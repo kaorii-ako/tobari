@@ -7,8 +7,8 @@ a build dependency.
 ## 1. Create the container
 
 ```sh
-distrobox create --name tobari-dev --image fedora:latest
-distrobox enter tobari-dev
+distrobox create --name tobari --image registry.fedoraproject.org/fedora:41
+distrobox enter tobari
 ```
 
 All steps below run **inside** the container.
@@ -16,21 +16,49 @@ All steps below run **inside** the container.
 ## 2. Toolchain
 
 ```sh
-sudo dnf install -y git curl cmake ninja-build gcc-c++ patchelf glslc \
-  vulkan-headers mesa-vulkan-drivers vulkan-tools nodejs npm
+sudo dnf install -y git curl cmake ninja-build gcc-c++ patchelf \
+  glslc spirv-headers-devel glslang \
+  vulkan-headers vulkan-loader-devel mesa-vulkan-drivers vulkan-tools \
+  nodejs npm python3
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
 source "$HOME/.cargo/env"
 rustup target add x86_64-unknown-linux-gnu
 ```
 
+The `-DGGML_VULKAN=ON` configure step fails without all three shader-toolchain
+packages. Both were hit in practice and both are fatal, not warnings:
+
+- `glslc` (shaderc) — `Could NOT find Vulkan (missing: glslc)`
+- `spirv-headers-devel` — `Could not find a package configuration file
+  provided by "SPIRV-Headers"` from `ggml/src/ggml-vulkan/CMakeLists.txt`
+
+`glslang` only accounts for the `missing components: glslangValidator` note;
+install it so the found-components list is clean.
+
 Verify the host GPU stack is visible from the container:
 
 ```sh
 vulkaninfo --summary
+cat /sys/class/drm/card*/device/mem_info_vram_total
 ```
 
 If no ICD is reported, stop: GPU offload cannot work and any build that
-silently falls back to CPU invalidates the Phase 1 memory story.
+silently falls back to CPU invalidates the Phase 1 memory story. Note that
+VRAM is read from `sysfs`, not from `vulkaninfo` — see `packaging/` notes in
+`docs/PACKAGING.md` for why.
+
+## 2b. appimagetool (container-local)
+
+```sh
+curl -sL -o /tmp/appimagetool.AppImage \
+  https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-x86_64.AppImage
+chmod +x /tmp/appimagetool.AppImage
+(cd /tmp && ./appimagetool.AppImage --appimage-extract)
+sudo rm -rf /opt/appimagetool && sudo cp -r /tmp/squashfs-root /opt/appimagetool
+printf '#!/bin/sh\nexec /opt/appimagetool/AppRun "$@"\n' | sudo tee /usr/local/bin/appimagetool
+sudo chmod 755 /usr/local/bin/appimagetool
+appimagetool --version
+```
 
 ## 3. llama.cpp (pinned source build)
 

@@ -26,7 +26,7 @@ fn validate_environment() -> Result<()> {
     );
     let paths = config::paths()?;
     paths.ensure()?;
-    let catalog = Catalog::load(&config::resolve_catalog_path(&paths))?;
+    let catalog = Catalog::load(&config::resolve_catalog_path(&paths)?)?;
     println!(
         "llama.cpp pin: {} ({})",
         catalog.llama_cpp_tag, catalog.llama_cpp_repo
@@ -67,7 +67,7 @@ async fn main() -> Result<()> {
 
     let paths = config::paths()?;
     paths.ensure()?;
-    let catalog = Catalog::load(&config::resolve_catalog_path(&paths))?;
+    let catalog = Catalog::load(&config::resolve_catalog_path(&paths)?)?;
     let state = Arc::new(AppState {
         catalog,
         paths,

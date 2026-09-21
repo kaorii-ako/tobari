@@ -86,6 +86,33 @@ fn nvidia() -> Option<GpuInfo> {
 }
 
 #[cfg(target_os = "linux")]
+fn vram_from_sysfs() -> Option<f64> {
+    let entries = std::fs::read_dir("/sys/class/drm").ok()?;
+    let mut largest: u64 = 0;
+    for entry in entries.flatten() {
+        let name = entry.file_name();
+        let name = name.to_string_lossy();
+        if !name.starts_with("card") || name.contains('-') {
+            continue;
+        }
+        let total = entry.path().join("device/mem_info_vram_total");
+        let Ok(raw) = std::fs::read_to_string(&total) else {
+            continue;
+        };
+        let Ok(bytes) = raw.trim().parse::<u64>() else {
+            continue;
+        };
+        if bytes > largest {
+            largest = bytes;
+        }
+    }
+    if largest == 0 {
+        return None;
+    }
+    Some(largest as f64 / 1024.0 / 1024.0 / 1024.0)
+}
+
+#[cfg(target_os = "linux")]
 fn vulkan() -> Option<GpuInfo> {
     let output = std::process::Command::new("vulkaninfo")
         .arg("--summary")
@@ -93,18 +120,30 @@ fn vulkan() -> Option<GpuInfo> {
         .output()
         .ok()?;
     let text = String::from_utf8(output.stdout).ok()?;
-    let mut vram_gb = 0.0;
-    let mut device_name = String::new();
+    let mut discrete_name: Option<String> = None;
+    let mut any_name: Option<String> = None;
+    let mut current_type = String::new();
     for line in text.lines() {
-        if let Some(rest) = line.strip_prefix("\tdeviceName") {
-            device_name = rest.trim().trim_start_matches('=').trim().to_string();
+        let trimmed = line.trim();
+        if let Some(rest) = trimmed.strip_prefix("deviceType") {
+            current_type = rest.trim().trim_start_matches('=').trim().to_string();
         }
-        if let Some(rest) = line.strip_prefix("\theapBudget") {
-            let value = rest.trim().trim_start_matches('=').trim().to_string();
-            vram_gb = parse_vulkan_bytes(&value) / 1024.0 / 1024.0 / 1024.0;
+        if let Some(rest) = trimmed.strip_prefix("deviceName") {
+            let name = rest.trim().trim_start_matches('=').trim().to_string();
+            if name.to_ascii_lowercase().contains("llvmpipe") {
+                continue;
+            }
+            if current_type.contains("DISCRETE") && discrete_name.is_none() {
+                discrete_name = Some(name.clone());
+            }
+            if any_name.is_none() {
+                any_name = Some(name);
+            }
         }
     }
-    if device_name.is_empty() || vram_gb <= 0.0 {
+    let device_name = discrete_name.or(any_name)?;
+    let vram_gb = vram_from_sysfs()?;
+    if vram_gb <= 0.0 {
         return None;
     }
     Some(GpuInfo {
@@ -114,35 +153,50 @@ fn vulkan() -> Option<GpuInfo> {
     })
 }
 
-#[cfg(target_os = "linux")]
-fn parse_vulkan_bytes(value: &str) -> f64 {
-    let value = value.trim();
-    let bytes: u64 = value
-        .trim_end_matches(char::is_alphabetic)
-        .trim()
-        .parse()
-        .unwrap_or(0);
-    match value.chars().last() {
-        Some('K') => bytes as f64 * 1024.0,
-        Some('M') => bytes as f64 * 1024.0 * 1024.0,
-        Some('G') => bytes as f64 * 1024.0 * 1024.0 * 1024.0,
-        Some('T') => bytes as f64 * 1024.0 * 1024.0 * 1024.0 * 1024.0,
-        _ => bytes as f64,
-    }
+pub fn cpu_fallback_reason() -> &'static str {
+    "no usable GPU detected — running on CPU. Responses will be slow, and the model will occupy system RAM instead of VRAM."
 }
 
+pub const ALL_LAYERS: u32 = 999;
+
 pub fn gpu_layer_budget(model_bytes: u64, vram_gb: f64) -> u32 {
-    let usable = vram_gb * 0.92 * 1024.0 * 1024.0 * 1024.0;
+    let usable = vram_gb * 0.90 * 1024.0 * 1024.0 * 1024.0;
     if model_bytes == 0 || usable <= 0.0 {
         return 0;
     }
     let ratio = usable / model_bytes as f64;
     if ratio >= 1.0 {
-        999
-    } else if ratio >= 0.3 {
-        ((ratio * 100.0).round() as u32).min(99)
+        ALL_LAYERS
+    } else if ratio >= 0.25 {
+        ((ratio * 100.0).round() as u32).min(ALL_LAYERS - 1)
     } else {
         0
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::{gpu_layer_budget, ALL_LAYERS};
+
+    #[test]
+    fn model_that_fits_gets_all_layers() {
+        let model = 2_497_281_120u64;
+        let vram = 16.0;
+        assert_eq!(gpu_layer_budget(model, vram), ALL_LAYERS);
+    }
+
+    #[test]
+    fn oversized_model_gets_a_partial_split_not_all_layers() {
+        let model = 18_556_686_752u64;
+        let vram = 16.0;
+        let layers = gpu_layer_budget(model, vram);
+        assert!(layers > 0 && layers < ALL_LAYERS, "got {layers}");
+    }
+
+    #[test]
+    fn no_vram_means_no_offload() {
+        assert_eq!(gpu_layer_budget(2_497_281_120, 0.0), 0);
+    }
+}
+
 

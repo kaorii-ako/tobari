@@ -20,6 +20,11 @@ body {
   overflow: hidden;
   text-overflow: ellipsis;
 }
+#status.warn {
+  color: #e0af68;
+  background: #221d13;
+  white-space: normal;
+}
 #context {
   display: none;
   padding: 8px 10px;

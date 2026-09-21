@@ -58,23 +58,29 @@ pub struct CatalogModel {
     pub sha256: String,
 }
 
-pub fn resolve_catalog_path(paths: &Paths) -> PathBuf {
+pub fn resolve_catalog_path(paths: &Paths) -> Result<PathBuf> {
     let exe_dir = std::env::current_exe()
         .ok()
         .and_then(|p| p.parent().map(PathBuf::from));
     let candidates = [
+        std::env::var("TOBARI_CATALOG").ok().map(PathBuf::from),
         exe_dir.as_ref().map(|d| d.join("models.toml")),
         Some(paths.config.join("models.toml")),
-        std::env::var("TOBARI_CATALOG")
-            .ok()
-            .map(PathBuf::from),
     ];
     for candidate in candidates.iter().flatten() {
         if candidate.exists() {
-            return candidate.clone();
+            return Ok(candidate.clone());
         }
     }
-    paths.config.join("models.toml")
+    let dev_fallback = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .join("../../models.toml");
+    if dev_fallback.exists() {
+        return Ok(dev_fallback);
+    }
+    anyhow::bail!(
+        "no models.toml found (checked TOBARI_CATALOG, sidecar dir, {}); copy core/models.toml there or set TOBARI_CATALOG",
+        paths.config.join("models.toml").display()
+    )
 }
 
 impl Catalog {

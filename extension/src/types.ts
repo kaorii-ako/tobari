@@ -8,9 +8,11 @@ export interface SidecarStatus {
   model_label?: string
   verified?: 'pinned' | 'unverified'
   vram_gb?: number
+  device_name?: string
   gpu_layers?: number
   total_layers?: number
   error?: string
+  warning?: string
 }
 
 export interface CatalogEntry {

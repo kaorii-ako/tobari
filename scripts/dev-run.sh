@@ -12,6 +12,10 @@ cp target/release/tobari-core "$STAGING/tobari-core"
 
 if [ -f "$STAGING/llama-server" ]; then
   cp "$STAGING/llama-server" "$BIN_DIR/llama-server"
+  for lib in "$STAGING"/libggml*.so* "$STAGING"/libllama*.so* "$STAGING"/libmtmd*.so*; do
+    [ -e "$lib" ] || continue
+    cp -P "$lib" "$BIN_DIR/"
+  done
 else
   echo "warning: $STAGING/llama-server missing — run packaging/build-llama-server.sh first" >&2
   echo "warning: the panel will report llama-server as unavailable until then" >&2
@@ -23,7 +27,9 @@ if [ ! -d node_modules ]; then
 fi
 npm run build
 
-"$REPO_ROOT/core/target/release/tobari-core" --install-manifests
+"$REPO_ROOT/core/target/release/tobari-core" --install-manifests || {
+  echo "note: manifest install skipped (no supported browser config dirs yet) — install Chrome/Chromium/Brave, then rerun this script" >&2
+}
 "$REPO_ROOT/core/target/release/tobari-core" --validate
 
 echo

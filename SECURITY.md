@@ -53,7 +53,74 @@ failure, not a warning. An unverified file is never loaded.
   split. Never silently OOM the GPU.
 - Model cannot load: the feature is unavailable. It does not phone home.
 
-## Tradeoff log
+## How to verify these claims yourself
+
+Every claim above is checkable from a shell. Run these while the panel is
+answering a question.
+
+**1. Nothing is listening outside loopback**
+
+```sh
+ss -tlnp | grep llama-server
+```
+
+The address column must read `127.0.0.1:<port>` and nothing else. A line
+showing `0.0.0.0` or `[::]` for `llama-server` is a bug we ship a fix for,
+not a configuration choice.
+
+**2. An unauthenticated request is rejected**
+
+```sh
+PORT=$(ss -tlnp | sed -n 's/.*127\.0\.0\.1:\([0-9]\+\).*llama-server.*/\1/p' | head -1)
+curl -s -o /dev/null -w '%{http_code}\n' "http://127.0.0.1:$PORT/v1/models"
+```
+
+Expect `401`. A `200` means any page you visit can use your GPU.
+
+**3. The token is not on disk or in the environment**
+
+```sh
+grep -rF "$(cat ~/.local/state/tobari/logs/llama-server.log 2>/dev/null | grep -o 'api-key[^ ]*' | head -1)" ~/.config/tobari 2>/dev/null
+```
+
+must find nothing, and `llama-server`'s environment
+(`tr '\0' '\n' < /proc/$(pgrep -f llama-server | head -1)/environ`) must not
+contain the token. It is passed as `--api-key` on the command line and is
+visible in `/proc/<pid>/cmdline` to processes running as your user — that is
+the documented, accepted boundary: same-user processes already have your
+secrets. No *web* context can read it.
+
+**4. Manifests are pinned to one extension ID**
+
+```sh
+grep -h allowed_origins -A1 ~/.config/*/NativeMessagingHosts/dev.tobari.core.json
+```
+
+must show exactly `chrome-extension://82e4bde19a6dc64c34b92da4c9c7ec21/`,
+with no wildcard. The ID is `SHA-256(SPKI-DER)` of the public key embedded in
+`extension/manifest.json`, so it is identical on every install and cannot be
+swapped by editing a JSON file at runtime.
+
+**5. The model file is the pinned one**
+
+```sh
+sha256sum ~/.local/share/tobari/models/Qwen3-4B-Instruct-2507-Q4_K_M.gguf
+```
+
+must equal the `sha256` for that entry in `core/models.toml`. If it does not,
+the sidecar refuses to load it and deletes the file rather than warning.
+
+**6. Nothing phones home**
+
+```sh
+sudo ss -tnp | grep -E 'tobari-core|llama-server'
+```
+
+shows only loopback. Run the whole acceptance flow with the network
+interface down; the sidecar makes no outbound connection except the Hugging
+Face download you explicitly asked for, which is the only time it touches the
+network at all.
+
 
 - Phase 1: none taken. No security property is weakened for memory or
   packaging in this phase.

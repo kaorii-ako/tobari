@@ -31,4 +31,8 @@ cmake --build "$SRC/build" --target llama-server
 
 mkdir -p "$STAGING"
 cp "$SRC/build/bin/llama-server" "$STAGING/llama-server"
-echo "staged: $STAGING/llama-server"
+for lib in "$SRC/build/bin"/libggml*.so* "$SRC/build/bin"/libllama*.so* "$SRC/build/bin"/libmtmd*.so*; do
+  [ -e "$lib" ] || continue
+  cp -P "$lib" "$STAGING/"
+done
+echo "staged: $STAGING/llama-server (+ shared libs)"

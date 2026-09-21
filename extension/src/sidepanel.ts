@@ -30,14 +30,19 @@ let streaming: HTMLDivElement | undefined
 
 function onEvent(msg: SidecarMessage): void {
   if (msg.type === 'status') {
+    ui.status.classList.toggle('warn', Boolean(msg.warning))
     if (msg.state === 'ready') {
-      ui.status.textContent =
-        `ready · ${msg.backend} · ${msg.model_label} (${msg.verified}) · ` +
-        `${msg.gpu_layers ?? 0}/${msg.total_layers ?? '?'} layers on ${msg.vram_gb ?? 0} GB VRAM`
+      const layers =
+        msg.total_layers && msg.total_layers > 0
+          ? `${msg.gpu_layers ?? 0}/${msg.total_layers} layers on ${msg.device_name ?? 'GPU'}`
+          : 'GPU offload not active'
+      ui.status.textContent = msg.warning
+        ? `${msg.warning} · ${msg.backend}`
+        : `ready · ${msg.backend} · ${msg.model_label} (${msg.verified}) · ${layers}`
     } else if (msg.state === 'error') {
       ui.status.textContent = `error: ${msg.error}`
     } else {
-      ui.status.textContent = 'starting…'
+      ui.status.textContent = msg.warning ?? 'starting…'
     }
   } else if (msg.type === 'catalog') {
     ui.modelSelect.replaceChildren()

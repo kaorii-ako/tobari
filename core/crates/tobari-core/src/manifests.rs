@@ -91,6 +91,11 @@ pub fn llama_server_path() -> Result<PathBuf> {
 
 pub fn status_json(state_name: &str, error: Option<&str>, extra: Value) -> Value {
     let info = crate::gpu::detect();
+    let warning = if info.backend == crate::gpu::Backend::Cpu {
+        Some(crate::gpu::cpu_fallback_reason())
+    } else {
+        None
+    };
     let mut object = json!({
         "type": "status",
         "state": state_name,
@@ -98,6 +103,7 @@ pub fn status_json(state_name: &str, error: Option<&str>, extra: Value) -> Value
         "vram_gb": info.vram_gb,
         "device_name": info.device_name,
         "error": error,
+        "warning": warning,
     });
     if let (Some(base), Some(extra_map)) = (object.as_object_mut(), extra.as_object()) {
         for (key, value) in extra_map {
