@@ -1,0 +1,46 @@
+name: linux
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  sidecar:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: core
+      - name: Check
+        run: cargo check --workspace --all-targets --locked
+        working-directory: core
+      - name: Test
+        run: cargo test --workspace --locked
+        working-directory: core
+      - name: Build
+        run: cargo build --release --locked
+        working-directory: core
+      - name: Smoke
+        run: target/release/tobari-core --version
+        working-directory: core
+
+  extension:
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: extension
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: extension/package-lock.json
+      - run: npm ci
+      - run: npm run build
+      - uses: actions/upload-artifact@v4
+        with:
+          name: tobari-extension
+          path: extension/dist

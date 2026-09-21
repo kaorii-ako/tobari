@@ -1,0 +1,27 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Tobari</title>
+  <link rel="stylesheet" href="sidepanel.css" />
+</head>
+<body>
+  <div id="status">connecting…</div>
+  <div id="context">
+    <span id="context-origin"></span>
+    <span id="context-title"></span>
+    <label><input type="checkbox" id="confirm-insert" checked /> confirm before inserting pages</label>
+    <button id="use-page">Use this page</button>
+  </div>
+  <div id="controls">
+    <select id="model"></select>
+    <button id="download">Download</button>
+  </div>
+  <div id="messages"></div>
+  <div id="composer">
+    <textarea id="input" placeholder="Ask Tobari…"></textarea>
+    <button id="send">Send</button>
+  </div>
+  <script type="module" src="sidepanel.js"></script>
+</body>
+</html>
