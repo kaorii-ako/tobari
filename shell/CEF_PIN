@@ -1,0 +1,32 @@
+# Phase 2 — CEF shell pin (not yet provisioned)
+
+The shell consumes **prebuilt CEF binaries** (Spotify's `cef-builds`
+distribution) via **tauri-apps/cef-rs** behind the `cef-ui` cargo feature.
+Default builds omit CEF entirely so `cargo check -p tobari-shell` stays green
+on any machine.
+
+- CEF branch: **unpinned** (to be pinned to a branch matching a Chromium
+  stable we accept, e.g. ` branch 7xxx + Chromium M1xx`)
+- Source: `https://cef-builds.spotifycdn.com/index.html`
+- Rust bindings: `https://github.com/tauri-apps/cef-rs`
+  (x86_64/arm64 × Linux/macOS/Windows; `cef` + `cef-dll-sys` crates,
+  `cef_binary` shared install or `CEF_PATH` export)
+- Provisioning (planned): `shell/provision-cef.sh` downloads the pinned
+  `linux64` + `mac-arm64` builds, verifies SHA-256, and sets `CEF_PATH`.
+  The script does not exist yet — writing the pin down here first is the
+  deliberate order (decide the exact binary before automating its fetch).
+
+Why CEF and not the alternatives (locked, spec §5):
+
+- **No Qt WebEngine**: Qt backports Chromium security fixes on its own
+  schedule; we would inherit the patch lag.
+- **No Electron**: its memory floor contradicts the product goal.
+- **No Tauri**: on Linux Tauri is WebKitGTK, not Chromium; we would not
+  ship the engine we claim to ship.
+
+IPC boundary (locked, spec §2.3): the shell talks to the Phase 1 sidecar
+(`tobari-core`) over the `tobari-ipc` protocol. The shell swap never
+rewrites the AI core.
+
+Linux windowing (locked, spec §5): `--ozone-platform=wayland` default with
+an X11/Xwayland fallback flag; both paths tested in CI.

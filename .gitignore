@@ -17,4 +17,6 @@ models/
 .DS_Store
 sccache/
 packaging/build/
+squashfs-root/
+shell/cef-bin/
 

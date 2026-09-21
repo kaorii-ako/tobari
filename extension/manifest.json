@@ -8,5 +8,5 @@
   "background": { "service_worker": "background.js" },
   "side_panel": { "default_path": "sidepanel.html" },
   "action": { "default_title": "Tobari" },
-  "permissions": ["sidePanel", "contextMenus", "storage", "scripting", "activeTab"]
+  "permissions": ["sidePanel", "contextMenus", "storage", "scripting", "activeTab", "alarms"]
 }

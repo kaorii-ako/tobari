@@ -91,3 +91,13 @@ export interface ExtractedPage {
   text: string
   selection: string
 }
+
+export interface PendingAction {
+  mode: 'explain' | 'summarize' | 'translate'
+  origin: string
+  title: string
+  text: string
+  selection: string
+  at: number
+  auto: boolean
+}

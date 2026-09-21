@@ -16,7 +16,7 @@ All steps below run **inside** the container.
 ## 2. Toolchain
 
 ```sh
-sudo dnf install -y git curl cmake ninja-build gcc-c++ patchelf \
+sudo dnf install -y git curl cmake ninja-build gcc-c++ patchelf glslc \
   vulkan-headers mesa-vulkan-drivers vulkan-tools nodejs npm
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
 source "$HOME/.cargo/env"

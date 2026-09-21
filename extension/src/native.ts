@@ -28,15 +28,16 @@ export class NativeBridge {
       for (const listener of this.statusListeners) listener(msg)
       return
     }
-    const pending = 'req_id' in msg ? this.pending.get(msg.req_id) : undefined
-    if (!pending) return
+    const reqId: string | undefined = 'req_id' in msg ? msg.req_id : undefined
+    const pending = reqId !== undefined ? this.pending.get(reqId) : undefined
+    if (!pending || reqId === undefined) return
     if (msg.type === 'stream_delta') {
       pending.onDelta(msg.delta)
     } else if (msg.type === 'done') {
-      this.pending.delete(msg.req_id)
+      this.pending.delete(reqId)
       pending.resolve()
     } else if (msg.type === 'error') {
-      this.pending.delete(msg.req_id)
+      this.pending.delete(reqId)
       pending.reject(new Error(msg.message))
     }
   }
@@ -53,7 +54,7 @@ export class NativeBridge {
     })
   }
 
-  send(msg: { type: 'download_model'; id: string } | { type: 'get_status' }): void {
+  send(msg: { type: 'download_model'; id: string } | { type: 'get_status' } | { type: 'get_catalog' }): void {
     this.port.postMessage(msg)
   }
 }

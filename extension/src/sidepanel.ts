@@ -1,4 +1,5 @@
-import type { ExtractedPage, PendingAction } from './types'
+import { NativeBridge } from './native'
+import type { PendingAction, SidecarMessage } from './types'
 
 const bridge = new NativeBridge()
 
@@ -154,9 +155,8 @@ ui.input.addEventListener('keydown', (event) => {
 })
 
 bridge.send({ type: 'get_status' })
+bridge.send({ type: 'get_catalog' })
 void chrome.storage.session.get({ confirmOnInsert: true }, (items) => {
   ui.confirmInsert.checked = items.confirmOnInsert as boolean
 })
-
-declare const self: Window & { __tobariExtracted?: ExtractedPage }
 
