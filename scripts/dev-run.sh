@@ -9,6 +9,7 @@ cd "$REPO_ROOT/core"
 cargo build --release
 mkdir -p "$STAGING" "$BIN_DIR"
 cp target/release/tobari-core "$STAGING/tobari-core"
+cp target/release/tobari-core "$BIN_DIR/tobari-core"
 
 if [ -f "$STAGING/llama-server" ]; then
   cp "$STAGING/llama-server" "$BIN_DIR/llama-server"

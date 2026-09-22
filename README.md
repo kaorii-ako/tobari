@@ -12,11 +12,23 @@ deliberately. No "untraceable", no "anonymous", no claim we cannot defend in
 
 ## Status
 
-Phase 1 in progress: Rust sidecar (`tobari-core`) + MV3 extension, installed
-into the user's existing Chrome/Chromium/Brave on Linux. macOS is CI-built
-only as a compile smoke test on `macos-14` — no `.dmg` is produced, because
-there is no Mac to test on and no notarization account; treat macOS as a
-build-from-source target (`docs/DEV-MACOS.md`, spec §7.5).
+Phase 1 on Linux: Rust sidecar (`tobari-core`) + MV3 extension, installed into
+the user's existing Chrome/Chromium/Brave — native installs and Flatpak
+installs both.
+
+macOS is **deferred to Phase 2** (`docs/DEV-MACOS.md`). The `macos-14` CI
+compile smoke stays so the code does not rot; no `.dmg` is produced, because
+there is no Mac to test on and no notarization account. Treat macOS as a
+build-from-source target.
+
+`docs/VALIDATION.md` has **no go/pivot/stop decision recorded**. The developer
+waived that gate for Phase 1 on 2026-09-22; the waiver does not extend to
+Phase 2, and the file says so.
+
+Phase 1 runs end to end on Linux as of 2026-09-22: native messaging → sidecar
+→ `llama-server` on Vulkan → streamed answer, with the loopback binding, token
+rejection and prompt-injection split measured rather than asserted. Results
+are in `SECURITY.md`; repro with `python3 scripts/acceptance-drive.py`.
 
 ## Layout
 
@@ -26,7 +38,9 @@ core/            Rust sidecar: supervises llama-server, serves the native
 extension/       MV3 TypeScript extension: sidebar chat, summarize, Explain
 shell/           Phase 2: CEF-based browser shell (not started)
 patches/         Phase 3: patch set against Chromium stable (not started)
-docs/            DEV-LINUX.md, DEV-MACOS.md, PACKAGING.md
+docs/            VALIDATION.md, DEV-LINUX.md, DEV-MACOS.md, PACKAGING.md,
+                 RELEASING.md
+site/            Static marketing site for Netlify — no trackers, no cookies
 core/models.toml Pinned model manifest (SHA-256, licences)
 SECURITY.md      Threat model and every security tradeoff, stated plainly
 ```
@@ -46,7 +60,8 @@ packaging/build-appimage.sh       # AppImage (static type2 runtime) + tarball
 
 | Question | Decision | Why |
 |---|---|---|
-| macOS Phase 1 | CI compile smoke on `macos-14` only, no `.dmg` artifact | No Mac to test on, no notarization account; a `.dmg` Gatekeeper blocks is not shippable (spec §7.5) |
+| macOS | **Deferred to Phase 2.** CI compile smoke on `macos-14` stays; no `.dmg`, no new macOS-conditional code | No Mac to test on, no notarization account; a `.dmg` Gatekeeper blocks is not shippable (spec §12.5). Full reasoning in `docs/DEV-MACOS.md` |
+| Flatpak browsers (Chrome/Chromium/Brave) | Supported: manifest into `~/.var/app/<id>/config/...`, host reached via a `flatpak-spawn --host` shim, missing permission detected and reported | A Flatpak browser cannot exec a host binary; without this the sidecar is unreachable on any Flatpak-only desktop (`docs/PACKAGING.md`) |
 | App framework (sigma-eclipse-llm uses Tauri) | No Tauri | On Linux Tauri is WebKitGTK, not Chromium; we would not ship the engine we claim |
 | Brand split ("Eclipse" style second brand) | No; the model is just Tobari | A second brand exists to license separately; we have nothing to license separately |
 | llama.cpp source | Pin tag `b11053` (ggml-org), build from source in-container | Source builds carry no redistribution risk and pin/upgrade on our schedule |
@@ -62,7 +77,9 @@ surface, Ai-Swat/sigma-eclipse-llm (llama-server supervision pattern).
 
 ## Docs
 
+- `docs/VALIDATION.md` — Stage 0 gate (waived for Phase 1; decision not yet recorded)
 - `docs/DEV-LINUX.md` — container setup, toolchain, llama.cpp build
 - `docs/DEV-MACOS.md` — CI build, signing/notarization status
 - `docs/PACKAGING.md` — AppImage and Flatpak constraints per phase
+- `docs/RELEASING.md` — minisign signing, checksums, GitHub Releases, Flathub
 - `SECURITY.md` — threat model, prompt-injection design, tradeoffs

@@ -24,15 +24,18 @@ def read_msg(proc):
 
 
 def main():
+    log_dir = os.path.expanduser("~/.local/state/tobari/logs")
+    os.makedirs(log_dir, exist_ok=True)
+    stderr_log = open(os.path.join(log_dir, "acceptance-sidecar.log"), "wb")
     proc = subprocess.Popen(
         [CORE],
         stdin=subprocess.PIPE,
         stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
+        stderr=stderr_log,
         bufsize=0,
     )
-    send(proc, {"type": "hello", "origin": "chrome-extension://82e4bde19a6dc64c34b92da4c9c7ec21/"})
-    send(proc, {"type": "get_status", "origin": "chrome-extension://82e4bde19a6dc64c34b92da4c9c7ec21/"})
+    send(proc, {"type": "hello", "origin": "chrome-extension://icoelnobjkgnmgemdeljcnkemjmhomcb/"})
+    send(proc, {"type": "get_status", "origin": "chrome-extension://icoelnobjkgnmgemdeljcnkemjmhomcb/"})
 
     ready = False
     deadline = time.time() + 240

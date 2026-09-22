@@ -9,8 +9,9 @@ export interface SidecarStatus {
   verified?: 'pinned' | 'unverified'
   vram_gb?: number
   device_name?: string
-  gpu_layers?: number
-  total_layers?: number
+  offload?: 'all' | 'partial' | 'none'
+  gpu_layers?: number | null
+  total_layers?: number | null
   error?: string
   warning?: string
 }

@@ -42,6 +42,7 @@ fn validate_environment() -> Result<()> {
     }
     let server = manifests::llama_server_path()?;
     println!("llama-server: {}", server.display());
+    manifests::report_targets()?;
     Ok(())
 }
 
@@ -58,6 +59,10 @@ async fn main() -> Result<()> {
     }
     if args.iter().any(|a| a == "--uninstall") {
         manifests::uninstall_manifests()?;
+        return Ok(());
+    }
+    if args.iter().any(|a| a == "--doctor") {
+        manifests::report_targets()?;
         return Ok(());
     }
     if args.iter().any(|a| a == "--validate") {
@@ -89,11 +94,18 @@ async fn main() -> Result<()> {
                 break;
             }
         };
-        match message["type"].as_str().unwrap_or_default() {
+        let kind = message["type"].as_str().unwrap_or_default().to_string();
+        match kind.as_str() {
             "get_status" => server::send_status(&state, "starting", None),
             "get_catalog" => chat::handle_catalog(&state).await,
-            "download_model" => chat::handle_download(&state, &message).await,
-            "chat" => chat::handle_chat(&state, &message).await,
+            "download_model" => {
+                let state = Arc::clone(&state);
+                tokio::spawn(async move { chat::handle_download(&state, &message).await });
+            }
+            "chat" => {
+                let state = Arc::clone(&state);
+                tokio::spawn(async move { chat::handle_chat(&state, &message).await });
+            }
             "hello" => {
                 let origin = message["origin"].as_str().unwrap_or_default();
                 match native_host::validate_origin(origin) {

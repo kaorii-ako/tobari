@@ -32,10 +32,23 @@ function onEvent(msg: SidecarMessage): void {
   if (msg.type === 'status') {
     ui.status.classList.toggle('warn', Boolean(msg.warning))
     if (msg.state === 'ready') {
-      const layers =
+      const device = msg.device_name ?? 'GPU'
+      const counted =
         msg.total_layers && msg.total_layers > 0
-          ? `${msg.gpu_layers ?? 0}/${msg.total_layers} layers on ${msg.device_name ?? 'GPU'}`
-          : 'GPU offload not active'
+          ? `${msg.gpu_layers ?? 0}/${msg.total_layers} layers`
+          : msg.gpu_layers != null && msg.gpu_layers > 0
+            ? `${msg.gpu_layers} layers`
+            : undefined
+      const layers =
+        msg.offload === 'none'
+          ? 'CPU only — no GPU offload'
+          : msg.offload === 'partial'
+            ? `partial offload${counted ? ` (${counted})` : ''} on ${device}`
+            : msg.offload === 'all'
+              ? `all layers${counted ? ` (${counted})` : ''} on ${device}`
+              : counted
+                ? `${counted} on ${device}`
+                : 'offload state unknown'
       ui.status.textContent = msg.warning
         ? `${msg.warning} · ${msg.backend}`
         : `ready · ${msg.backend} · ${msg.model_label} (${msg.verified}) · ${layers}`
