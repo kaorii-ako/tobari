@@ -1,0 +1,30 @@
+name: phase1
+on:
+  push:
+    paths:
+      - "core/**"
+      - "extension/**"
+  pull_request:
+    paths:
+      - "core/**"
+      - "extension/**"
+jobs:
+  sidecar:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable@v1
+        with:
+          components: clippy, rustfmt
+      - run: cargo fmt --check --manifest-path core/Cargo.toml
+      - run: cargo clippy --manifest-path core/Cargo.toml -- -D warnings
+      - run: cargo test --manifest-path core/Cargo.toml
+  extension:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm ci --prefix extension
+      - run: npm run build --prefix extension

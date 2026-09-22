@@ -1,0 +1,9 @@
+target/
+dist/
+node_modules/
+*.log
+*.part
+models/*.gguf
+AppDir/
+*.AppImage
+.mcp-backups/

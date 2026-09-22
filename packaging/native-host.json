@@ -1,0 +1,7 @@
+{
+  "name": "dev.tobari.core",
+  "description": "Tobari local AI core",
+  "path": "__HOST_PATH__",
+  "type": "stdio",
+  "allowed_origins": ["chrome-extension://__TOBARI_EXT_ID__/"]
+}

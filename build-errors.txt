@@ -1,0 +1,25 @@
+   Compiling tobari-core v0.1.0 (/var/home/hxshino/projects/Tobari/core)
+error[E0425]: cannot find function `proxy_stream` in module `super`
+  --> src/chat.rs:64:24
+   |
+64 |                 super::proxy_stream(res).await?;
+   |                        ^^^^^^^^^^^^ not found in `super`
+
+error[E0599]: no method named `json` found for struct `RequestBuilder` in the current scope
+  --> src/chat.rs:57:63
+   |
+57 |                 let res = client.post(url).bearer_auth(token).json(&body).send().await?;
+   |                                                               ^^^^ method not found in `RequestBuilder`
+
+warning: unused variable: `mac_rel`
+  --> src/paths.rs:82:27
+   |
+82 |     for (name, linux_rel, mac_rel) in candidates {
+   |                           ^^^^^^^ help: if this is intentional, prefix it with an underscore: `_mac_rel`
+   |
+   = note: `#[warn(unused_variables)]` (part of `#[warn(unused)]`) on by default
+
+Some errors have detailed explanations: E0425, E0599.
+For more information about an error, try `rustc --explain E0425`.
+warning: `tobari-core` (bin "tobari-core") generated 1 warning
+error: could not compile `tobari-core` (bin "tobari-core") due to 2 previous errors; 1 warning emitted

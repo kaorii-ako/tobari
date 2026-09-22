@@ -1,0 +1,32 @@
+{
+  "manifest_version": 3,
+  "name": "Tobari",
+  "version": "0.1.0",
+  "description": "A browser that closes over the window. Local-only AI sidebar.",
+  "minimum_chrome_version": "116",
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAq/rayQZb7dwNBKIhn/3TlWP/d78RYTce6WEdx3SGZj9e2o/W77HMFGQ2kfphWRR9A/0U6Lg//MfvQZ3uRQYK7gUqA6NA0TWE4kGoQ9aZ8S0DQjCZ8SLOeBSHCJcYbDoTX44XbnMnnrLJ9AyYtejKHK4qHs13GThWVXPySkel91VeOGO5Emqyz/+1z4qGHeKlHWnQf8MjW6t7S8MaEOenDHZhyg/Eu5yqi6eBPLDL5e3roSeRkheVC5LVpoF+bGtwl1xEoyC1NCDuruAgoRALTni3dnopBGrf6kgOk8Y9V7BkKC8h1WeZXMmfzyjqDAOZVAy1Bgv64a9umr12Dc9kKQIDAQAB",
+  "permissions": ["sidePanel", "contextMenus", "activeTab", "scripting", "storage"],
+  "host_permissions": [],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "side_panel": {
+    "default_path": "sidepanel.html"
+  },
+  "action": {
+    "default_title": "Tobari",
+    "default_icon": {
+      "16": "icons/tobari-16.png",
+      "48": "icons/tobari-48.png",
+      "128": "icons/tobari-128.png"
+    }
+  },
+  "icons": {
+    "16": "icons/tobari-16.png",
+    "48": "icons/tobari-48.png",
+    "128": "icons/tobari-128.png"
+  },
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'; connect-src 'self';"
+  }
+}

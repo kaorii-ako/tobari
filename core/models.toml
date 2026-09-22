@@ -1,0 +1,9 @@
+[[models]]
+id = "qwen3-4b-instruct-2507-q4_k_m"
+repo = "unsloth/Qwen3-4B-Instruct-2507-GGUF"
+file = "Qwen3-4B-Instruct-2507-Q4_K_M.gguf"
+sha256 = "PENDING: replaced with the real digest before any release. Run `tobari-core sha <file>` after downloading and pin the output here. The sidecar refuses to load while this is unpinned."
+license = "Apache-2.0"
+size_mb = 2600
+ctx_default = 8192
+default = true

@@ -1,0 +1,13 @@
+{
+  "name": "tobari-extension",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "build": "tsc && node scripts/assemble.mjs",
+    "watch": "tsc --watch"
+  },
+  "devDependencies": {
+    "typescript": "^5.5.0",
+    "@types/chrome": "^0.0.263"
+  }
+}
