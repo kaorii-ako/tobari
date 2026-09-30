@@ -442,7 +442,14 @@ svg {
   transition: background var(--dur-1) var(--ease-out);
 }
 .item:hover { background: var(--ink-200); }
-.item__text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.item__text {
+  flex: 1; min-width: 0;
+  display: flex; flex-direction: column; align-items: flex-start; gap: 1px;
+  text-align: left;
+  background: none; border: none; padding: 0;
+  color: inherit; font: inherit; letter-spacing: inherit;
+}
+.item__title, .item__url { max-width: 100%; }
 .item__title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--fs-200); color: var(--fg-0); }
 .item__url {
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;

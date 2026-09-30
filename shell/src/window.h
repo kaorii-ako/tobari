@@ -19,6 +19,27 @@ namespace tobari {
 
 inline constexpr int kChromeHeight = 72;
 
+class FixedWidthDelegate : public CefPanelDelegate {
+ public:
+  explicit FixedWidthDelegate(int width) : width_(width) {}
+
+  CefSize GetPreferredSize(CefRefPtr<CefView> view) override {
+    return CefSize(width_, 1);
+  }
+  CefSize GetMinimumSize(CefRefPtr<CefView> view) override {
+    return CefSize(width_, 1);
+  }
+  CefSize GetMaximumSize(CefRefPtr<CefView> view) override {
+    return CefSize(width_, 100000);
+  }
+
+ private:
+  const int width_;
+
+  IMPLEMENT_REFCOUNTING(FixedWidthDelegate);
+  DISALLOW_COPY_AND_ASSIGN(FixedWidthDelegate);
+};
+
 class FixedHeightDelegate : public CefPanelDelegate {
  public:
   explicit FixedHeightDelegate(int height) : height_(height) {}
@@ -93,6 +114,8 @@ class BrowserWindow : public CefBaseRefCounted {
   void ReloadUi();
 
   void SetUiBrowser(CefRefPtr<CefBrowser> browser);
+  void SetPanelBrowser(CefRefPtr<CefBrowser> browser);
+  void RefreshPanel(const std::string& kind);
   CefRefPtr<CefWindow> window() const { return window_; }
 
  private:
@@ -108,6 +131,10 @@ class BrowserWindow : public CefBaseRefCounted {
   CefRefPtr<FixedHeightDelegate> chrome_height_delegate_;
   CefRefPtr<CefBrowser> ui_browser_;
   CefRefPtr<CefPanel> content_panel_;
+  CefRefPtr<CefPanel> body_panel_;
+  CefRefPtr<CefPanel> panel_wrap_;
+  CefRefPtr<CefBrowserView> panel_view_;
+  CefRefPtr<CefBrowser> panel_browser_;
 
   std::vector<Tab> tabs_;
   int active_id_ = 0;

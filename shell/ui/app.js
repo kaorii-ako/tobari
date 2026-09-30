@@ -14,18 +14,16 @@ const ui = {
   input: el("input"), scheme: el("scheme"), bangchip: el("bangchip"),
   dropdown: el("dropdown"), shield: el("shield"), blockcount: el("blockcount"),
   progress: el("progress"), progressBar: el("progressBar"), panel: el("panel"),
-  panelBody: el("panelBody"), panelTabs: el("panelTabs"), panelToggle: el("panelToggle"),
-  panelClose: el("panelClose"), menu: el("menu"), menuBtn: el("menuBtn"),
+  panelToggle: el("panelToggle"), menu: el("menu"), menuBtn: el("menuBtn"),
   bookmark: el("bookmark"),
   winMin: el("winMin"), winMax: el("winMax"), winMaxGlyph: el("winMaxGlyph"),
   winClose: el("winClose"), dragzone: el("dragzone"),
-  themeLabel: el("themeLabel"), ptabSettings: el("ptabSettings"), curtain: el("curtain"),
+  themeLabel: el("themeLabel"), curtain: el("curtain"),
 };
 
 let state = { tabs: [], activeId: null, blocked: 0 };
 let prefs = loadPrefs();
 let panelOpen = false;
-let panelView = "bookmarks";
 let menuOpen = false;
 let rows = [];
 let sel = -1;
@@ -362,153 +360,11 @@ function closeTab(id) {
 function setPanel(open) {
   panelOpen = open;
   ui.panelToggle.setAttribute("aria-pressed", String(open));
-  if (open) {
-    ui.panel.hidden = false;
-    renderPanel();
-    if (!prefersReducedMotion()) {
-      wake();
-      track("panel", gsap.fromTo(ui.panel, { opacity: 0, x: 18 }, { opacity: 1, x: 0, duration: DUR.d3, ease: EASE.out, clearProps: "transform", onComplete: settle }));
-    }
-  } else if (!ui.panel.hidden) {
-    if (prefersReducedMotion()) { ui.panel.hidden = true; }
-    else {
-      track("panel", gsap.to(ui.panel, {
-        opacity: 0, x: 18, duration: DUR.d2, ease: EASE.in,
-        onComplete: () => { ui.panel.hidden = true; gsap.set(ui.panel, { clearProps: "all" }); settle(); },
-      }));
-    }
-  }
   native({ type: "panel", open });
   pushDragRegions();
 }
 
-function setPanelView(view) {
-  panelView = view;
-  for (const t of ui.panelTabs.querySelectorAll(".ptab")) {
-    t.setAttribute("aria-selected", String(t.dataset.panel === view));
-  }
-  ui.ptabSettings.hidden = view !== "settings";
-  renderPanel();
-}
-
-const EMPTY_COPY = {
-  bookmarks: "Nothing saved yet. Bookmarks stay on this machine.",
-  history: "No pages visited yet.",
-  reading: "Reading list is empty. Add the current page from the menu.",
-};
-
-async function renderPanel() {
-  ui.panelBody.replaceChildren();
-  if (panelView === "settings") { renderSettings(); return; }
-
-  const entries = (await native({ type: "list_get", kind: panelView })) ?? [];
-  if (!entries.length) {
-    const empty = document.createElement("p");
-    empty.className = "empty";
-    empty.textContent = EMPTY_COPY[panelView] ?? "";
-    ui.panelBody.appendChild(empty);
-    return;
-  }
-
-  const frag = document.createDocumentFragment();
-  for (const entry of entries) {
-    const row = document.createElement("div");
-    row.className = "item";
-
-    const open = document.createElement("button");
-    open.type = "button";
-    open.className = "item__text";
-    open.addEventListener("click", () => native({ type: "entry_open", url: entry.url }));
-
-    const title = document.createElement("span");
-    title.className = "item__title";
-    title.textContent = entry.title || entry.url;
-    const url = document.createElement("span");
-    url.className = "item__url";
-    url.textContent = entry.url;
-    open.append(title, url);
-
-    const drop = document.createElement("button");
-    drop.type = "button";
-    drop.className = "item__drop";
-    drop.setAttribute("aria-label", `Remove ${entry.title || entry.url}`);
-    drop.innerHTML = '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4.5 4.5l7 7M11.5 4.5l-7 7"/></svg>';
-    drop.addEventListener("click", async () => {
-      await native({ type: "entry_remove", kind: panelView, url: entry.url });
-      renderPanel();
-    });
-
-    row.append(open, drop);
-    frag.appendChild(row);
-  }
-  ui.panelBody.appendChild(frag);
-
-  const foot = document.createElement("div");
-  foot.className = "panel__foot";
-  const clear = document.createElement("button");
-  clear.type = "button";
-  clear.className = "linkbtn";
-  clear.textContent = `Clear ${panelView}`;
-  clear.addEventListener("click", async () => {
-    await native({ type: "list_clear", kind: panelView });
-    renderPanel();
-  });
-  foot.appendChild(clear);
-  ui.panelBody.appendChild(foot);
-}
-
-function renderSettings() {
-  const fields = [
-    { key: "theme", name: "Appearance", hint: `Currently ${prefs.theme}. Follows the system when set to system.`, kind: "theme" },
-    { key: "newtabMotion", name: "New-tab background", hint: "Animated background on the new-tab page. Off by default; costs GPU while visible.", kind: "switch" },
-    { key: "smoothScroll", name: "Smooth scrolling on new tab", hint: "Eased scrolling on the new-tab page only. Never applied to web pages.", kind: "switch" },
-  ];
-  for (const f of fields) {
-    const field = document.createElement("div");
-    field.className = "field";
-    const text = document.createElement("div");
-    text.className = "field__text";
-    const name = document.createElement("div");
-    name.className = "field__name";
-    name.textContent = f.name;
-    const hint = document.createElement("div");
-    hint.className = "field__hint";
-    hint.textContent = f.hint;
-    text.append(name, hint);
-    field.appendChild(text);
-
-    if (f.kind === "switch") {
-      const sw = document.createElement("button");
-      sw.type = "button";
-      sw.className = "switch";
-      sw.setAttribute("role", "switch");
-      sw.setAttribute("aria-checked", String(Boolean(prefs[f.key])));
-      sw.setAttribute("aria-label", f.name);
-      const dot = document.createElement("span");
-      dot.className = "switch__dot";
-      sw.appendChild(dot);
-      gsap.set(dot, { x: prefs[f.key] ? 16 : 0 });
-      sw.addEventListener("click", () => {
-        const next = !prefs[f.key];
-        prefs[f.key] = next;
-        savePref(f.key, next);
-        sw.setAttribute("aria-checked", String(next));
-        if (prefersReducedMotion()) gsap.set(dot, { x: next ? 16 : 0 });
-        else { wake(); gsap.to(dot, { x: next ? 16 : 0, duration: DUR.d2, ease: EASE.snap, onComplete: settle }); }
-      });
-      field.appendChild(sw);
-    } else {
-      const btn = document.createElement("button");
-      btn.type = "button";
-      btn.className = "menu__item";
-      btn.style.width = "auto";
-      btn.textContent = prefs.theme;
-      btn.addEventListener("click", () => { cycleTheme(); renderSettings(); });
-      field.appendChild(btn);
-    }
-    ui.panelBody.appendChild(field);
-  }
-}
+function setPanelView() {}
 
 /* ------------------------------------------------------------ theme */
 
@@ -558,8 +414,8 @@ ui.menu.addEventListener("click", (e) => {
   const action = item.dataset.action;
   if (action === "new-tab") newTab();
   else if (action === "panel") setPanel(!panelOpen);
-  else if (action === "reading") { native({ type: "reading_toggle" }).then(() => { if (panelView === "reading") renderPanel(); }); }
-  else if (action === "settings") { setPanelView("settings"); if (!panelOpen) setPanel(true); }
+  else if (action === "reading") { native({ type: "reading_toggle" }); }
+  else if (action === "settings") { if (!panelOpen) setPanel(true); }
   else if (action === "theme") cycleTheme();
 });
 
@@ -623,22 +479,15 @@ ui.tabs.addEventListener("keydown", (e) => {
   }
 });
 
-ui.panelTabs.addEventListener("click", (e) => {
-  const t = e.target.closest(".ptab");
-  if (t) setPanelView(t.dataset.panel);
-});
-
 ui.newtab.addEventListener("click", () => newTab());
 ui.back.addEventListener("click", () => native({ type: "back" }));
 ui.forward.addEventListener("click", () => native({ type: "forward" }));
 ui.reload.addEventListener("click", () => native({ type: "reload" }));
 ui.shield.addEventListener("click", () => native({ type: "toggle_blocking" }));
 ui.panelToggle.addEventListener("click", () => setPanel(!panelOpen));
-ui.panelClose.addEventListener("click", () => { setPanel(false); ui.panelToggle.focus(); });
 ui.menuBtn.addEventListener("click", () => setMenu(!menuOpen));
 ui.bookmark.addEventListener("click", async () => {
   await native({ type: "bookmark_toggle" });
-  if (panelOpen && panelView === "bookmarks") renderPanel();
 });
 ui.winMin.addEventListener("click", () => native({ type: "window_minimize" }));
 ui.winMax.addEventListener("click", () => native({ type: "window_maximize" }));
@@ -745,7 +594,6 @@ window.tobari = {
 applyTheme();
 renderTabs();
 renderOmnibox();
-setPanelView(panelView);
 
 if (prefersReducedMotion()) {
   ui.curtain.remove();

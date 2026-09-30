@@ -172,6 +172,24 @@ carries scheme state, bang state and the block counter inline, and the side
 panel is the only surface that can grow. When the omnibox dropdown opens the
 chrome grows to fit it and returns to 72px when it closes.
 
+## Surfaces are separate browser views
+
+The chrome is a 72px browser view at the top of the window; the side panel is a
+**second** browser view docked to the right of the content area, not part of the
+chrome document. The first build put the panel inside the chrome document, where
+`position: fixed` clipped it to the 72px strip — an HTML surface cannot paint
+outside the browser view that hosts it.
+
+The window layout is therefore a vertical box of [chrome, body], where body is a
+horizontal box of [content, panel]. The panel wrapper is a fixed-width panel
+(320px) toggled with `SetVisible`, so a closed panel costs no layout and no
+paint.
+
+The omnibox dropdown has the same constraint and takes the other available
+answer: it stays in the chrome document and the chrome grows to fit it, then
+returns to 72px. That is acceptable for a transient overlay and wrong for a
+persistent panel, which is why they differ.
+
 ## Blocking
 
 `adblock-rust` (the `adblock` crate, the engine Brave ships) is compiled as a

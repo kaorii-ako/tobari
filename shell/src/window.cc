@@ -19,6 +19,8 @@ namespace tobari {
 namespace {
 
 constexpr char kUiUrl[] = "tobari://ui/index.html";
+constexpr char kPanelUrl[] = "tobari://ui/panel.html";
+constexpr int kPanelWidth = 320;
 constexpr char kNewTabUrl[] = "tobari://ui/newtab.html";
 
 std::string JsonEscape(const std::string& value) {
@@ -79,7 +81,8 @@ class UiClient : public CefClient,
                  public CefDragHandler,
                  public CefRequestHandler {
  public:
-  explicit UiClient(CefRefPtr<BrowserWindow> owner) : owner_(owner) {
+  UiClient(CefRefPtr<BrowserWindow> owner, bool is_panel)
+      : owner_(owner), is_panel_(is_panel) {
     CefMessageRouterConfig config;
     router_ = CefMessageRouterBrowserSide::Create(config);
     handler_ = std::make_unique<Handler>(owner);
@@ -97,7 +100,11 @@ class UiClient : public CefClient,
   }
 
   void OnAfterCreated(CefRefPtr<CefBrowser> browser) override {
-    owner_->SetUiBrowser(browser);
+    if (is_panel_) {
+      owner_->SetPanelBrowser(browser);
+    } else {
+      owner_->SetUiBrowser(browser);
+    }
   }
 
   bool OnProcessMessageReceived(CefRefPtr<CefBrowser> browser,
@@ -165,8 +172,10 @@ class UiClient : public CefClient,
         return true;
       } else if (type == "bookmark_toggle") {
         owner_->ToggleBookmark();
+        owner_->RefreshPanel("bookmarks");
       } else if (type == "reading_toggle") {
         owner_->ToggleReading();
+        owner_->RefreshPanel("reading");
       } else if (type == "entry_remove") {
         Store::Get().Remove(dict->GetString("kind").ToString(),
                             dict->GetString("url").ToString());
@@ -211,6 +220,7 @@ class UiClient : public CefClient,
   };
 
   CefRefPtr<BrowserWindow> owner_;
+  const bool is_panel_;
   CefRefPtr<CefMessageRouterBrowserSide> router_;
   std::unique_ptr<Handler> handler_;
 
@@ -436,7 +446,11 @@ void BrowserWindow::OnWindowReady(CefRefPtr<CefWindow> window) {
   settings.background_color = CefColorSetARGB(255, 11, 11, 15);
 
   ui_view_ = CefBrowserView::CreateBrowserView(
-      new UiClient(this), kUiUrl, settings, nullptr, nullptr,
+      new UiClient(this, false), kUiUrl, settings, nullptr, nullptr,
+      new UiViewDelegate());
+
+  panel_view_ = CefBrowserView::CreateBrowserView(
+      new UiClient(this, true), kPanelUrl, settings, nullptr, nullptr,
       new UiViewDelegate());
 
   chrome_height_delegate_ = new FixedHeightDelegate(kChromeHeight);
@@ -447,15 +461,31 @@ void BrowserWindow::OnWindowReady(CefRefPtr<CefWindow> window) {
   content_panel_ = CefPanel::CreatePanel(nullptr);
   content_panel_->SetToFillLayout();
 
+  panel_wrap_ = CefPanel::CreatePanel(new FixedWidthDelegate(kPanelWidth));
+  panel_wrap_->SetToFillLayout();
+  panel_wrap_->AddChildView(panel_view_);
+  panel_wrap_->SetVisible(false);
+
+  CefBoxLayoutSettings row;
+  row.horizontal = true;
+  row.default_flex = 0;
+  row.cross_axis_alignment = CEF_AXIS_ALIGNMENT_STRETCH;
+  body_panel_ = CefPanel::CreatePanel(nullptr);
+  CefRefPtr<CefBoxLayout> row_layout = body_panel_->SetToBoxLayout(row);
+  body_panel_->AddChildView(content_panel_);
+  body_panel_->AddChildView(panel_wrap_);
+  row_layout->SetFlexForView(content_panel_, 1);
+  row_layout->SetFlexForView(panel_wrap_, 0);
+
   CefBoxLayoutSettings box;
   box.horizontal = false;
   box.default_flex = 0;
   box.cross_axis_alignment = CEF_AXIS_ALIGNMENT_STRETCH;
   CefRefPtr<CefBoxLayout> layout = window_->SetToBoxLayout(box);
   window_->AddChildView(ui_panel_);
-  window_->AddChildView(content_panel_);
+  window_->AddChildView(body_panel_);
   layout->SetFlexForView(ui_panel_, 0);
-  layout->SetFlexForView(content_panel_, 1);
+  layout->SetFlexForView(body_panel_, 1);
 
   window_->CenterWindow(CefSize(1280, 820));
   window_->Show();
@@ -467,6 +497,10 @@ void BrowserWindow::OnWindowGone() {
   window_ = nullptr;
   ui_view_ = nullptr;
   ui_panel_ = nullptr;
+  body_panel_ = nullptr;
+  panel_wrap_ = nullptr;
+  panel_view_ = nullptr;
+  panel_browser_ = nullptr;
   ui_browser_ = nullptr;
   content_panel_ = nullptr;
   tabs_.clear();
@@ -596,7 +630,33 @@ void BrowserWindow::Reload() {
   if (tab && tab->browser) tab->browser->Reload();
 }
 
-void BrowserWindow::SetPanelOpen(bool open) { panel_open_ = open; }
+void BrowserWindow::SetPanelOpen(bool open) {
+  panel_open_ = open;
+  if (panel_wrap_) {
+    panel_wrap_->SetVisible(open);
+    if (window_) {
+      window_->Layout();
+    }
+  }
+  if (open) {
+    RefreshPanel(std::string());
+  }
+  PushState();
+}
+
+void BrowserWindow::SetPanelBrowser(CefRefPtr<CefBrowser> browser) {
+  panel_browser_ = browser;
+}
+
+void BrowserWindow::RefreshPanel(const std::string& kind) {
+  if (!panel_browser_) {
+    return;
+  }
+  panel_browser_->GetMainFrame()->ExecuteJavaScript(
+      "window.tobariPanel && window.tobariPanel.refresh(" +
+          (kind.empty() ? std::string("null") : ("\"" + kind + "\"")) + ")",
+      "", 0);
+}
 
 void BrowserWindow::SetDraggableRegions(const std::vector<CefDraggableRegion>& regions) {
   if (window_) {
