@@ -32,7 +32,9 @@ int main(int argc, char* argv[]) {
 
   CefSettings settings;
   settings.no_sandbox = false;
-  settings.log_severity = LOGSEVERITY_WARNING;
+  const char* log_env = getenv("TOBARI_LOG");
+  settings.log_severity = (log_env && std::string(log_env) == "info") ? LOGSEVERITY_INFO
+                                                                     : LOGSEVERITY_WARNING;
   CefString(&settings.root_cache_path) = DataPath("/profiles/default");
 
   CefInitialize(main_args, settings, app.get(), nullptr);

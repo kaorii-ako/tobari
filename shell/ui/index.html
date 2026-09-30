@@ -15,6 +15,20 @@
     <button class="newtab" id="newtab" type="button" aria-label="New tab" data-tip="New tab · Ctrl+T">
       <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 3.5v9M3.5 8h9"/></svg>
     </button>
+
+    <div class="dragzone" id="dragzone" aria-hidden="true"></div>
+
+    <div class="wincontrols">
+      <button class="wc" id="winMin" type="button" aria-label="Minimise">
+        <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 8.5h8"/></svg>
+      </button>
+      <button class="wc" id="winMax" type="button" aria-label="Maximise">
+        <svg viewBox="0 0 16 16" aria-hidden="true" id="winMaxGlyph"><rect x="4.5" y="4.5" width="7" height="7" rx="1"/></svg>
+      </button>
+      <button class="wc wc--close" id="winClose" type="button" aria-label="Close window">
+        <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4.5 4.5l7 7M11.5 4.5l-7 7"/></svg>
+      </button>
+    </div>
   </div>
 
   <div class="toolbar">

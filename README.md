@@ -21,15 +21,15 @@ Built and measured on Bazzite / Wayland, 2026-09-30:
 | | |
 |---|---|
 | Chrome UI | vanilla ES modules + GSAP, no framework, no bundler |
+| Blocking | adblock-rust, 141,987 rules, cancels before load |
+| Window | frameless — the tab strip is the title bar |
 | UI payload | 245 KB total incl. bundled fonts (three.js lazy, opt-in only) |
-| Idle CPU | 0.50% of one core, GSAP ticker asleep |
-| Idle memory | 373 MB PSS across 11 processes |
+| Idle CPU | 0.30% of one core, GSAP ticker asleep |
+| Idle memory | 378 MB PSS across 11 processes |
 | Contrast | every informational token clears WCAG AA in both themes |
 
-Not yet done in Phase 1: `adblock-rust` network blocking (the shield counter is
-wired end to end but not yet fed by a real engine), bookmarks/history/reading
-persistence, and the RAM benchmark against stock Chrome that decides whether
-Phase 2 happens.
+Not yet done in Phase 1: bookmarks/history/reading persistence, and the RAM
+benchmark against stock Chrome that decides whether Phase 2 happens.
 
 **Known constraint, from CEF's own headers:** an Alloy-style window can host
 only Alloy-style browser views, and a Chrome-style window can host *at most one*
@@ -48,7 +48,9 @@ configuration. That is the open architectural question for Phase 1 acceptance.
 ## Layout
 
 ```
-shell/      Phase 1: CEF browser shell — src/ (C++), ui/ (chrome + new tab)
+blocker/    Rust staticlib wrapping adblock-rust behind a C ABI
+shell/      Phase 1: CEF browser shell — src/ (C++), ui/ (chrome + new tab),
+            filters/ (EasyList, EasyPrivacy, uBO)
 patches/    Phase 2: patch set against Chromium stable (conditional)
 docs/       VALIDATION, DEV-LINUX, DEV-MACOS, PACKAGING, RELEASING
 site/       Static marketing site for Netlify — no trackers (not started)

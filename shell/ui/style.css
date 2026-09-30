@@ -24,6 +24,9 @@ svg {
   stroke-width: 1.4; stroke-linecap: round; stroke-linejoin: round;
 }
 
+:where(button), :where(input) { -webkit-app-region: no-drag;
+  app-region: no-drag; }
+
 :where(button) {
   cursor: pointer;
   font: inherit;
@@ -62,6 +65,8 @@ svg {
 /* ---------------------------------------------------------------- chrome */
 
 .chrome {
+  -webkit-app-region: drag;
+  app-region: drag;
   position: relative;
   z-index: var(--z-chrome);
   height: var(--chrome-h);
@@ -72,6 +77,23 @@ svg {
 
 /* ---------------------------------------------------------------- tabs */
 
+.dragzone { flex: 1 1 auto; min-width: var(--sp-6); align-self: stretch; -webkit-app-region: drag;
+  app-region: drag; }
+
+.wincontrols { display: flex; align-items: center; gap: var(--sp-1); flex: none; -webkit-app-region: no-drag;
+  app-region: no-drag; }
+
+.wc {
+  width: var(--hit); height: var(--hit);
+  display: grid; place-items: center;
+  border-radius: var(--r-sm);
+  color: var(--fg-3);
+  transition: background var(--dur-1) var(--ease-out), color var(--dur-1) var(--ease-out);
+}
+.wc:hover { background: var(--ink-200); color: var(--fg-0); }
+.wc--close:hover { background: var(--danger); color: var(--ink-000); }
+.wc svg { width: 13px; height: 13px; }
+
 .tabstrip {
   display: flex;
   align-items: stretch;
@@ -80,6 +102,8 @@ svg {
 }
 
 .tabs {
+  -webkit-app-region: no-drag;
+  app-region: no-drag;
   display: flex;
   align-items: stretch;
   gap: var(--sp-1);
@@ -203,7 +227,8 @@ svg {
 
 /* ---------------------------------------------------------------- omnibox */
 
-.omnibox-wrap { position: relative; flex: 1; min-width: 0; }
+.omnibox-wrap { position: relative; flex: 1; min-width: 0; -webkit-app-region: no-drag;
+  app-region: no-drag; }
 
 .omnibox {
   display: flex;
@@ -274,6 +299,7 @@ svg {
 }
 .shield:hover { background: var(--ink-300); color: var(--fg-1); }
 .shield[data-active="true"] { color: var(--signal); }
+.shield[data-off="true"] { color: var(--fg-3); text-decoration: line-through; }
 .shield svg { width: 12px; height: 12px; }
 .shield__count {
   font-family: var(--font-mono);
@@ -285,6 +311,8 @@ svg {
 /* ---------------------------------------------------------------- dropdown */
 
 .dropdown {
+  -webkit-app-region: no-drag;
+  app-region: no-drag;
   position: absolute;
   top: calc(100% + var(--sp-2));
   left: 0; right: 0;
@@ -369,6 +397,8 @@ svg {
 /* ---------------------------------------------------------------- panel */
 
 .panel {
+  -webkit-app-region: no-drag;
+  app-region: no-drag;
   position: fixed;
   top: 0; right: 0; bottom: 0;
   width: var(--panel-w);
@@ -411,6 +441,8 @@ svg {
 /* ---------------------------------------------------------------- menu */
 
 .menu {
+  -webkit-app-region: no-drag;
+  app-region: no-drag;
   position: absolute;
   top: calc(100% + var(--sp-2));
   right: 0;

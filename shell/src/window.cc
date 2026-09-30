@@ -4,7 +4,11 @@
 #include <memory>
 
 #include "include/base/cef_logging.h"
+#include "blocking.h"
 #include "include/cef_app.h"
+#include "include/base/cef_bind.h"
+#include "include/base/cef_callback.h"
+#include "include/wrapper/cef_closure_task.h"
 #include "include/cef_parser.h"
 #include "include/views/cef_box_layout.h"
 #include "include/views/cef_fill_layout.h"
@@ -71,6 +75,7 @@ class UiViewDelegate : public CefBrowserViewDelegate {
 
 class UiClient : public CefClient,
                  public CefLifeSpanHandler,
+                 public CefDragHandler,
                  public CefRequestHandler {
  public:
   explicit UiClient(CefRefPtr<BrowserWindow> owner) : owner_(owner) {
@@ -81,7 +86,14 @@ class UiClient : public CefClient,
   }
 
   CefRefPtr<CefLifeSpanHandler> GetLifeSpanHandler() override { return this; }
+  CefRefPtr<CefDragHandler> GetDragHandler() override { return this; }
   CefRefPtr<CefRequestHandler> GetRequestHandler() override { return this; }
+
+  void OnDraggableRegionsChanged(CefRefPtr<CefBrowser> browser,
+                                 CefRefPtr<CefFrame> frame,
+                                 const std::vector<CefDraggableRegion>& regions) override {
+    owner_->SetDraggableRegions(regions);
+  }
 
   void OnAfterCreated(CefRefPtr<CefBrowser> browser) override {
     owner_->SetUiBrowser(browser);
@@ -147,6 +159,27 @@ class UiClient : public CefClient,
         owner_->SetChromeHeight(dict->GetInt("height"));
       } else if (type == "toggle_blocking") {
         owner_->ToggleBlocking();
+      } else if (type == "drag_regions") {
+        std::vector<CefDraggableRegion> regions;
+        CefRefPtr<CefListValue> list = dict->GetList("regions");
+        if (list) {
+          for (size_t i = 0; i < list->GetSize(); ++i) {
+            CefRefPtr<CefDictionaryValue> r = list->GetDictionary(i);
+            if (!r) {
+              continue;
+            }
+            regions.emplace_back(
+                CefRect(r->GetInt("x"), r->GetInt("y"), r->GetInt("w"), r->GetInt("h")),
+                r->GetBool("draggable"));
+          }
+        }
+        owner_->SetDraggableRegions(regions);
+      } else if (type == "window_minimize") {
+        owner_->MinimizeWindow();
+      } else if (type == "window_maximize") {
+        owner_->ToggleMaximizeWindow();
+      } else if (type == "window_close") {
+        owner_->CloseWindow();
       } else if (type == "ui_error") {
         LOG(ERROR) << "tobari ui: " << dict->GetString("message").ToString();
       } else {
@@ -172,11 +205,34 @@ class UiClient : public CefClient,
 
 // ----------------------------------------------------------- content client
 
+std::string AdblockTypeFor(CefRequest::ResourceType type) {
+  switch (type) {
+    case RT_MAIN_FRAME: return "document";
+    case RT_SUB_FRAME: return "subdocument";
+    case RT_STYLESHEET: return "stylesheet";
+    case RT_SCRIPT: return "script";
+    case RT_IMAGE: return "image";
+    case RT_FONT_RESOURCE: return "font";
+    case RT_XHR: return "xmlhttprequest";
+    case RT_MEDIA: return "media";
+    case RT_PING: return "ping";
+    case RT_CSP_REPORT: return "csp_report";
+    case RT_OBJECT: return "object";
+    case RT_WORKER:
+    case RT_SHARED_WORKER:
+    case RT_SERVICE_WORKER: return "script";
+    case RT_FAVICON: return "image";
+    default: return "other";
+  }
+}
+
 class ContentClient : public CefClient,
                       public CefLifeSpanHandler,
                       public CefLoadHandler,
                       public CefDisplayHandler,
-                      public CefKeyboardHandler {
+                      public CefKeyboardHandler,
+                      public CefRequestHandler,
+                      public CefResourceRequestHandler {
  public:
   ContentClient(CefRefPtr<BrowserWindow> owner, int tab_id)
       : owner_(owner), tab_id_(tab_id) {}
@@ -185,6 +241,55 @@ class ContentClient : public CefClient,
   CefRefPtr<CefLoadHandler> GetLoadHandler() override { return this; }
   CefRefPtr<CefDisplayHandler> GetDisplayHandler() override { return this; }
   CefRefPtr<CefKeyboardHandler> GetKeyboardHandler() override { return this; }
+  CefRefPtr<CefRequestHandler> GetRequestHandler() override { return this; }
+
+  CefRefPtr<CefResourceRequestHandler> GetResourceRequestHandler(
+      CefRefPtr<CefBrowser> browser,
+      CefRefPtr<CefFrame> frame,
+      CefRefPtr<CefRequest> request,
+      bool is_navigation,
+      bool is_download,
+      const CefString& request_initiator,
+      bool& disable_default_handling) override {
+    return this;
+  }
+
+  ReturnValue OnBeforeResourceLoad(CefRefPtr<CefBrowser> browser,
+                                   CefRefPtr<CefFrame> frame,
+                                   CefRefPtr<CefRequest> request,
+                                   CefRefPtr<CefCallback> callback) override {
+    const CefRequest::ResourceType type = request->GetResourceType();
+    if (type == RT_MAIN_FRAME) {
+      return RV_CONTINUE;
+    }
+
+    Blocking& blocking = Blocking::Get();
+    if (!blocking.Ready()) {
+      return RV_CONTINUE;
+    }
+
+    std::string document;
+    if (browser && browser->GetMainFrame()) {
+      document = browser->GetMainFrame()->GetURL().ToString();
+    }
+    const std::string host = HostOf(document);
+    if (!host.empty() && blocking.HostDisabled(host)) {
+      return RV_CONTINUE;
+    }
+
+    const std::string url = request->GetURL().ToString();
+    if (url.rfind("tobari://", 0) == 0 || url.rfind("data:", 0) == 0 ||
+        url.rfind("blob:", 0) == 0 || url.rfind("about:", 0) == 0) {
+      return RV_CONTINUE;
+    }
+
+    if (blocking.ShouldBlock(url, document, AdblockTypeFor(type),
+                             request->GetMethod().ToString())) {
+      owner_->NoteBlockedRequest();
+      return RV_CANCEL;
+    }
+    return RV_CONTINUE;
+  }
 
   void OnAfterCreated(CefRefPtr<CefBrowser> browser) override {
     owner_->OnContentBrowserCreated(tab_id_, browser);
@@ -281,7 +386,10 @@ class WindowDelegate : public CefWindowDelegate {
     return CefSize(1280, 820);
   }
 
+  bool IsFrameless(CefRefPtr<CefWindow> window) override { return true; }
   bool CanResize(CefRefPtr<CefWindow> window) override { return true; }
+  bool CanMaximize(CefRefPtr<CefWindow> window) override { return true; }
+  bool CanMinimize(CefRefPtr<CefWindow> window) override { return true; }
   bool CanClose(CefRefPtr<CefWindow> window) override { return true; }
 
   cef_runtime_style_t GetWindowRuntimeStyle() override {
@@ -469,6 +577,40 @@ void BrowserWindow::Reload() {
 
 void BrowserWindow::SetPanelOpen(bool open) { panel_open_ = open; }
 
+void BrowserWindow::SetDraggableRegions(const std::vector<CefDraggableRegion>& regions) {
+  if (window_) {
+    window_->SetDraggableRegions(regions);
+  }
+}
+
+void BrowserWindow::MinimizeWindow() {
+  if (window_) {
+    window_->Minimize();
+  }
+}
+
+void BrowserWindow::ToggleMaximizeWindow() {
+  if (!window_) {
+    return;
+  }
+  if (window_->IsMaximized()) {
+    window_->Restore();
+  } else {
+    window_->Maximize();
+  }
+  PushState();
+}
+
+void BrowserWindow::CloseWindow() {
+  if (window_) {
+    window_->Close();
+  }
+}
+
+bool BrowserWindow::IsMaximized() const {
+  return window_ && window_->IsMaximized();
+}
+
 void BrowserWindow::SetChromeHeight(int height) {
   if (!chrome_height_delegate_ || !window_) {
     return;
@@ -518,7 +660,12 @@ void BrowserWindow::SetTabTitle(int tab_id, const std::string& title) {
 void BrowserWindow::SetTabUrl(int tab_id, const std::string& url) {
   Tab* tab = FindTab(tab_id);
   if (!tab) return;
+  const bool host_changed = HostOf(tab->url) != HostOf(url);
   tab->url = url;
+  if (host_changed && tab_id == active_id_) {
+    blocked_count_ = 0;
+    blocking_enabled_ = !Blocking::Get().HostDisabled(HostOf(url));
+  }
   PushState();
 }
 
@@ -533,8 +680,18 @@ void BrowserWindow::SetTabLoading(int tab_id, bool loading, bool back,
 }
 
 void BrowserWindow::ToggleBlocking() {
-  blocking_enabled_ = !blocking_enabled_;
+  Tab* tab = ActiveTab();
+  const std::string host = tab ? HostOf(tab->url) : std::string();
+  if (host.empty()) {
+    return;
+  }
+  const bool now_disabled = !Blocking::Get().HostDisabled(host);
+  Blocking::Get().SetHostDisabled(host, now_disabled);
+  blocking_enabled_ = !now_disabled;
   PushState();
+  if (tab && tab->browser) {
+    tab->browser->ReloadIgnoreCache();
+  }
 }
 
 void BrowserWindow::ReloadUi() {
@@ -546,6 +703,14 @@ void BrowserWindow::ReloadUi() {
 
 void BrowserWindow::NoteBlockedRequest() {
   ++blocked_count_;
+  if (!push_pending_) {
+    push_pending_ = true;
+    CefPostDelayedTask(TID_UI, base::BindOnce(&BrowserWindow::FlushBlockedCount, this), 120);
+  }
+}
+
+void BrowserWindow::FlushBlockedCount() {
+  push_pending_ = false;
   PushState();
 }
 
@@ -567,7 +732,8 @@ void BrowserWindow::PushState() {
   }
   json += "],\"activeId\":" + std::to_string(active_id_) +
           ",\"blocked\":" + std::to_string(blocked_count_) +
-          ",\"blockingEnabled\":" + (blocking_enabled_ ? "true" : "false") + "}";
+          ",\"blockingEnabled\":" + (blocking_enabled_ ? "true" : "false") +
+          ",\"maximized\":" + (IsMaximized() ? "true" : "false") + "}";
 
   ui_browser_->GetMainFrame()->ExecuteJavaScript(
       "window.tobari && window.tobari.setState(" + json + ")", "", 0);

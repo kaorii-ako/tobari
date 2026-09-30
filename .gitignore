@@ -20,3 +20,4 @@ packaging/build/
 squashfs-root/
 shell/cef-bin/
 
+blocker/target/

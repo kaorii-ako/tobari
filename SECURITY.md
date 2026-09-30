@@ -164,3 +164,29 @@ requires the token on every path. Not done in Phase 1.
 A single prompt-injection probe is evidence, not proof. The structural
 control (§5d: extractor with no tools → actor that never sees raw page text)
 is what the claim rests on; the probe only confirms the wiring is live.
+
+
+## Network-layer blocking (Phase 1)
+
+Tobari blocks ad and tracker requests at the network layer, before they load,
+using `adblock-rust` — the engine Brave ships — linked into the browser binary.
+The hook is `CefResourceRequestHandler::OnBeforeResourceLoad`, returning
+`RV_CANCEL`.
+
+What this does and does not claim:
+
+- A blocked third-party **subframe** is a renderer process that is never
+  created. That is the memory claim, and it is the only one made here.
+- Blocking is **not** an anonymity feature. It reduces what third parties
+  receive; it does not make you unidentifiable to the sites you visit. Nothing
+  in this document should be read as saying otherwise.
+- Main-frame navigations are never blocked, so blocking cannot prevent you
+  reaching a site you asked for.
+- Blocking can be turned off per host from the omnibox shield. The setting is
+  held in memory for the session.
+
+Filter lists ship with the build and can be refreshed with
+`scripts/update-filters.sh`. Updates are plain unauthenticated GETs with no
+cookies, no query string and no identifier of any kind; `SHA256SUMS` records
+what was installed. Lists are read from `$XDG_DATA_HOME/tobari/filters/` when
+present, otherwise from the copy beside the binary.

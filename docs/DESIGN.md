@@ -145,15 +145,56 @@ JavaScript takes the instant branch — state changes, never slower motion.
   keyed per tab and cleared on re-render; nothing survives on a detached node.
 - Repeating tweens pause on window blur.
 
+## The chrome is the window
+
+The window is frameless (`CefWindowDelegate::IsFrameless`). There is no
+separate OS title bar above the chrome — the tab strip *is* the title bar, with
+minimise / maximise / close at its right edge and a drag zone between them and
+the new-tab button.
+
+CEF does not fire `OnDraggableRegionsChanged` for a Views `CefBrowserView`, so
+the `-webkit-app-region` CSS path is inert here. The header for `IsFrameless`
+says the intended path is for the client to call
+`CefWindow::SetDraggableRegions()` directly, so the UI computes its own
+regions — the whole chrome as draggable, minus a non-draggable rect per
+interactive cluster — and pushes them over the existing IPC on load, resize,
+state change and whenever an overlay opens or closes. The CSS is kept as well,
+harmless, in case CEF wires the callback later.
+
 ## Density
 
 The chrome is **72px**: a 30px tab strip and a 34px toolbar. The previous
-build was 84px. The 12px is returned to the page, on every window, all day.
+build was 84px, below an OS title bar that no longer exists. Counting the
+title bar it replaces, the window gives back roughly 40px of page height.
 
 It earns the rest of its height by never needing a second row: the omnibox
 carries scheme state, bang state and the block counter inline, and the side
 panel is the only surface that can grow. When the omnibox dropdown opens the
 chrome grows to fit it and returns to 72px when it closes.
+
+## Blocking
+
+`adblock-rust` (the `adblock` crate, the engine Brave ships) is compiled as a
+Rust `staticlib` in `blocker/` and linked into the C++ binary through a small C
+ABI. Cargo is driven from CMake, so the whole thing builds with one
+`cmake --build`.
+
+It runs in `CefResourceRequestHandler::OnBeforeResourceLoad` and returns
+`RV_CANCEL`, which cancels the request *before* it loads. For a third-party
+subframe that means the renderer process is never created — that is where the
+memory saving comes from, not from the bytes not transferred. Main-frame
+navigations are never blocked, and `tobari://`, `data:`, `blob:` and `about:`
+are skipped.
+
+Lists: EasyList, EasyPrivacy and uBlock Origin's `filters` and `privacy` —
+**141,987 rules**. They load from `$XDG_DATA_HOME/tobari/filters/` if present,
+else from the copy staged beside the binary. `scripts/update-filters.sh`
+refreshes them and writes `SHA256SUMS`; updates are plain GETs carrying no
+identifier.
+
+The shield in the omnibox shows the live count for the current page and toggles
+blocking per host; the count resets when the host changes. Measured cost of the
+resident engine: **+5 MB PSS**.
 
 ## New-tab page
 
@@ -174,7 +215,8 @@ against these tokens without React. Rationale in the README.
 
 | configuration | PSS | idle CPU |
 |---|---|---|
-| defaults (Lenis off, Vanta off) | 373.3 MB | 0.50% of one core |
+| defaults, no blocker | 373.3 MB | 0.50% of one core |
+| defaults + adblock engine resident | 378.2 MB | 0.30% of one core |
 | Lenis on | — | 4.80% of one core |
 | Vanta on, visible | 401.3 MB | 4.00% of one core |
 | Vanta on, suspended | 403.8 MB | 1.10% of one core |

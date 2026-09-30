@@ -16,6 +16,8 @@ const ui = {
   progress: el("progress"), progressBar: el("progressBar"), panel: el("panel"),
   panelBody: el("panelBody"), panelTabs: el("panelTabs"), panelToggle: el("panelToggle"),
   panelClose: el("panelClose"), menu: el("menu"), menuBtn: el("menuBtn"),
+  winMin: el("winMin"), winMax: el("winMax"), winMaxGlyph: el("winMaxGlyph"),
+  winClose: el("winClose"), dragzone: el("dragzone"),
   themeLabel: el("themeLabel"), ptabSettings: el("ptabSettings"), curtain: el("curtain"),
 };
 
@@ -206,6 +208,7 @@ function hideDropdown() {
   rows = [];
   sel = -1;
   requestChromeHeight(CHROME_BASE);
+  pushDragRegions();
 }
 
 function makeRow({ kind, primary, secondary, bang, onPick }, index) {
@@ -293,6 +296,7 @@ function updateDropdown() {
   ui.dropdown.hidden = false;
   ui.input.setAttribute("aria-expanded", "true");
   setSel(0);
+  pushDragRegions();
 
   if (!prefersReducedMotion()) {
     wake();
@@ -374,6 +378,7 @@ function setPanel(open) {
     }
   }
   native({ type: "panel", open });
+  pushDragRegions();
 }
 
 function setPanelView(view) {
@@ -577,6 +582,10 @@ ui.shield.addEventListener("click", () => native({ type: "toggle_blocking" }));
 ui.panelToggle.addEventListener("click", () => setPanel(!panelOpen));
 ui.panelClose.addEventListener("click", () => { setPanel(false); ui.panelToggle.focus(); });
 ui.menuBtn.addEventListener("click", () => setMenu(!menuOpen));
+ui.winMin.addEventListener("click", () => native({ type: "window_minimize" }));
+ui.winMax.addEventListener("click", () => native({ type: "window_maximize" }));
+ui.winClose.addEventListener("click", () => native({ type: "window_close" }));
+ui.dragzone.addEventListener("dblclick", () => native({ type: "window_maximize" }));
 
 document.addEventListener("click", (e) => {
   if (menuOpen && !ui.menu.contains(e.target) && e.target !== ui.menuBtn) setMenu(false);
@@ -598,6 +607,37 @@ document.addEventListener("keydown", (e) => {
 window.addEventListener("blur", () => { progressTween?.pause(); reloadTween?.pause(); });
 window.addEventListener("focus", () => { progressTween?.resume(); reloadTween?.resume(); });
 
+/* ------------------------------------------------------------ drag regions */
+
+const NO_DRAG = ".tabs, .omnibox-wrap, .wincontrols, .newtab, .cluster, .panel, .dropdown, .menu";
+
+let dragPending = false;
+
+function pushDragRegions() {
+  if (dragPending) return;
+  dragPending = true;
+  requestAnimationFrame(() => {
+    dragPending = false;
+    const chrome = document.querySelector(".chrome");
+    if (!chrome) return;
+    const box = chrome.getBoundingClientRect();
+    const regions = [{ x: 0, y: 0, w: Math.round(box.width), h: Math.round(box.height), draggable: true }];
+    for (const node of document.querySelectorAll(NO_DRAG)) {
+      if (node.closest("[hidden]") || node.hidden) continue;
+      const r = node.getBoundingClientRect();
+      if (r.width <= 0 || r.height <= 0) continue;
+      regions.push({
+        x: Math.round(r.left), y: Math.round(r.top),
+        w: Math.round(r.width), h: Math.round(r.height),
+        draggable: false,
+      });
+    }
+    native({ type: "drag_regions", regions });
+  });
+}
+
+window.addEventListener("resize", pushDragRegions);
+
 /* ------------------------------------------------------------ native -> UI */
 
 window.tobari = {
@@ -608,6 +648,19 @@ window.tobari = {
       focusedTabIndex = Math.min(focusedTabIndex, Math.max(state.tabs.length - 1, 0));
       renderTabs();
       renderOmnibox();
+      pushDragRegions();
+      if (typeof next.maximized === "boolean") {
+        ui.winMax.setAttribute("aria-label", next.maximized ? "Restore" : "Maximise");
+        ui.winMaxGlyph.innerHTML = next.maximized
+          ? '<path d="M5.5 6.5h5v5h-5z"/><path d="M7 6.5V5h4.5v4.5H10"/>'
+          : '<rect x="4.5" y="4.5" width="7" height="7" rx="1"/>';
+      }
+      if (typeof next.blockingEnabled === "boolean") {
+        ui.shield.dataset.off = String(!next.blockingEnabled);
+        ui.shield.setAttribute("aria-label", next.blockingEnabled
+          ? "Blocking on for this site"
+          : "Blocking off for this site");
+      }
       if (typeof next.blocked === "number") {
         ui.blockcount.textContent = String(next.blocked);
         ui.shield.dataset.active = String(next.blocked > 0);
@@ -641,4 +694,5 @@ if (prefersReducedMotion()) {
   });
 }
 
+pushDragRegions();
 native({ type: "ready" });

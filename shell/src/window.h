@@ -5,6 +5,7 @@
 #include <vector>
 
 #include "include/cef_browser.h"
+#include "include/cef_drag_handler.h"
 #include "include/cef_client.h"
 #include "include/views/cef_browser_view.h"
 #include "include/views/cef_browser_view_delegate.h"
@@ -72,6 +73,11 @@ class BrowserWindow : public CefBaseRefCounted {
   void Reload();
   void SetPanelOpen(bool open);
   void SetChromeHeight(int height);
+  void SetDraggableRegions(const std::vector<CefDraggableRegion>& regions);
+  void MinimizeWindow();
+  void ToggleMaximizeWindow();
+  void CloseWindow();
+  bool IsMaximized() const;
 
   void OnContentBrowserCreated(int tab_id, CefRefPtr<CefBrowser> browser);
   void OnContentBrowserClosing(int tab_id);
@@ -80,6 +86,7 @@ class BrowserWindow : public CefBaseRefCounted {
   void SetTabUrl(int tab_id, const std::string& url);
   void SetTabLoading(int tab_id, bool loading, bool back, bool forward);
   void NoteBlockedRequest();
+  void FlushBlockedCount();
   void ToggleBlocking();
   void ReloadUi();
 
@@ -105,6 +112,7 @@ class BrowserWindow : public CefBaseRefCounted {
   int blocked_count_ = 0;
   bool panel_open_ = false;
   bool blocking_enabled_ = true;
+  bool push_pending_ = false;
   bool ui_ready_ = false;
 
   IMPLEMENT_REFCOUNTING(BrowserWindow);

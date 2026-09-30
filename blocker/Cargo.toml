@@ -1,0 +1,17 @@
+[package]
+name = "tobari-blocker"
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+
+[lib]
+name = "tobari_blocker"
+crate-type = ["staticlib"]
+
+[dependencies]
+adblock = { version = "0.13", features = ["full-regex-handling"] }
+
+[profile.release]
+lto = true
+codegen-units = 1
+panic = "abort"
