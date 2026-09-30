@@ -88,6 +88,8 @@ class BrowserWindow : public CefBaseRefCounted {
   void NoteBlockedRequest();
   void FlushBlockedCount();
   void ToggleBlocking();
+  void ToggleBookmark();
+  void ToggleReading();
   void ReloadUi();
 
   void SetUiBrowser(CefRefPtr<CefBrowser> browser);
@@ -96,6 +98,7 @@ class BrowserWindow : public CefBaseRefCounted {
  private:
   Tab* FindTab(int id);
   Tab* ActiveTab();
+  const Tab* ActiveTabConst() const;
   void PushState();
   void ApplyVisibility();
 

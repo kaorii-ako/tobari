@@ -28,8 +28,16 @@ Built and measured on Bazzite / Wayland, 2026-09-30:
 | Idle memory | 378 MB PSS across 11 processes |
 | Contrast | every informational token clears WCAG AA in both themes |
 
-Not yet done in Phase 1: bookmarks/history/reading persistence, and the RAM
-benchmark against stock Chrome that decides whether Phase 2 happens.
+Bookmarks, history and reading list persist to
+`$XDG_DATA_HOME/tobari/profiles/default/` as JSON.
+
+**RAM at 10 identical tabs: 821.8 MB PSS against Chrome's 933.2 MB — 11.9%
+lower, with 20 processes against 45.** Blocking accounts for 7.7 points of
+that. Method, caveats and the Phase 2 decision are in `BENCHMARKS.md`; the
+short version is that Phase 2 is **not** justified by this measurement.
+
+Not yet done in Phase 1: a week of daily-driver use, and the extension question
+below.
 
 **Known constraint, from CEF's own headers:** an Alloy-style window can host
 only Alloy-style browser views, and a Chrome-style window can host *at most one*

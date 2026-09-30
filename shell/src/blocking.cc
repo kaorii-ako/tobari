@@ -81,6 +81,12 @@ void Blocking::Load() {
     return;
   }
 
+  const char* disabled = getenv("TOBARI_NO_BLOCKING");
+  if (disabled && *disabled && std::string(disabled) != "0") {
+    LOG(WARNING) << "tobari: blocking disabled by TOBARI_NO_BLOCKING";
+    return;
+  }
+
   const std::string user_dir = UserFilterDir();
   const std::string bundled_dir = ExecutableDir() + "/filters";
 

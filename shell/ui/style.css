@@ -430,6 +430,53 @@ svg {
 
 .panel__body { flex: 1; overflow-y: auto; padding: var(--sp-3); }
 
+.item {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  width: 100%;
+  padding: var(--sp-3) var(--sp-3);
+  border-radius: var(--r-sm);
+  color: var(--fg-1);
+  text-align: left;
+  transition: background var(--dur-1) var(--ease-out);
+}
+.item:hover { background: var(--ink-200); }
+.item__text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.item__title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--fs-200); color: var(--fg-0); }
+.item__url {
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  font-family: var(--font-mono); font-size: var(--fs-100);
+  letter-spacing: var(--track-normal); color: var(--fg-3);
+}
+.item__drop {
+  flex: none; width: 18px; height: 18px;
+  display: grid; place-items: center;
+  border-radius: var(--r-xs);
+  color: var(--fg-3);
+  opacity: 0;
+  transition: opacity var(--dur-1) var(--ease-out), background var(--dur-1) var(--ease-out), color var(--dur-1) var(--ease-out);
+}
+.item:hover .item__drop, .item__drop:focus-visible { opacity: 1; }
+.item__drop:hover { background: var(--ink-300); color: var(--danger); }
+.item__drop svg { width: 11px; height: 11px; }
+
+.panel__foot {
+  display: flex; justify-content: flex-end;
+  padding: var(--sp-3) var(--sp-4);
+  border-top: var(--bw) solid var(--line-hair);
+}
+.linkbtn {
+  color: var(--fg-3);
+  font-size: var(--fs-200);
+  border-radius: var(--r-xs);
+  padding: var(--sp-2) var(--sp-3);
+  transition: color var(--dur-1) var(--ease-out), background var(--dur-1) var(--ease-out);
+}
+.linkbtn:hover { color: var(--danger); background: var(--ink-200); }
+
+.icon[aria-pressed="true"] #bookmarkGlyph path { fill: currentColor; }
+
 .empty {
   padding: var(--sp-9) var(--sp-5);
   text-align: center;

@@ -61,6 +61,9 @@
     </div>
 
     <div class="cluster" style="position:relative">
+      <button class="icon" id="bookmark" type="button" aria-pressed="false" aria-label="Bookmark this page" data-tip="Bookmark · Ctrl+D">
+        <svg viewBox="0 0 16 16" aria-hidden="true" id="bookmarkGlyph"><path d="M4.5 3.5h7v9l-3.5-2.6L4.5 12.5z"/></svg>
+      </button>
       <button class="icon" id="panelToggle" type="button" aria-pressed="false" aria-label="Side panel" data-tip="Side panel · Ctrl+B">
         <svg viewBox="0 0 16 16" aria-hidden="true"><rect x="2.5" y="3.5" width="11" height="9" rx="1.5"/><path d="M10 3.5v9"/></svg>
       </button>
@@ -72,6 +75,7 @@
         <button class="menu__item" role="menuitem" data-action="new-tab" type="button">New tab <span class="menu__key">Ctrl T</span></button>
         <button class="menu__item" role="menuitem" data-action="panel" type="button">Side panel <span class="menu__key">Ctrl B</span></button>
         <div class="menu__sep"></div>
+        <button class="menu__item" role="menuitem" data-action="reading" type="button">Add to reading list</button>
         <button class="menu__item" role="menuitem" data-action="settings" type="button">Settings</button>
         <button class="menu__item" role="menuitem" data-action="theme" type="button">Switch theme <span class="menu__key" id="themeLabel">night</span></button>
       </div>

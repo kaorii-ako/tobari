@@ -16,6 +16,7 @@ const ui = {
   progress: el("progress"), progressBar: el("progressBar"), panel: el("panel"),
   panelBody: el("panelBody"), panelTabs: el("panelTabs"), panelToggle: el("panelToggle"),
   panelClose: el("panelClose"), menu: el("menu"), menuBtn: el("menuBtn"),
+  bookmark: el("bookmark"),
   winMin: el("winMin"), winMax: el("winMax"), winMaxGlyph: el("winMaxGlyph"),
   winClose: el("winClose"), dragzone: el("dragzone"),
   themeLabel: el("themeLabel"), ptabSettings: el("ptabSettings"), curtain: el("curtain"),
@@ -390,18 +391,70 @@ function setPanelView(view) {
   renderPanel();
 }
 
-function renderPanel() {
+const EMPTY_COPY = {
+  bookmarks: "Nothing saved yet. Bookmarks stay on this machine.",
+  history: "No pages visited yet.",
+  reading: "Reading list is empty. Add the current page from the menu.",
+};
+
+async function renderPanel() {
   ui.panelBody.replaceChildren();
   if (panelView === "settings") { renderSettings(); return; }
-  const copy = {
-    bookmarks: "Nothing saved yet. Bookmarks stay on this machine.",
-    history: "No history recorded in this session.",
-    reading: "Reading list is empty.",
-  };
-  const empty = document.createElement("p");
-  empty.className = "empty";
-  empty.textContent = copy[panelView] ?? "";
-  ui.panelBody.appendChild(empty);
+
+  const entries = (await native({ type: "list_get", kind: panelView })) ?? [];
+  if (!entries.length) {
+    const empty = document.createElement("p");
+    empty.className = "empty";
+    empty.textContent = EMPTY_COPY[panelView] ?? "";
+    ui.panelBody.appendChild(empty);
+    return;
+  }
+
+  const frag = document.createDocumentFragment();
+  for (const entry of entries) {
+    const row = document.createElement("div");
+    row.className = "item";
+
+    const open = document.createElement("button");
+    open.type = "button";
+    open.className = "item__text";
+    open.addEventListener("click", () => native({ type: "entry_open", url: entry.url }));
+
+    const title = document.createElement("span");
+    title.className = "item__title";
+    title.textContent = entry.title || entry.url;
+    const url = document.createElement("span");
+    url.className = "item__url";
+    url.textContent = entry.url;
+    open.append(title, url);
+
+    const drop = document.createElement("button");
+    drop.type = "button";
+    drop.className = "item__drop";
+    drop.setAttribute("aria-label", `Remove ${entry.title || entry.url}`);
+    drop.innerHTML = '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4.5 4.5l7 7M11.5 4.5l-7 7"/></svg>';
+    drop.addEventListener("click", async () => {
+      await native({ type: "entry_remove", kind: panelView, url: entry.url });
+      renderPanel();
+    });
+
+    row.append(open, drop);
+    frag.appendChild(row);
+  }
+  ui.panelBody.appendChild(frag);
+
+  const foot = document.createElement("div");
+  foot.className = "panel__foot";
+  const clear = document.createElement("button");
+  clear.type = "button";
+  clear.className = "linkbtn";
+  clear.textContent = `Clear ${panelView}`;
+  clear.addEventListener("click", async () => {
+    await native({ type: "list_clear", kind: panelView });
+    renderPanel();
+  });
+  foot.appendChild(clear);
+  ui.panelBody.appendChild(foot);
 }
 
 function renderSettings() {
@@ -505,6 +558,7 @@ ui.menu.addEventListener("click", (e) => {
   const action = item.dataset.action;
   if (action === "new-tab") newTab();
   else if (action === "panel") setPanel(!panelOpen);
+  else if (action === "reading") { native({ type: "reading_toggle" }).then(() => { if (panelView === "reading") renderPanel(); }); }
   else if (action === "settings") { setPanelView("settings"); if (!panelOpen) setPanel(true); }
   else if (action === "theme") cycleTheme();
 });
@@ -582,6 +636,10 @@ ui.shield.addEventListener("click", () => native({ type: "toggle_blocking" }));
 ui.panelToggle.addEventListener("click", () => setPanel(!panelOpen));
 ui.panelClose.addEventListener("click", () => { setPanel(false); ui.panelToggle.focus(); });
 ui.menuBtn.addEventListener("click", () => setMenu(!menuOpen));
+ui.bookmark.addEventListener("click", async () => {
+  await native({ type: "bookmark_toggle" });
+  if (panelOpen && panelView === "bookmarks") renderPanel();
+});
 ui.winMin.addEventListener("click", () => native({ type: "window_minimize" }));
 ui.winMax.addEventListener("click", () => native({ type: "window_maximize" }));
 ui.winClose.addEventListener("click", () => native({ type: "window_close" }));
@@ -598,6 +656,7 @@ document.addEventListener("keydown", (e) => {
   else if (mod && e.key === "l") { e.preventDefault(); ui.input.focus(); }
   else if (mod && e.key === "r") { e.preventDefault(); native({ type: "reload" }); }
   else if (mod && e.key === "b") { e.preventDefault(); setPanel(!panelOpen); }
+  else if (mod && e.key === "d") { e.preventDefault(); ui.bookmark.click(); }
   else if (e.key === "F5") { e.preventDefault(); native({ type: "reload" }); }
   else if (e.key === "Escape" && menuOpen) { setMenu(false); ui.menuBtn.focus(); }
   else if (e.altKey && e.key === "ArrowLeft") { e.preventDefault(); native({ type: "back" }); }
@@ -649,6 +708,10 @@ window.tobari = {
       renderTabs();
       renderOmnibox();
       pushDragRegions();
+      if (typeof next.bookmarked === "boolean") {
+        ui.bookmark.setAttribute("aria-pressed", String(next.bookmarked));
+        ui.bookmark.setAttribute("aria-label", next.bookmarked ? "Remove bookmark" : "Bookmark this page");
+      }
       if (typeof next.maximized === "boolean") {
         ui.winMax.setAttribute("aria-label", next.maximized ? "Restore" : "Maximise");
         ui.winMaxGlyph.innerHTML = next.maximized

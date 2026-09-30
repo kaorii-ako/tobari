@@ -5,6 +5,7 @@
 
 #include "include/base/cef_logging.h"
 #include "blocking.h"
+#include "store.h"
 #include "include/cef_app.h"
 #include "include/base/cef_bind.h"
 #include "include/base/cef_callback.h"
@@ -159,6 +160,20 @@ class UiClient : public CefClient,
         owner_->SetChromeHeight(dict->GetInt("height"));
       } else if (type == "toggle_blocking") {
         owner_->ToggleBlocking();
+      } else if (type == "list_get") {
+        callback->Success(Store::Get().ToJson(dict->GetString("kind").ToString()));
+        return true;
+      } else if (type == "bookmark_toggle") {
+        owner_->ToggleBookmark();
+      } else if (type == "reading_toggle") {
+        owner_->ToggleReading();
+      } else if (type == "entry_remove") {
+        Store::Get().Remove(dict->GetString("kind").ToString(),
+                            dict->GetString("url").ToString());
+      } else if (type == "list_clear") {
+        Store::Get().Clear(dict->GetString("kind").ToString());
+      } else if (type == "entry_open") {
+        owner_->NewTab(dict->GetString("url").ToString());
       } else if (type == "drag_regions") {
         std::vector<CefDraggableRegion> regions;
         CefRefPtr<CefListValue> list = dict->GetList("regions");
@@ -472,6 +487,12 @@ Tab* BrowserWindow::FindTab(int id) {
 
 Tab* BrowserWindow::ActiveTab() { return FindTab(active_id_); }
 
+const Tab* BrowserWindow::ActiveTabConst() const {
+  auto it = std::find_if(tabs_.begin(), tabs_.end(),
+                         [this](const Tab& t) { return t.id == active_id_; });
+  return it == tabs_.end() ? nullptr : &(*it);
+}
+
 void BrowserWindow::NewTab(const std::string& url) {
   CEF_REQUIRE_UI_THREAD();
   if (!content_panel_) {
@@ -651,6 +672,7 @@ void BrowserWindow::SetTabTitle(int tab_id, const std::string& title) {
   Tab* tab = FindTab(tab_id);
   if (!tab) return;
   tab->title = title;
+  Store::Get().RecordVisit(tab->url, title);
   if (tab->id == active_id_ && window_) {
     window_->SetTitle(title.empty() ? "Tobari" : (title + " — Tobari"));
   }
@@ -676,6 +698,24 @@ void BrowserWindow::SetTabLoading(int tab_id, bool loading, bool back,
   tab->loading = loading;
   tab->can_go_back = back;
   tab->can_go_forward = forward;
+  PushState();
+}
+
+void BrowserWindow::ToggleBookmark() {
+  Tab* tab = ActiveTab();
+  if (!tab || tab->url.empty()) {
+    return;
+  }
+  Store::Get().ToggleBookmark(tab->url, tab->title);
+  PushState();
+}
+
+void BrowserWindow::ToggleReading() {
+  Tab* tab = ActiveTab();
+  if (!tab || tab->url.empty()) {
+    return;
+  }
+  Store::Get().ToggleReading(tab->url, tab->title);
   PushState();
 }
 
@@ -733,7 +773,11 @@ void BrowserWindow::PushState() {
   json += "],\"activeId\":" + std::to_string(active_id_) +
           ",\"blocked\":" + std::to_string(blocked_count_) +
           ",\"blockingEnabled\":" + (blocking_enabled_ ? "true" : "false") +
-          ",\"maximized\":" + (IsMaximized() ? "true" : "false") + "}";
+          ",\"maximized\":" + (IsMaximized() ? "true" : "false") +
+          ",\"bookmarked\":" +
+              ((ActiveTabConst() && Store::Get().IsBookmarked(ActiveTabConst()->url)) ? "true"
+                                                                                      : "false") +
+          "}";
 
   ui_browser_->GetMainFrame()->ExecuteJavaScript(
       "window.tobari && window.tobari.setState(" + json + ")", "", 0);

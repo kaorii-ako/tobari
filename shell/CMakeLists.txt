@@ -46,6 +46,7 @@ set(TOBARI_SRCS
   src/app.cc
   src/blocking.cc
   src/scheme.cc
+  src/store.cc
   src/window.cc
 )
 

@@ -2,6 +2,7 @@
 
 #include "include/cef_scheme.h"
 #include "blocking.h"
+#include "store.h"
 #include "scheme.h"
 #include "window.h"
 
@@ -36,6 +37,7 @@ void App::OnRegisterCustomSchemes(CefRawPtr<CefSchemeRegistrar> registrar) {
 void App::OnContextInitialized() {
   RegisterTobariSchemeHandler();
   Blocking::Get().Load();
+  Store::Get().Load();
   BrowserWindow::CreateNew();
 }
 
