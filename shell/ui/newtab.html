@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en" data-theme="night">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>New tab</title>
+<link rel="stylesheet" href="newtab.css">
+</head>
+<body>
+<canvas id="veil" aria-hidden="true"></canvas>
+
+<main class="sheet" id="sheet">
+  <section class="fold">
+    <div class="mark" aria-hidden="true">帳</div>
+
+    <h1 class="wordmark" id="wordmark" aria-label="Tobari">Tobari</h1>
+    <p class="creed" id="creed">A browser that closes over the window.</p>
+
+    <form class="seek" id="seek" role="search">
+      <span class="seek__prompt" aria-hidden="true">&rsaquo;</span>
+      <input class="seek__input" id="seekInput" type="text" spellcheck="false" autocomplete="off"
+             aria-label="Search or enter address" placeholder="search, address, or ! for bangs">
+      <span class="seek__bang" id="seekBang" hidden></span>
+    </form>
+    <p class="seek__hint" id="seekHint">Bangs resolve on this machine. Nothing is sent to resolve them.</p>
+
+    <dl class="readout" id="readout">
+      <div class="readout__cell"><dt>bangs</dt><dd data-scramble id="statBangs">—</dd></div>
+      <div class="readout__cell"><dt>engine</dt><dd data-scramble id="statEngine">—</dd></div>
+      <div class="readout__cell"><dt>telemetry</dt><dd data-scramble id="statTel">none</dd></div>
+    </dl>
+
+    <div class="scroll-cue" id="scrollCue" aria-hidden="true">
+      <span class="u-caps">bang index</span>
+      <svg viewBox="0 0 16 16"><path d="M8 3v10M4.5 9.5L8 13l3.5-3.5"/></svg>
+    </div>
+  </section>
+
+  <section class="index" id="index" aria-label="Bang index">
+    <h2 class="index__title u-caps">Bang index</h2>
+    <ul class="index__list" id="indexList"></ul>
+  </section>
+</main>
+
+<script src="vendor/gsap.min.js"></script>
+<script src="vendor/lenis.min.js"></script>
+<script type="module" src="newtab.js"></script>
+</body>
+</html>
