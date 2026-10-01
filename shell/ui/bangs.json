@@ -1,0 +1,179 @@
+[
+ {
+  "token": "g",
+  "name": "Google",
+  "url": "https://www.google.com/search?q={}"
+ },
+ {
+  "token": "ddg",
+  "name": "DuckDuckGo",
+  "url": "https://duckduckgo.com/?q={}"
+ },
+ {
+  "token": "b",
+  "name": "Brave Search",
+  "url": "https://search.brave.com/search?q={}"
+ },
+ {
+  "token": "sp",
+  "name": "Startpage",
+  "url": "https://www.startpage.com/sp/search?query={}"
+ },
+ {
+  "token": "w",
+  "name": "Wikipedia",
+  "url": "https://en.wikipedia.org/w/index.php?search={}"
+ },
+ {
+  "token": "yt",
+  "name": "YouTube",
+  "url": "https://www.youtube.com/results?search_query={}"
+ },
+ {
+  "token": "gh",
+  "name": "GitHub",
+  "url": "https://github.com/search?q={}"
+ },
+ {
+  "token": "ghr",
+  "name": "GitHub repos",
+  "url": "https://github.com/search?type=repositories&q={}"
+ },
+ {
+  "token": "so",
+  "name": "Stack Overflow",
+  "url": "https://stackoverflow.com/search?q={}"
+ },
+ {
+  "token": "mdn",
+  "name": "MDN",
+  "url": "https://developer.mozilla.org/en-US/search?q={}"
+ },
+ {
+  "token": "cr",
+  "name": "crates.io",
+  "url": "https://crates.io/search?q={}"
+ },
+ {
+  "token": "docsrs",
+  "name": "docs.rs",
+  "url": "https://docs.rs/releases/search?query={}"
+ },
+ {
+  "token": "rust",
+  "name": "Rust std docs",
+  "url": "https://doc.rust-lang.org/std/index.html?search={}"
+ },
+ {
+  "token": "npm",
+  "name": "npm",
+  "url": "https://www.npmjs.com/search?q={}"
+ },
+ {
+  "token": "pypi",
+  "name": "PyPI",
+  "url": "https://pypi.org/search/?q={}"
+ },
+ {
+  "token": "hn",
+  "name": "Hacker News",
+  "url": "https://hn.algolia.com/?q={}"
+ },
+ {
+  "token": "lob",
+  "name": "Lobsters",
+  "url": "https://lobste.rs/search?q={}"
+ },
+ {
+  "token": "r",
+  "name": "Reddit",
+  "url": "https://www.reddit.com/search/?q={}"
+ },
+ {
+  "token": "aur",
+  "name": "AUR",
+  "url": "https://aur.archlinux.org/packages?K={}"
+ },
+ {
+  "token": "arch",
+  "name": "Arch Wiki",
+  "url": "https://wiki.archlinux.org/index.php?search={}"
+ },
+ {
+  "token": "fedora",
+  "name": "Fedora packages",
+  "url": "https://packages.fedoraproject.org/search?query={}"
+ },
+ {
+  "token": "flat",
+  "name": "Flathub",
+  "url": "https://flathub.org/apps/search?q={}"
+ },
+ {
+  "token": "nix",
+  "name": "Nix packages",
+  "url": "https://search.nixos.org/packages?query={}"
+ },
+ {
+  "token": "man",
+  "name": "man pages",
+  "url": "https://man7.org/linux/man-pages/man1/{}.1.html",
+  "raw": true
+ },
+ {
+  "token": "caniuse",
+  "name": "Can I Use",
+  "url": "https://caniuse.com/?search={}"
+ },
+ {
+  "token": "cve",
+  "name": "CVE search",
+  "url": "https://cve.mitre.org/cgi-bin/cvekey.cgi?keyword={}"
+ },
+ {
+  "token": "osm",
+  "name": "OpenStreetMap",
+  "url": "https://www.openstreetmap.org/search?query={}"
+ },
+ {
+  "token": "wa",
+  "name": "Wolfram Alpha",
+  "url": "https://www.wolframalpha.com/input?i={}"
+ },
+ {
+  "token": "tr",
+  "name": "Translate",
+  "url": "https://translate.google.com/?text={}"
+ },
+ {
+  "token": "ia",
+  "name": "Internet Archive",
+  "url": "https://archive.org/search?query={}"
+ },
+ {
+  "token": "wb",
+  "name": "Wayback Machine",
+  "url": "https://web.archive.org/web/*/{}",
+  "raw": true
+ },
+ {
+  "token": "gl",
+  "name": "GitLab",
+  "url": "https://gitlab.com/search?search={}"
+ },
+ {
+  "token": "sr",
+  "name": "sourcehut",
+  "url": "https://sr.ht/projects?search={}"
+ },
+ {
+  "token": "cef",
+  "name": "CEF forum",
+  "url": "https://magpcss.org/ceforum/search.php?keywords={}"
+ },
+ {
+  "token": "crbug",
+  "name": "Chromium bugs",
+  "url": "https://issues.chromium.org/issues?q={}"
+ }
+]

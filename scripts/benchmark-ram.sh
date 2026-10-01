@@ -57,13 +57,16 @@ echo
 if [ "${1:-}" = "tobari" ]; then
   BUILD="${TOBARI_BUILD:?set TOBARI_BUILD to the build directory}"
   pkill -x tobari 2>/dev/null; sleep 3
+  PROFILE_HOME="$(mktemp -d)"
   read -r BC BP BR <<< "$(sum_for tobari)"
-  ( cd "$BUILD" && nohup ./tobari --remote-debugging-port=9600 >/dev/null 2>&1 </dev/null & )
+  ( cd "$BUILD" && XDG_DATA_HOME="$PROFILE_HOME" nohup ./tobari --remote-debugging-port=9600 >/dev/null 2>&1 </dev/null & )
   sleep 14
   node "$(dirname "$0")/bench-open.mjs" 9600 "${URLS[@]}"
   sleep "$SETTLE"
   report_delta tobari "tobari" "$BC" "$BP" "$BR"
   for p in $(pgrep -x tobari); do kill "$p" 2>/dev/null; done
+  sleep 3
+  rm -rf "$PROFILE_HOME"
 elif [ "${1:-}" = "chrome" ]; then
   PROFILE="$(mktemp -d)"
   read -r BC BP BR <<< "$(sum_for chrome)"
@@ -72,12 +75,14 @@ elif [ "${1:-}" = "chrome" ]; then
     "${URLS[@]}" >/dev/null 2>&1 &
   sleep $((SETTLE + 25))
   report_delta chrome "google chrome" "$BC" "$BP" "$BR"
-  for p in $(pgrep -x chrome); do
-    if tr '\0' ' ' < "/proc/$p/cmdline" 2>/dev/null | grep -q "$PROFILE"; then
-      kill "$p" 2>/dev/null
-    fi
+  for attempt in 1 2 3; do
+    for p in $(pgrep -x chrome); do
+      if tr '\0' ' ' < "/proc/$p/cmdline" 2>/dev/null | grep -q "$PROFILE"; then
+        kill "$p" 2>/dev/null
+      fi
+    done
+    sleep 4
   done
-  sleep 4
   rm -rf "$PROFILE"
 else
   echo "usage: $0 {tobari|chrome}" >&2

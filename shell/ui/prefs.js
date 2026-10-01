@@ -1,7 +1,7 @@
 const KEY = "tobari.prefs.v1";
 
 const DEFAULTS = {
-  theme: "night",
+  theme: "system",
   newtabMotion: false,
   smoothScroll: false,
 };

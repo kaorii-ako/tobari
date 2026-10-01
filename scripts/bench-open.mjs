@@ -1,8 +1,6 @@
 const [, , port, ...urls] = process.argv;
-const list = await (await fetch(`http://127.0.0.1:${port}/json/list`)).json();
-const ui = list.find((t) => (t.url || "").includes("ui/index.html"));
-if (!ui) { console.error("chrome UI not found"); process.exit(1); }
-const ws = new WebSocket(ui.webSocketDebuggerUrl);
+const version = await (await fetch(`http://127.0.0.1:${port}/json/version`)).json();
+const ws = new WebSocket(version.webSocketDebuggerUrl);
 let id = 1;
 const pending = new Map();
 ws.addEventListener("message", (e) => {
@@ -14,10 +12,12 @@ const send = (method, params) =>
 
 ws.addEventListener("open", async () => {
   for (const url of urls) {
-    await send("Runtime.evaluate", {
-      expression: `window.cefQuery({request:JSON.stringify({type:"new_tab",url:${JSON.stringify(url)}}),onSuccess(){},onFailure(){}})`,
-    });
+    await send("Target.createTarget", { url });
     await new Promise((r) => setTimeout(r, 900));
+  }
+  const list = await (await fetch(`http://127.0.0.1:${port}/json/list`)).json();
+  for (const t of list) {
+    if (t.type === "page" && /newtab/.test(t.url)) await send("Target.closeTarget", { targetId: t.id });
   }
   console.log(`opened ${urls.length} tabs`);
   process.exit(0);

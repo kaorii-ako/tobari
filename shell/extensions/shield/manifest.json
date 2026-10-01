@@ -1,0 +1,32 @@
+{
+  "manifest_version": 3,
+  "name": "Tobari",
+  "description": "Controls Tobari's built-in network blocking. Bundled with the browser; talks only to the browser itself.",
+  "version": "1.0.0",
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEArn1SSNKTzkCLRb2aw2HpcupMGJa/UT/hWUzg1a572oQq924mBl+Bkwfesn+0qIA4mlbmVG/oiUcPBKLJE318HZFZ2mA21Oin3jU1unKZ7XTKN3f7F1xJxrUYXRCeWPsQ+WsX0gsZRX4JD86e5UGav8fqjGiUKs3LVUH0uEQ4V434dM0+HDkjsJx+PC9ih05n+v1rgcOUva90PUzaUCHR7vPB8N6L4djznilt3KmNuiJEDCn8ksh1SZbn6EJoVNkHp0ntSoSYKNY6TZB6ZiAnOVS6l1kuumwjx9ako3KdewrF1g590Kca4AK0KFj7L8Zh89W5iZ5s3NKIwiQadgC9aQIDAQAB",
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Tobari blocking",
+    "default_icon": {
+      "16": "icons/16.png",
+      "24": "icons/24.png",
+      "32": "icons/32.png"
+    }
+  },
+  "background": {
+    "service_worker": "bg.js"
+  },
+  "permissions": [
+    "tabs",
+    "offscreen"
+  ],
+  "host_permissions": [
+    "https://tobari.internal/*"
+  ],
+  "icons": {
+    "16": "icons/16.png",
+    "32": "icons/32.png",
+    "48": "icons/48.png",
+    "128": "icons/128.png"
+  }
+}

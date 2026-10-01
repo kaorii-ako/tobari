@@ -2,17 +2,30 @@
 
 #include <mutex>
 #include <set>
+#include <shared_mutex>
 #include <string>
+#include <vector>
 
 namespace tobari {
+
+struct ListInfo {
+  std::string name;
+  std::string path;
+  size_t rules = 0;
+  long long modified = 0;
+};
 
 class Blocking {
  public:
   static Blocking& Get();
 
+  // Builds the engine from the user's filter directory, falling back to the
+  // lists shipped beside the binary. Safe to call again: the new engine is
+  // built off to the side and swapped in, so lookups never wait on a parse.
   void Load();
-  bool Ready() const { return handle_ != nullptr; }
+  bool Ready() const;
   size_t RuleCount() const;
+  std::vector<ListInfo> Lists() const;
 
   bool ShouldBlock(const std::string& url,
                    const std::string& source_url,
@@ -26,9 +39,16 @@ class Blocking {
   Blocking() = default;
   ~Blocking();
 
+  void LoadDisabledHosts();
+  void SaveDisabledHosts() const;
+
+  mutable std::shared_mutex engine_mutex_;
   void* handle_ = nullptr;
-  mutable std::mutex mutex_;
+  std::vector<ListInfo> lists_;
+
+  mutable std::mutex hosts_mutex_;
   std::set<std::string> disabled_hosts_;
+  bool hosts_loaded_ = false;
 };
 
 std::string HostOf(const std::string& url);

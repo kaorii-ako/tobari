@@ -29,4 +29,5 @@ for name in "${!LISTS[@]}"; do
 done
 
 ( cd "$DEST" && sha256sum ./*.txt > SHA256SUMS )
+date -u +%s > "$DEST/SNAPSHOT"
 echo "hashes written to $DEST/SHA256SUMS"

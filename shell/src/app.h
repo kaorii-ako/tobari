@@ -1,43 +1,30 @@
 #pragma once
 
 #include "include/cef_app.h"
-#include "include/wrapper/cef_message_router.h"
+#include "include/cef_resource_bundle_handler.h"
 
 namespace tobari {
 
-class App : public CefApp,
-            public CefBrowserProcessHandler,
-            public CefRenderProcessHandler {
+class App : public CefApp, public CefBrowserProcessHandler, public CefResourceBundleHandler {
  public:
-  App();
+  App() = default;
 
-  CefRefPtr<CefBrowserProcessHandler> GetBrowserProcessHandler() override {
-    return this;
-  }
-  CefRefPtr<CefRenderProcessHandler> GetRenderProcessHandler() override {
-    return this;
+  CefRefPtr<CefBrowserProcessHandler> GetBrowserProcessHandler() override { return this; }
+  CefRefPtr<CefResourceBundleHandler> GetResourceBundleHandler() override { return this; }
+
+  bool GetLocalizedString(int string_id, CefString& string) override;
+  bool GetDataResource(int resource_id, void*& data, size_t& data_size) override { return false; }
+  bool GetDataResourceForScale(int resource_id, ScaleFactor scale_factor, void*& data,
+                               size_t& data_size) override {
+    return false;
   }
 
   void OnBeforeCommandLineProcessing(const CefString& process_type,
                                      CefRefPtr<CefCommandLine> command_line) override;
-  void OnRegisterCustomSchemes(CefRawPtr<CefSchemeRegistrar> registrar) override;
-
   void OnContextInitialized() override;
-
-  void OnContextCreated(CefRefPtr<CefBrowser> browser,
-                        CefRefPtr<CefFrame> frame,
-                        CefRefPtr<CefV8Context> context) override;
-  void OnContextReleased(CefRefPtr<CefBrowser> browser,
-                         CefRefPtr<CefFrame> frame,
-                         CefRefPtr<CefV8Context> context) override;
-  bool OnProcessMessageReceived(CefRefPtr<CefBrowser> browser,
-                                CefRefPtr<CefFrame> frame,
-                                CefProcessId source_process,
-                                CefRefPtr<CefProcessMessage> message) override;
+  CefRefPtr<CefClient> GetDefaultClient() override;
 
  private:
-  CefRefPtr<CefMessageRouterRendererSide> renderer_router_;
-
   IMPLEMENT_REFCOUNTING(App);
   DISALLOW_COPY_AND_ASSIGN(App);
 };

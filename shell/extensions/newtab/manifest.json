@@ -1,0 +1,13 @@
+{
+  "manifest_version": 3,
+  "name": "Tobari New Tab",
+  "description": "Tobari's new-tab page. Bundled with the browser; makes no network requests.",
+  "version": "1.0.0",
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAqqpUe8kanKWCRL5aPnRbtsoBnfzrqsJpn7PtqqRUzcn+460pS+lAoOetzw8Mjkp6tWITlIOBD5VJHBKwZReblfMgbUPcx+cKkIIzA/ag2Qcu1zY+lpLsC2TE2L8vamUDqG5KA/4vf/r8KL6neeEP4c1uMZO+QEl9MGMR/sB3RzzvSUInBW7IxCtMBl6pb0nUoMfiuueMdObAKoGlE1EqNpDG60621TvHuOTGQiqnmOboJSTfcJRxxf4qX03kkyoQ4wSfyXl8b1gILWfTOx3g/I0H1g0SM0Vpv4ehxuP2GJDhZv4YoLR6aQBtfAhr8fWNQDJCkHo6nkUbRr1FFGF/UwIDAQAB",
+  "chrome_url_overrides": {
+    "newtab": "newtab.html"
+  },
+  "icons": {
+    "128": "icon.png"
+  }
+}

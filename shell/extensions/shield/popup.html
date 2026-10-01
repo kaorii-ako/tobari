@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Tobari</title>
+<link rel="stylesheet" href="popup.css">
+</head>
+<body>
+<main class="card" aria-live="polite">
+  <header class="head">
+    <span class="label">Tobari · blocking</span>
+    <button class="switch" id="toggle" type="button" role="switch" aria-checked="true" aria-label="Blocking on this site">
+      <span class="switch__dot"></span>
+    </button>
+  </header>
+
+  <p class="host" id="host">—</p>
+
+  <section class="reading">
+    <span class="count" id="count">—</span>
+    <span class="caption" id="caption">requests blocked on this page</span>
+  </section>
+
+  <dl class="readout">
+    <div><dt>session</dt><dd id="total">—</dd></div>
+    <div><dt>rules</dt><dd id="rules">—</dd></div>
+    <div><dt>lists</dt><dd id="lists">—</dd></div>
+  </dl>
+
+  <footer class="foot">
+    <button class="link" id="update" type="button">Update filter lists</button>
+    <span class="status" id="status"></span>
+  </footer>
+</main>
+<script type="module" src="popup.js"></script>
+</body>
+</html>
