@@ -1,0 +1,27 @@
+      <div class="wrap">
+        <header class="grid page-head">
+          <p class="crumb caps">Waitlist</p>
+          <h1 class="page-title">Remove an address.</h1>
+          <p class="page-meta">
+            Enter the address you added. It is deleted from the waitlist by hand before the one email is sent, and this
+            request is deleted with it. Nothing else is asked for.
+          </p>
+        </header>
+        <section class="section waitlist" aria-label="Removal form">
+          <div class="grid">
+            <div class="prose-col">
+              <form class="form" name="waitlist-removal" method="POST" action="/waitlist/removed/" data-netlify="true" netlify-honeypot="bot-field">
+                <input type="hidden" name="form-name" value="waitlist-removal">
+                <p class="hp" aria-hidden="true">
+                  <label>Leave this empty <input name="bot-field" tabindex="-1" autocomplete="off"></label>
+                </p>
+                <label class="field-label caps" for="removal-email">Email address to remove</label>
+                <div class="field-row">
+                  <input class="input" id="removal-email" type="email" name="email" required autocomplete="email" spellcheck="false" placeholder="you@example.org">
+                  <button class="btn btn-primary" type="submit">Remove my address</button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </section>
+      </div>

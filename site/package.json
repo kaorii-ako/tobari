@@ -1,0 +1,16 @@
+{
+  "name": "tobari-site",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Static site for Tobari. Build-time dependencies only; nothing in node_modules ships to browsers.",
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "build": "node scripts/build.mjs"
+  },
+  "devDependencies": {
+    "marked": "18.0.14"
+  }
+}
