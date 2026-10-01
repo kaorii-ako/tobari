@@ -25,7 +25,11 @@ int main(int argc, char* argv[]) {
                                                                      : LOGSEVERITY_WARNING;
   CefString(&settings.root_cache_path) = tobari::ProfileDir();
 
-  CefInitialize(main_args, settings, app.get(), nullptr);
+  // On a second launch CEF forwards the arguments to the running instance
+  // (see App::OnAlreadyRunningAppRelaunch) and returns false here.
+  if (!CefInitialize(main_args, settings, app.get(), nullptr)) {
+    return CefGetExitCode();
+  }
   CefRunMessageLoop();
   CefShutdown();
 

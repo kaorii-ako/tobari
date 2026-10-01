@@ -1,76 +1,82 @@
 # PACKAGING
 
-## Phase 1: AppImage + plain tarball (Linux)
+## Formats
 
-The sidecar must reach the user's existing Chrome/Chromium/Brave install,
-so being *outside* any sandbox is required, not incidental.
+| format | status | sandbox | notes |
+|---|---|---|---|
+| Flatpak | **primary** | Chromium sandbox via `zypak` inside Flatpak's | `packaging/flatpak/` |
+| Per-user install | works | Chromium sandbox via unprivileged user namespaces | `packaging/install.sh` |
+| AppImage | not built | — | see below |
+| `.rpm` / `.deb` | not built | — | optional, not designed around |
 
-- Use the **static type2-runtime**. The classic runtime dlopens
-  `libfuse.so.2`; Bazzite ships FUSE3, so the default runtime fails on the
-  primary dev machine.
-- **Bundle nothing graphics-related.** No libvulkan, no Mesa, no libdrm.
-  A bundled Vulkan loader against host ICDs silently drops GPU offload to
-  CPU and quietly destroys the memory story. Link the host stack and fail
-  loudly if no ICD is found.
-- Models are never inside the AppImage. They download to the XDG data dir
-  on first run after SHA-256 verification against `core/models.toml`.
-- Native messaging manifests are installed on first launch via
-  `tobari-core --install-manifests`, only for browsers actually present
-  (Chrome, Chromium, Brave paths; macOS equivalents under
-  `~/Library/Application Support/`). The extension ID is key-pinned and
-  compiled into the sidecar — there is no flag to override it and no
-  wildcard in `allowed_origins`.
-- `tobari-core --uninstall` removes the manifests. Offer it, document it.
+Every format keeps Chromium's sandbox on. None ever passes `--no-sandbox`.
 
-### Two things the Phase 1 build must not get wrong
-
-**1. The AppDir needs an explicit `AppRun`.** `appimagetool` no longer
-synthesizes one. Without it the type2 runtime falls back to the desktop
-`Exec` line and dies with `execv error: No such file or directory` before
-printing anything useful. `build-appimage.sh` writes:
+## Flatpak
 
 ```sh
-#!/bin/sh
-set -eu
-HERE="$(dirname "$(readlink -f "$0")")"
-export LD_LIBRARY_PATH="$HERE/usr/bin${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
-exec "$HERE/usr/bin/tobari-core" "$@"
+packaging/flatpak/build.sh ~/.cache/tobari-dev/build --install
+flatpak run dev.tobari.Browser
 ```
 
-The `LD_LIBRARY_PATH` line is required because upstream llama.cpp builds
-`libggml*`, `libllama*` and `libmtmd*` as shared objects. Those are *our own*
-build artifacts and are bundled; the graphics stack is still not.
+`build.sh` stages the CMake build output and runs `flatpak-builder` against
+`packaging/flatpak/dev.tobari.Browser.yml`, then writes `tobari.flatpak`.
 
-**2. `tobari-core` must be rebuilt, never reused from staging.**
-`build-appimage.sh` runs `cargo build --release` itself and installs the
-fresh binary. A stale staged binary is invisible at build time and produces an
-AppImage that behaves like an older commit — this was hit in practice (an
-AppImage that silently reported `backend: cpu` on a machine with a working
-RX 6800 XT, because staging held a pre-fix sidecar). The script also writes
-`staging/tobari-core.buildinfo` with the UTC timestamp and SHA-256 of the
-binary it packaged.
+The app sits on `org.chromium.Chromium.BaseApp`, which provides `zypak`.
+Chromium normally sandboxes renderers with a SUID helper or with user
+namespaces; neither is available inside Flatpak's own sandbox. `zypak` makes
+Chromium spawn its sandboxed children through Flatpak's sandbox instead, the
+same mechanism Chromium's and Spotify's (also CEF) Flatpaks use.
 
-### Verification that nothing graphics-related was bundled
+Inside the Flatpak, `$XDG_DATA_HOME` and friends resolve under
+`~/.var/app/dev.tobari.Browser/`, so the profile, filter updates and state live
+there. Tobari never hard-codes a path; it only reads the XDG variables.
+
+**Not yet Flathub-ready.** Flathub builds from source. The manifest here
+packages a build made outside it. The remaining work:
+
+1. add the pinned CEF archive as a `file` source with its **sha256** (the
+   provisioning script pins Spotify's published SHA-1, which Flatpak does not
+   accept);
+2. vendor the `adblock` crate's dependencies with `flatpak-cargo-generator`;
+3. run the CMake build inside `flatpak-builder` with no network.
+
+## Per-user install
 
 ```sh
-ls packaging/build/staging/Tobari.AppDir/usr/bin/ | grep -iE 'vulkan|mesa|drm'
+packaging/install.sh ~/.cache/tobari-dev/build            # install
+packaging/install.sh ~/.cache/tobari-dev/build --set-default
+packaging/install.sh --uninstall
 ```
 
-Must print nothing. `libggml-vulkan.so` is present by design: it is the ggml
-backend that `dlopen`s the **host** loader, not a copy of it.
+Installs into `~/.local/lib/tobari`, a launcher into `~/.local/bin`, the desktop
+entry, AppStream metadata and icons into `~/.local/share`. Nothing outside
+`$HOME` is written, so it works on immutable distributions.
 
-## Phase 2+: Flatpak (primary), AppImage (secondary, constrained)
+A per-user install cannot set up Chromium's SUID sandbox helper, so it depends
+on unprivileged user namespaces. The installer checks for them and **refuses to
+install** if they are disabled, rather than produce a browser that would only
+run unsandboxed. `--set-default` is opt-in; installing never changes your
+default browser on its own.
 
-Flatpak (`dev.tobari.Browser`) carries `tobari-core` inside the same
-sandbox as the browser, so native messaging never crosses the sandbox
-boundary. It also gives real sandboxing and correct
-`x-scheme-handler/http(s)` registration.
+## AppImage
 
-A Phase 2 AppImage is secondary and carries a hard constraint: the
-Chromium sandbox stays on. AppImages mount `nosuid`, so the SUID
-`chrome-sandbox` helper cannot work; the build must rely on unprivileged
-user namespaces and **refuse to start** if they are unavailable. Never
-ship `--no-sandbox` in a browser sold on security. Detect and report; do
-not degrade.
+The original plan shipped an AppImage. It is not built for the browser, for the
+reason the spec gave in advance: AppImages mount `nosuid`, so Chromium's SUID
+sandbox helper cannot work, and the result would depend entirely on user
+namespaces — the same as the per-user install, with none of the integration.
+Flatpak gives real sandboxing and correct `x-scheme-handler/http(s)`
+registration. If an AppImage is added, it must check for user namespaces and
+refuse to start without them, exactly as `install.sh` does.
 
-`.rpm` and `.deb` are optional conveniences, not design targets.
+## Desktop integration
+
+`packaging/dev.tobari.Browser.desktop` registers for `http`, `https`, HTML,
+XHTML and PDF, and has a "New Window" action. `StartupWMClass` matches the
+`--class=dev.tobari.Browser` Tobari sets on its windows, so the taskbar groups
+them under the right icon. Both files pass `desktop-file-validate` and
+`appstreamcli validate`.
+
+When Tobari is already running, a second launch (for example a link clicked in
+another app) is forwarded to the running instance by Chromium's process
+singleton. A URL opens as a new tab in the most recently focused window; a bare
+launch opens a new window.

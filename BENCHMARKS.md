@@ -2,17 +2,14 @@
 
 ## Memory at 10 identical tabs
 
-The measurement Phase 1 exists to produce: does a CEF shell with network-layer
-blocking use less memory than stock Chrome at the same workload, and by enough
-to matter?
+Does Tobari use less memory than stock Chrome at the same workload, and how
+much of the difference is the blocker?
 
 ### Method
 
-`scripts/benchmark-ram.sh` opens the same ten pages in each browser, waits for
-them to settle, and sums memory across every process the browser owns.
-
-Ten pages, chosen to include ad-supported news alongside static documentation
-so the blocking result is not flattered:
+`scripts/benchmark-ram.sh` opens the same ten pages in a browser on a **fresh,
+throwaway profile**, waits 45 seconds for them to settle, and sums memory
+across every process that browser owns.
 
 ```
 en.wikipedia.org/wiki/Wayland_(protocol)   github.com/chromiumembedded/cef
@@ -22,78 +19,100 @@ bbc.com/news                               stackoverflow.com/questions
 archlinux.org                              kernel.org
 ```
 
+Ad-supported news sits beside static documentation so the blocking result is
+not flattered.
+
 **PSS is the headline number.** Proportional set size divides each shared page
-between the processes mapping it, so a multi-process browser is counted once
-rather than once per renderer. RSS is reported beside it because people expect
-it, but RSS counts the shared Chromium libraries in every process and badly
-over-states a browser with many renderers.
+between the processes that map it, so a multi-process browser is counted once,
+not once per renderer. RSS is shown alongside but over-counts the shared
+Chromium libraries in every process.
 
-Both browsers were measured by taking a baseline of that browser's processes
-before launch and subtracting it. This is what makes the run reproducible on a
-machine where the user already has Chrome open — nothing has to be killed.
+Each browser is measured by taking a baseline of its own processes before
+launch and subtracting it. This makes the run correct on a machine where Chrome
+is already open, and nothing has to be killed. (Chrome from Flathub reparents
+through `bwrap`, so walking the process tree from the launched PID does not
+find its renderers.)
 
-Settle: 45s after the last tab opens (Chrome given 25s extra for Flatpak
-startup). Machine: Ryzen 5 9600X, 32 GB, Bazzite, Wayland, 2026-09-30.
-Tobari on CEF 154.0.32 / Chromium 154.0.8037.58; Chrome from Flathub.
+**Three runs per configuration, interleaved** — Tobari on, Tobari off, Chrome,
+then again — because live pages change between loads. A single run is not
+enough: across two days the same Chrome configuration measured 933 MB and
+1,292 MB.
+
+Machine: Ryzen 5 9600X, 32 GB, Bazzite, Wayland. 2026-10-01. Tobari on CEF
+154.0.32 (Chromium 154.0.8037.58); Chrome 154.0.8037.92 from Flathub.
 
 ### Result
 
-| configuration | processes | PSS | RSS |
-|---|---:|---:|---:|
-| Tobari, blocking on | 20 | **821.8 MB** | 2744.8 MB |
-| Tobari, blocking off | 21 | 890.4 MB | 2912.9 MB |
-| Google Chrome, stock | 45 | 933.2 MB | 5681.1 MB |
+| configuration | PSS run 1 / 2 / 3 | **median PSS** | processes | median RSS |
+|---|---|---:|---|---:|
+| Tobari, blocking on | 866.1 / 917.5 / 905.9 MB | **905.9 MB** | 20 / 20 / 20 | 2,823.6 MB |
+| Tobari, blocking off | 1,106.4 / 1,069.4 / 1,113.1 MB | 1,106.4 MB | 34 / 33 / 34 | 4,427.4 MB |
+| Google Chrome, stock | 1,291.6 / 1,017.2 / 1,285.4 MB | 1,285.4 MB | 69 / 66 / 66 | 7,971.5 MB |
 
-Tobari with blocking on, against stock Chrome:
+Tobari, blocking on, against stock Chrome (medians):
 
-- **111.4 MB less PSS — 11.9% lower**
-- 2936 MB less RSS — 51.7% lower
-- 25 fewer processes
+- **379.5 MB less PSS — 29.5% lower**
+- **20 processes against 66**
 
-Blocking's own contribution, Tobari on vs Tobari off:
+A bound that does not depend on medians: Tobari's **worst** run (917.5 MB) is
+still 9.8% below Chrome's **best** (1,017.2 MB).
 
-- **68.6 MB less PSS — 7.7% lower**
-- one fewer process
+The blocker's own contribution, on against off (medians):
+
+- **200.5 MB less PSS — 18.1% lower**
+- **14 fewer processes** (34 → 20)
 
 ### What this does and does not show
 
-The 7.7% from blocking is real but smaller than the theory suggests. The
-argument for network-layer blocking is that a third-party subframe cancelled
-before it loads is a renderer process never created; across these ten pages
-that produced exactly **one** fewer process, not the handful expected. Most of
-the saving came from ad and tracker resources never being fetched, parsed and
-retained inside renderers that existed anyway. The renderer-elision effect is
-real but it is not the dominant term at this tab count.
+**Blocking is where the processes go.** A third-party subframe cancelled before
+it loads is a renderer that is never created; here that removed 14 of them.
+An earlier single-run measurement found only one, on a different day's ad
+inventory — the effect is real but varies a great deal with what the pages
+happen to be serving, which is why three runs are reported.
 
-The 11.9% gap against Chrome is **not** all efficiency. Tobari currently has no
-extension system, no sync, no Safe Browsing, and no translate or prefetch
-machinery. Some of that gap is missing features rather than better engineering,
-and it will narrow as Phase 1 finishes.
+**Not all of the gap is efficiency.** Even with blocking off, Tobari is 13.9%
+below Chrome and runs about half the processes. Part of that is Tobari's
+defaults doing their job — no network prediction means no speculative
+renderers for pages you did not open — and part is that Chrome runs services
+Tobari does not: Safe Browsing, sync, the Google account integration,
+optimisation hints and on-device model services. That second part is a
+difference in features, not engineering, and SECURITY.md says what Tobari
+gives up.
 
-Two things bias the comparison, both against Tobari, so the figure above is
-conservative:
+**Two things bias the Chrome numbers downward**, so the comparison is
+conservative: Chrome was measured by subtraction while another Chrome was open,
+which spreads shared pages across more processes and lowers the measured delta;
+and Chrome was given longer to settle.
 
-- Chrome was measured by subtraction while the user's own Chrome was running.
-  Shared pages divide across more processes when more Chrome processes exist,
-  which lowers the measured PSS delta for the benchmark instance. Chrome's
-  standalone cost is therefore somewhat higher than 933.2 MB.
-- Chrome was given a longer settle, so more of its lazy work had completed.
+Tobari carries two small bundled extensions (the new-tab page and the blocking
+control); their cost is included in every Tobari figure above.
 
-This is a single run against live sites. Ad inventory and article length vary
-between loads, so treat the numbers as one observation, not a distribution.
-Re-run with `SETTLE=90 scripts/benchmark-ram.sh tobari|chrome`.
+### History
+
+An earlier version of Tobari drew its own interface in HTML on CEF's Alloy
+runtime. It measured 821.8 MB PSS in a single run against Chrome's 933.2 MB on
+2026-09-30, and was replaced because that runtime cannot host Chrome extensions
+(`docs/DESIGN.md`). Chromium's own interface costs more than the HTML chrome
+did; the single-run numbers are not comparable with the medians above.
+
+### Reproduce
+
+```sh
+TOBARI_BUILD=~/.cache/tobari-dev/build scripts/benchmark-ram.sh tobari
+TOBARI_BUILD=~/.cache/tobari-dev/build TOBARI_NO_BLOCKING=1 scripts/benchmark-ram.sh tobari
+scripts/benchmark-ram.sh chrome
+SETTLE=90 scripts/benchmark-ram.sh chrome   # longer settle
+```
 
 ### Decision on Phase 2
 
-Spec §6 starts the Chromium patch set only if Phase 1 shows a **specific, named
-limit that CEF cannot get past**. It does not.
+Phase 2 — a Chromium patch set — starts only if a measurement shows a
+**specific, named limit CEF cannot get past**. Memory does not show one: Tobari
+already runs under a third of Chrome's processes and 29.5% less PSS on CEF
+unpatched.
 
-Tobari already runs 20 processes against Chrome's 45 and uses 11.9% less PSS
-without patching anything, and the largest items on the Phase 2 list are things
-CEF has already omitted — Safe Browsing infrastructure, sync, UMA. The
-remaining lever with real headroom is the process model, and `--process-per-site`
-weakens site isolation, which §3.3 and `SECURITY.md` forbid trading away by
-default.
-
-**Phase 2 is not justified by this measurement.** Revisit only if a named
-workload shows CEF blocking a specific optimisation.
+The engine-currency gap in SECURITY.md is the stronger argument for owning a
+Chromium build, because it would let Tobari ship a Chromium security release
+without waiting for CEF. It is a different cost: a 4–8 hour build on six cores
+and a rebase every four weeks, indefinitely. It is recorded as the open
+question for Phase 2, not decided here.

@@ -15,6 +15,12 @@ endif()
 set(CMAKE_MODULE_PATH "${CEF_ROOT}/cmake")
 find_package(CEF REQUIRED)
 
+# CEF links with -rpath,. — relative to the working directory, not the binary —
+# and CMake adds the absolute path of the CEF tree it built against. Together
+# they made the binary work only when launched from its own directory or on the
+# machine that built it. Resolve libraries next to the executable instead.
+list(REMOVE_ITEM CEF_LINKER_FLAGS "-Wl,-rpath,.")
+
 ADD_LOGICAL_TARGET("libcef_lib" "${CEF_LIB_DEBUG}" "${CEF_LIB_RELEASE}")
 
 add_subdirectory("${CEF_ROOT}/libcef_dll" libcef_dll_wrapper)
@@ -64,6 +70,9 @@ target_include_directories(tobari PRIVATE "${CEF_ROOT}" "${CMAKE_CURRENT_SOURCE_
 add_dependencies(tobari libcef_dll_wrapper tobari_blocker_build)
 target_link_libraries(tobari libcef_lib libcef_dll_wrapper "${BLOCKER_LIB}" ${CEF_STANDARD_LIBS})
 SET_EXECUTABLE_TARGET_PROPERTIES(tobari)
+set_target_properties(tobari PROPERTIES
+  BUILD_WITH_INSTALL_RPATH TRUE
+  INSTALL_RPATH "$ORIGIN")
 
 COPY_FILES(tobari "${CEF_BINARY_FILES}" "${CEF_BINARY_DIR}" "${CEF_TARGET_OUT_DIR}")
 COPY_FILES(tobari "${CEF_RESOURCE_FILES}" "${CEF_RESOURCE_DIR}" "${CEF_TARGET_OUT_DIR}")

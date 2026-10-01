@@ -1,113 +1,74 @@
-# DEV-LINUX — primary dev target
+# DEV-LINUX — building Tobari
 
-Bazzite is an rpm-ostree atomic system: the base image is read-only. All
-build toolchains live in a distrobox container. Never `rpm-ostree install`
-a build dependency.
+Bazzite and other atomic distributions have a read-only base image. Every build
+tool lives in a distrobox container; nothing is layered onto the host. The one
+host tool used is `flatpak-builder`, which Bazzite already ships.
 
-## 1. Create the container
+## 1. Container
 
 ```sh
 distrobox create --name tobari --image registry.fedoraproject.org/fedora:41
 distrobox enter tobari
-```
-
-All steps below run **inside** the container.
-
-## 2. Toolchain
-
-```sh
-sudo dnf install -y git curl cmake ninja-build gcc-c++ patchelf \
-  glslc spirv-headers-devel glslang \
-  vulkan-headers vulkan-loader-devel mesa-vulkan-drivers vulkan-tools \
-  nodejs npm python3
+sudo dnf install -y git cmake ninja-build gcc-c++ python3 python3-pillow openssl \
+  gtk3-devel libX11-devel libXi-devel nss-devel alsa-lib-devel \
+  at-spi2-atk-devel cups-devel libdrm-devel mesa-libgbm-devel
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
-source "$HOME/.cargo/env"
-rustup target add x86_64-unknown-linux-gnu
 ```
 
-The `-DGGML_VULKAN=ON` configure step fails without all three shader-toolchain
-packages. Both were hit in practice and both are fatal, not warnings:
-
-- `glslc` (shaderc) — `Could NOT find Vulkan (missing: glslc)`
-- `spirv-headers-devel` — `Could not find a package configuration file
-  provided by "SPIRV-Headers"` from `ggml/src/ggml-vulkan/CMakeLists.txt`
-
-`glslang` only accounts for the `missing components: glslangValidator` note;
-install it so the found-components list is clean.
-
-Verify the host GPU stack is visible from the container:
+## 2. CEF
 
 ```sh
-vulkaninfo --summary
-cat /sys/class/drm/card*/device/mem_info_vram_total
+shell/provision-cef.sh
 ```
 
-If no ICD is reported, stop: GPU offload cannot work and any build that
-silently falls back to CPU invalidates the Phase 1 memory story. Note that
-VRAM is read from `sysfs`, not from `vulkaninfo` — see `packaging/` notes in
-`docs/PACKAGING.md` for why.
+Downloads the pinned CEF binary distribution (`minimal`, ~326 MB), checks it
+against the SHA-1 hard-coded in the script, unpacks it into
+`~/.cache/tobari-dev/` and prints the resulting directory. The cache survives
+reboots and `/tmp` cleanups, which matters: a CEF tree under `/tmp` will
+disappear and take a build with it.
 
-## 2b. appimagetool (container-local)
+Bumping CEF means changing `CEF_VERSION` and `CEF_SHA1` together; see
+`docs/RELEASING.md`.
+
+## 3. Build
 
 ```sh
-curl -sL -o /tmp/appimagetool.AppImage \
-  https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-x86_64.AppImage
-chmod +x /tmp/appimagetool.AppImage
-(cd /tmp && ./appimagetool.AppImage --appimage-extract)
-sudo rm -rf /opt/appimagetool && sudo cp -r /tmp/squashfs-root /opt/appimagetool
-printf '#!/bin/sh\nexec /opt/appimagetool/AppRun "$@"\n' | sudo tee /usr/local/bin/appimagetool
-sudo chmod 755 /usr/local/bin/appimagetool
-appimagetool --version
+CEF_ROOT=$(shell/provision-cef.sh | tail -1)
+cmake -S shell -B ~/.cache/tobari-dev/build -G Ninja \
+  -DCEF_ROOT="$CEF_ROOT" -DCMAKE_BUILD_TYPE=Release
+cmake --build ~/.cache/tobari-dev/build
 ```
 
-## 3. llama.cpp (pinned source build)
+One build produces everything: the CEF wrapper library, the Rust blocking
+engine in `blocker/` (cargo is driven from CMake), the `tobari` binary, the two
+bundled extensions, and the filter lists staged beside the binary.
 
-Pinned tag: `b11053` (`https://github.com/ggml-org/llama.cpp`).
-Bump only deliberately; record the new tag in `core/models.toml`.
+If `~/.cache/cargo` is not writable, pass `-DTOBARI_CARGO_HOME=<dir>`; by
+default cargo uses a directory inside the build tree.
+
+## 4. Run
 
 ```sh
-git clone --branch b11053 --depth 1 https://github.com/ggml-org/llama.cpp
-cmake -S llama.cpp -B llama.cpp/build -G Ninja \
-  -DGGML_VULKAN=ON \
-  -DCMAKE_BUILD_TYPE=Release
-cmake --build llama.cpp/build --target llama-server
+~/.cache/tobari-dev/build/tobari
 ```
 
-NVIDIA laptop only: if the CUDA toolkit is present, `-DGGML_CUDA=ON` may
-replace `-DGGML_VULKAN=ON`. Never ROCm on RDNA2.
+Useful while developing:
 
-The resulting `llama-server` binary is supervised by `tobari-core`; it is
-never executed by hand in production and never bound to anything but
-`127.0.0.1` (enforced by the sidecar, see `SECURITY.md`).
+| | |
+|---|---|
+| `XDG_DATA_HOME=/tmp/p tobari` | throwaway profile; exercises first-run defaults |
+| `--remote-debugging-port=9222` | drive it from DevTools / scripts |
+| `--ozone-platform=x11` | run under XWayland (default is native Wayland) |
+| `TOBARI_NO_BLOCKING=1` | load without the engine, for benchmarking |
+| `TOBARI_LOG=info` | raise CEF's log level |
 
-Build and package inside the same container. Binaries link the container's
-glibc; keep the container image at or below the oldest host you support
-(Bazzite tracks Fedora stable, glibc 2.35+) so the AppImage and tarball run
-on a clean system.
-
-## 4. Build the sidecar and extension
+## 5. Verify
 
 ```sh
-cargo build --release -p tobari-core
-cd extension && npm ci && npm run build
+scripts/contrast.py                       # palette meets WCAG AA in both themes
+scripts/benchmark-ram.sh tobari|chrome    # BENCHMARKS.md methodology
 ```
 
-## 5. Run (Phase 1)
-
-```sh
-packaging/build-llama-server.sh
-./scripts/dev-run.sh
-```
-
-`build-llama-server.sh` stages the pinned `llama-server` into
-`packaging/build/staging/`; `dev-run.sh` builds the sidecar and the
-extension, copies `llama-server` to `~/.local/share/tobari/bin/`,
-installs the native messaging manifests, and prints the load
-instructions. Load `extension/dist/` as an unpacked extension, then
-select text on any page and use Explain with the network interface down.
-
-## Disk and time budget
-
-Phase 1 needs a few GB in-container. Phase 3 (Chromium build) needs
-~150 GB of writable space and 4–8 hours clean on 6 cores; that lands on
-the same disk as this checkout and is flagged here, not discovered later.
+The blocking engine has a standalone check: build `blocker/` with cargo and
+link a small C program against `libtobari_blocker.a` — see the test cases in
+`BENCHMARKS.md`.

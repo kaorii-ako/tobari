@@ -13,6 +13,7 @@ namespace tobari {
 
 class ChromeClient : public CefClient,
                      public CefLifeSpanHandler,
+                     public CefFocusHandler,
                      public CefRequestHandler,
                      public CefResourceRequestHandler,
                      public CefCommandHandler {
@@ -21,7 +22,14 @@ class ChromeClient : public CefClient,
 
   void OpenWindow(const std::string& url);
 
+  // Opens |url| as a foreground tab in the most recently focused window, or in
+  // a new window if none is open.
+  void OpenInLastWindow(const std::string& url);
+
   CefRefPtr<CefLifeSpanHandler> GetLifeSpanHandler() override { return this; }
+  CefRefPtr<CefFocusHandler> GetFocusHandler() override { return this; }
+
+  void OnGotFocus(CefRefPtr<CefBrowser> browser) override;
   CefRefPtr<CefRequestHandler> GetRequestHandler() override { return this; }
   CefRefPtr<CefCommandHandler> GetCommandHandler() override { return this; }
 
@@ -66,6 +74,8 @@ class ChromeClient : public CefClient,
   std::map<int, Page> pages_;
   int blocked_total_ = 0;
   int open_browsers_ = 0;
+  CefRefPtr<CefBrowser> last_focused_;
+  std::string pending_tab_url_;
 
   IMPLEMENT_REFCOUNTING(ChromeClient);
 };

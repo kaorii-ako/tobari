@@ -1,0 +1,67 @@
+# Tobari as a Flatpak.
+#
+# zypak is built from source here instead of using the Chromium BaseApp; see
+# the comment on that module.
+#
+# This manifest packages a build produced by the CMake project (see
+# docs/PACKAGING.md), which is how it is tested locally. It is not yet the
+# from-source manifest Flathub requires: that needs the pinned CEF archive as a
+# sha256-verified source and the adblock crate's dependencies vendored with
+# flatpak-cargo-generator, which docs/PACKAGING.md lists as the remaining step.
+app-id: dev.tobari.Browser
+runtime: org.freedesktop.Platform
+runtime-version: '26.08'
+sdk: org.freedesktop.Sdk
+command: tobari
+separate-locales: false
+
+finish-args:
+  - --require-version=1.8.2
+  - --share=ipc
+  - --share=network
+  - --socket=wayland
+  - --socket=fallback-x11
+  - --socket=pulseaudio
+  - --socket=cups
+  - --device=dri
+  - --filesystem=xdg-download
+  - --filesystem=xdg-run/pipewire-0
+  - --talk-name=org.freedesktop.Notifications
+  - --talk-name=org.freedesktop.FileManager1
+  - --talk-name=org.freedesktop.ScreenSaver
+  - --talk-name=org.freedesktop.secrets
+  - --system-talk-name=org.freedesktop.UPower
+  - --own-name=org.mpris.MediaPlayer2.chromium.*
+
+modules:
+  # zypak lets Chromium's sandbox work inside Flatpak's. Built here rather than
+  # taken from org.chromium.Chromium.BaseApp: on SELinux hosts (Fedora,
+  # Bazzite) a user-installed BaseApp cannot be layered, because flatpak copies
+  # its files with their flatpak_home_t label and the relabel is refused.
+  - name: zypak
+    buildsystem: simple
+    sources:
+      - type: git
+        url: https://github.com/refi64/zypak
+        tag: v2025.09
+        commit: 693a71c5ffa80ec9c9ce2ae03b1ccc493c698e53
+    build-commands:
+      - make SHELL=/bin/bash
+      - make install SHELL=/bin/bash FLATPAK_DEST=/app
+
+  - name: tobari
+    buildsystem: simple
+    sources:
+      - type: dir
+        path: ../../.flatpak-stage
+    build-commands:
+      - install -d /app/lib/tobari
+      - cp -a lib/. /app/lib/tobari/
+      - install -Dm755 tobari.sh /app/bin/tobari
+      - install -Dm644 dev.tobari.Browser.desktop /app/share/applications/dev.tobari.Browser.desktop
+      - install -Dm644 dev.tobari.Browser.metainfo.xml /app/share/metainfo/dev.tobari.Browser.metainfo.xml
+      - |
+        for size in 16 24 32 48 64 128 256 512; do
+          install -Dm644 icons/${size}x${size}/apps/dev.tobari.Browser.png \
+            /app/share/icons/hicolor/${size}x${size}/apps/dev.tobari.Browser.png
+        done

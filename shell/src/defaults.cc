@@ -66,7 +66,6 @@ CefRefPtr<CefValue> DuckDuckGo() {
   d->SetString("short_name", "DuckDuckGo");
   d->SetString("keyword", "duckduckgo.com");
   d->SetString("url", "https://duckduckgo.com/?q={searchTerms}");
-  d->SetString("favicon_url", "https://duckduckgo.com/favicon.ico");
   d->SetString("suggestions_url", "");
   d->SetInt("prepopulate_id", 92);
   d->SetBool("safe_for_autoreplace", true);

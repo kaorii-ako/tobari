@@ -1,0 +1,19 @@
+[Desktop Entry]
+Version=1.5
+Type=Application
+Name=Tobari
+GenericName=Web Browser
+Comment=A browser that closes over the window.
+Exec=tobari %U
+Icon=dev.tobari.Browser
+Terminal=false
+StartupNotify=true
+StartupWMClass=dev.tobari.Browser
+Categories=Network;WebBrowser;
+MimeType=text/html;text/xml;application/xhtml+xml;application/pdf;x-scheme-handler/http;x-scheme-handler/https;
+Keywords=web;browser;internet;privacy;adblock;
+Actions=new-window;
+
+[Desktop Action new-window]
+Name=New Window
+Exec=tobari --new-window

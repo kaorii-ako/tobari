@@ -22,3 +22,8 @@ shell/cef-bin/
 
 blocker/target/
 .claude/
+.flatpak-stage/
+.flatpak-build/
+.flatpak-repo/
+.flatpak-builder/
+tobari.flatpak

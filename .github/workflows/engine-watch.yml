@@ -1,0 +1,35 @@
+name: engine-watch
+
+# Daily check that Tobari's pinned Chromium is not behind Chrome stable.
+# Opens or updates one issue labelled engine-currency listing the security
+# fixes Tobari does not have, and whether a CEF build exists to bump to.
+# Never edits code, never releases, never posts anywhere but this repo's issues.
+
+on:
+  schedule:
+    - cron: "17 6 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  watch:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Ensure label
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh label create engine-currency --color B23410 --description "Pinned Chromium is behind Chrome stable" --force
+      - name: Check engine currency
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set +e
+          python3 scripts/cef-watch.py --issue
+          status=$?
+          set -e
+          echo "status=$status"
+          [ "$status" -le 2 ]

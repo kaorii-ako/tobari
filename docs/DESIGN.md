@@ -1,8 +1,7 @@
 # Tobari — visual system
 
-Normative. Supersedes the `shell/DESIGN.md` that exists at commit `7fc1749`,
-which described a direction that was never built and which the shipped chrome
-contradicts on nearly every point.
+Normative for every surface Tobari draws. Supersedes earlier versions of this
+file, including the custom-chrome design described at commit `e605c0e`.
 
 ## Point of view
 
@@ -12,78 +11,101 @@ read a page. It refuses to feel like software that wants to be used — no
 gradient as identity, no glass, no bounce, no floating card, no element that
 draws the eye without carrying information.
 
-The name is the curtain drawn at nightfall. The chrome is the curtain rail:
-you should stop noticing it within a day.
+The name is the curtain drawn at nightfall. The browser chrome is the curtain
+rail: you should stop noticing it within a day.
+
+## Where the design lives
+
+Tobari's window is Chromium's own: tab strip in the title bar, omnibox,
+extension toolbar. That was not the first plan. The first builds drew their own
+chrome in HTML, and it looked the way this document wanted. It could not have
+extensions, and that turned out to be a hard limit of CEF rather than a missing
+feature:
+
+- An Alloy-style window can host only Alloy-style browser views, which have no
+  Chrome extension system.
+- A Chrome-style window can host at most one Chrome-style browser view **for its
+  lifetime**. Measured on CEF 154: after the first, every further one is refused
+  with `Cannot add multiple Chrome style BrowserViews`, even once the first has
+  been detached. Swapping one view per tab in and out of a window is not
+  possible.
+
+Custom HTML chrome, real multi-tab and Chrome extensions cannot coexist in CEF.
+Extensions — password managers above all — decide whether a browser can be used
+every day, so the custom chrome went. The system below now applies to the
+surfaces Tobari still owns, and to Chromium's chrome through the one channel
+Chromium exposes for it, its palette.
+
+| surface | how the system reaches it |
+|---|---|
+| Browser chrome | Chromium palette set on first run: dark, grayscale |
+| New-tab page | Bundled extension overriding `chrome://newtab`, built from these tokens |
+| Blocking popup | Bundled toolbar extension, built from these tokens |
+| App icon | Drawn from the same ink, foreground and signal |
+| tobari.dev | Built from these tokens |
+
+### Browser chrome
+
+Chromium's theme engine generates its whole palette from a seed. The obvious
+seed — the vermilion signal with the "neutral" variant — produced a warm brown
+toolbar that fought the cool ink of the new-tab page. **Grayscale** keeps the
+chrome monochrome, which is what this system asks for anyway: the signal colour
+belongs in content, not in the frame.
+
+Chromium on Linux otherwise follows the GTK theme, which would override any
+palette with the desktop's, so first run selects Chromium's own. Those keys are
+written into the profile's `Preferences` before CEF starts: the theme service
+applies them only to windows created after it reloads, and setting them through
+the API alone left the first window half light.
+
+Chromium's own branding is replaced where CEF allows it: the product name and
+window-title format are overridden (`Name - Tobari`), the window class is
+`dev.tobari.Browser`, and the avatar button, the new-tab footer and every menu
+item or page action that fronts a Google service are hidden.
 
 ## Typography
 
-**IBM Plex Sans** for interface text, **IBM Plex Mono** for machine data.
-Both OFL, both bundled as latin `woff2` subsets in `shell/ui/fonts/` — the
-browser makes no network request to render its own interface.
+**IBM Plex Sans** for interface text, **IBM Plex Mono** for machine data. Both
+OFL, bundled as latin `woff2` subsets — nothing Tobari draws makes a network
+request for a font.
 
-Plex was drawn as an engineering typeface. Its squared terminals, low stroke
-contrast and slightly mechanical rhythm read as instrumentation. Inter and the
-system humanist faces read as consumer-friendly, which is the opposite of the
-register this product wants, and Inter in particular is the default that makes
-an interface look like every other interface.
-
-Mono is not decorative here — it marks anything the machine produced rather
-than anything a person wrote: URLs, schemes, bang tokens, counters, key hints,
-readout values. Typeface carries meaning.
-
-### Scale
-
-Tight at chrome sizes where a pixel is visible, opening toward a 1.2 ratio at
-display sizes.
+Plex was drawn as an engineering typeface; its squared terminals and low stroke
+contrast read as instrumentation. Mono marks anything the machine produced
+rather than anything a person wrote: URLs, bang tokens, counters, readouts.
 
 | token | px | use |
 |---|---|---|
 | `--fs-100` | 10.5 | micro caps labels, counters |
-| `--fs-200` | 11.5 | tab titles, secondary |
+| `--fs-200` | 11.5 | secondary |
 | `--fs-300` | 12.5 | interface default |
 | `--fs-400` | 13.5 | emphasis, new-tab input |
-| `--fs-500` | 15 | — |
-| `--fs-600` | 17 | — |
-| `--fs-700` | 21 | — |
-| `--fs-800` | 28 | — |
-| `--fs-900` | 38 | new-tab wordmark |
+| `--fs-500` | 15 | popup host name |
+| `--fs-900` | 38 | wordmark, popup count |
 
 Line height `--lh-tight` 1.2 / `--lh-base` 1.45 / `--lh-loose` 1.62.
-Tracking `--track-tight` -0.011em for sans, `--track-normal` 0 for mono,
-`--track-caps` 0.09em for micro caps.
 
 ## Colour
 
-Monochrome chrome, one signal. The interface is a neutral ink ramp; colour
-appears only where it means something. The identity comes from typography,
-density and restraint — not from a brand hue smeared across surfaces.
-
-The single accent is a muted vermilion (朱色), used at exactly three places:
-the focus ring, the active-tab hairline, and a live block counter. It is never
-a background, never a gradient, never decoration.
+A neutral ink ramp and one signal. Colour appears only where it means
+something. The accent is a muted vermilion (朱色) used for focus rings, the
+blocking switch, the badge and a few single marks — never a background, never a
+gradient.
 
 | token | night | daybreak | role |
 |---|---|---|---|
-| `--ink-000` | `#0a0a0c` | `#faf9f7` | window base |
-| `--ink-050` | `#0f0f12` | `#f2f1ee` | chrome |
-| `--ink-100` | `#141418` | `#ffffff` | surface, overlays |
-| `--ink-200` | `#1b1b20` | `#eceae6` | raised, active tab |
-| `--ink-300` | `#23232a` | `#e2e0db` | hover |
-| `--line-hair` | `#1e1e25` | `#e4e1db` | internal division |
-| `--line-firm` | `#2b2b34` | `#d3cfc7` | overlay edge |
+| `--ink-000` | `#0a0a0c` | `#faf9f7` | base |
+| `--ink-100` | `#141418` | `#ffffff` | surface |
+| `--ink-200` | `#1b1b20` | `#eceae6` | raised |
 | `--fg-0` | `#f2f2f5` | `#17171a` | primary text |
-| `--fg-1` | `#b9b9c4` | `#43434b` | secondary text |
-| `--fg-2` | `#8f8f9c` | `#61616b` | tertiary text |
+| `--fg-1` | `#b9b9c4` | `#43434b` | secondary |
+| `--fg-2` | `#8f8f9c` | `#61616b` | tertiary |
 | `--fg-3` | `#6a6a77` | `#80808b` | non-informational only |
 | `--signal` | `#ff6b3d` | `#b23410` | focus, active, live count |
-| `--secure` | `#7fb894` | `#2f6b4a` | https |
-| `--warn` | `#d9a441` | `#8a6212` | http |
-| `--danger` | `#e0574f` | `#b3302a` | destructive |
 
 ### Measured contrast
 
-Worst case for each informational token against **every** backdrop it can sit
-on (`--ink-000/050/100/200`), computed in `scripts/contrast.py`:
+Worst case for each informational token against every backdrop it can sit on,
+from `scripts/contrast.py`:
 
 | token | night | daybreak |
 |---|---|---|
@@ -91,168 +113,63 @@ on (`--ink-000/050/100/200`), computed in `scripts/contrast.py`:
 | `--fg-1` | 8.82:1 | 8.16:1 |
 | `--fg-2` | 5.37:1 | 5.10:1 |
 | `--signal` | 6.06:1 | 5.15:1 |
-| `--secure` | 7.50:1 | 5.26:1 |
-| `--warn` | 7.63:1 | 4.56:1 |
-| `--danger` | 4.61:1 | 5.18:1 |
 
-Every one clears WCAG AA for normal text in both themes. `--fg-3` sits at
-3.22:1 / 3.25:1 and is therefore restricted to borders, icon strokes and
-decorative glyphs — it never carries information.
+All clear WCAG AA for normal text in both themes. `--fg-3` (3.22:1 / 3.25:1)
+never carries information.
 
-## Space, radius, border, elevation
+## Space, radius, elevation, motion
 
-Spacing is a 2/4/6/8/12/16/20/24/32/40/56 ramp (`--sp-1` … `--sp-12`).
-
-Radii are deliberately small: `--r-xs` 2, `--r-sm` 3, `--r-md` 5, `--r-lg` 8,
-`--r-full`. Instruments have tight corners; `rounded-2xl` is the tell of the
-generic look this system rejects.
-
-Borders are a single hairline (`--bw` 1px). There is exactly **one** elevation
-(`--shadow-overlay`), used only by surfaces that float above the page —
-the omnibox dropdown and the menu. Nothing else casts a shadow.
-
-## Motion
-
-Durations and easings are tokens; no animation in the shell uses a literal.
+Spacing `--sp-1`…`--sp-12` on a 2/4/6/8/12/16/20/24/32/40/56 ramp. Radii are
+small (`2/3/5/8px`); `rounded-2xl` is the tell of the generic look this rejects.
+One hairline border, one elevation, used only by surfaces that float.
 
 | token | ms | use |
 |---|---|---|
-| `--dur-1` | 90 | state change, hover |
-| `--dur-2` | 160 | enter/exit of small elements |
-| `--dur-3` | 240 | panel |
-| `--dur-4` | 420 | curtain, wordmark |
+| `--dur-1` | 90 | state change |
+| `--dur-2` | 160 | small enter/exit |
+| `--dur-3` | 240 | larger surfaces |
+| `--dur-4` | 420 | wordmark reveal |
 
-Easings: `--ease-out`, `--ease-in`, `--ease-inout`, `--ease-snap`. There is no
-spring and no overshoot anywhere. An instrument does not bounce; the previous
-chrome used `cubic-bezier(0.34, 1.56, 0.64, 1)`, which is where a lot of its
-consumer-app feel came from.
+No spring, no overshoot. Under `prefers-reduced-motion` every duration becomes
+`0ms` and scripts take the instant branch.
 
-Under `prefers-reduced-motion`, every duration token becomes `0ms` and the
-JavaScript takes the instant branch — state changes, never slower motion.
-
-### Enforced performance rules
-
-- GSAP animates `transform` and `opacity` only. The previous chrome animated
-  `flex-basis`, `min-width` and `padding` on tab open/close — layout thrash on
-  a shared flex container, on every tab event. Tabs now fade and scale; width
-  resolves in one reflow.
-- **The GSAP ticker is put to sleep when no tween is active.** GSAP holds a
-  `requestAnimationFrame` loop open by default, which is a continuous render
-  loop in the chrome. `motion.js` calls `gsap.ticker.sleep()` once the global
-  timeline is empty and `wake()` before any animation. Measured: idle CPU fell
-  from 8.00% to 0.50% of one core.
-- Every repeating tween is registered and killed on unmount. Tab spinners are
-  keyed per tab and cleared on re-render; nothing survives on a detached node.
-- Repeating tweens pause on window blur.
-
-## The chrome is the window
-
-The window is frameless (`CefWindowDelegate::IsFrameless`). There is no
-separate OS title bar above the chrome — the tab strip *is* the title bar, with
-minimise / maximise / close at its right edge and a drag zone between them and
-the new-tab button.
-
-CEF does not fire `OnDraggableRegionsChanged` for a Views `CefBrowserView`, so
-the `-webkit-app-region` CSS path is inert here. The header for `IsFrameless`
-says the intended path is for the client to call
-`CefWindow::SetDraggableRegions()` directly, so the UI computes its own
-regions — the whole chrome as draggable, minus a non-draggable rect per
-interactive cluster — and pushes them over the existing IPC on load, resize,
-state change and whenever an overlay opens or closes. The CSS is kept as well,
-harmless, in case CEF wires the callback later.
-
-## Density
-
-The chrome is **72px**: a 30px tab strip and a 34px toolbar. The previous
-build was 84px, below an OS title bar that no longer exists. Counting the
-title bar it replaces, the window gives back roughly 40px of page height.
-
-It earns the rest of its height by never needing a second row: the omnibox
-carries scheme state, bang state and the block counter inline, and the side
-panel is the only surface that can grow. When the omnibox dropdown opens the
-chrome grows to fit it and returns to 72px when it closes.
-
-## Surfaces are separate browser views
-
-The chrome is a 72px browser view at the top of the window; the side panel is a
-**second** browser view docked to the right of the content area, not part of the
-chrome document. The first build put the panel inside the chrome document, where
-`position: fixed` clipped it to the 72px strip — an HTML surface cannot paint
-outside the browser view that hosts it.
-
-The window layout is therefore a vertical box of [chrome, body], where body is a
-horizontal box of [content, panel]. The panel wrapper is a fixed-width panel
-(320px) toggled with `SetVisible`, so a closed panel costs no layout and no
-paint.
-
-The omnibox dropdown has the same constraint and takes the other available
-answer: it stays in the chrome document and the chrome grows to fit it, then
-returns to 72px. That is acceptable for a transient overlay and wrong for a
-persistent panel, which is why they differ.
-
-## Blocking
-
-`adblock-rust` (the `adblock` crate, the engine Brave ships) is compiled as a
-Rust `staticlib` in `blocker/` and linked into the C++ binary through a small C
-ABI. Cargo is driven from CMake, so the whole thing builds with one
-`cmake --build`.
-
-It runs in `CefResourceRequestHandler::OnBeforeResourceLoad` and returns
-`RV_CANCEL`, which cancels the request *before* it loads. For a third-party
-subframe that means the renderer process is never created — that is where the
-memory saving comes from, not from the bytes not transferred. Main-frame
-navigations are never blocked, and `tobari://`, `data:`, `blob:` and `about:`
-are skipped.
-
-Lists: EasyList, EasyPrivacy and uBlock Origin's `filters` and `privacy` —
-**141,987 rules**. They load from `$XDG_DATA_HOME/tobari/filters/` if present,
-else from the copy staged beside the binary. `scripts/update-filters.sh`
-refreshes them and writes `SHA256SUMS`; updates are plain GETs carrying no
-identifier.
-
-The shield in the omnibox shows the live count for the current page and toggles
-blocking per host; the count resets when the host changes. Measured cost of the
-resident engine: **+5 MB PSS**.
+**Animation never runs while idle.** GSAP holds a `requestAnimationFrame` loop
+open even with no tweens; `motion.js` sleeps its ticker whenever the timeline is
+empty. Measured on the earlier shell: idle CPU fell from 8.00% to 0.50% of one
+core. GSAP animates `transform` and `opacity` only.
 
 ## New-tab page
 
-The only surface where Lenis and Vanta are permitted, and the only place the
-design is allowed to be expressive.
+The one surface allowed to be expressive. An asymmetric fold, not a centred
+hero: the 帳 glyph as a quiet mark, the wordmark revealed per character, a mono
+command line that resolves bangs locally, and a readout (`bangs / engine /
+telemetry`). Below the fold, the full bang index as a hairline-ruled list.
 
-It is deliberately not a centred hero: an asymmetric two-column fold, the 帳
-glyph as a quiet 6%-opacity mark, the wordmark revealed per-character, a mono
-command line, and an instrument readout (`bangs / engine / telemetry`). Below
-the fold is the full bang index as a dense hairline-ruled two-column list —
-an index page, not a grid of cards.
+Smooth scrolling (Lenis) and the animated background (Vanta) are both **off by
+default** because both cost measurable idle CPU — 4.3% and 3.5% of a core on
+the earlier shell. Vanta lazy-loads three.js only when enabled and is destroyed,
+not paused, on blur. `react-bits` effects (split text, scramble, magnetic hover)
+are reimplemented with GSAP against these tokens rather than shipping React.
 
-`react-bits` components were used as the starting point for three effects —
-split-text reveal, decrypt/scramble text, magnetic hover — and reimplemented
-against these tokens without React. Rationale in the README.
+## Blocking popup
 
-### Measured cost
+A readout, not a dashboard: the site, a large mono count of requests blocked on
+this page, a switch for the site, and a three-column strip of session total,
+rule count and list age. The toolbar badge carries the same count in the signal
+colour so the popup rarely needs opening.
 
-| configuration | PSS | idle CPU |
-|---|---|---|
-| defaults, no blocker | 373.3 MB | 0.50% of one core |
-| defaults + adblock engine resident | 378.2 MB | 0.30% of one core |
-| Lenis on | — | 4.80% of one core |
-| Vanta on, visible | 401.3 MB | 4.00% of one core |
-| Vanta on, suspended | 403.8 MB | 1.10% of one core |
+## App icon
 
-Both are **off by default** because both cost measurable idle CPU. Vanta
-lazy-loads three.js only when enabled, so 615 KB never enters the page
-otherwise, and is destroyed outright on blur or tab-hide rather than paused,
-because Vanta exposes no frame-rate cap.
+The ink square, 帳 in Noto Serif CJK, and one vermilion hairline above it — the
+mark the original tab strip used for the active tab, read here as the curtain
+rail. Below 48px a serif hairline dissolves into grey, so 16–48px are drawn
+separately from a heavier sans glyph at a larger size rather than downscaled.
+`shell/icons/render-icon.py` renders every size.
 
-## Accessibility
+## Correction
 
-- Every interactive element has a designed focus state: a 2px `--signal`
-  outline at 2px offset via `:focus-visible`. The previous chrome had none and
-  actively removed the ring from the omnibox with `outline: none`.
-- The tab strip is a real `role="tablist"` of `<button role="tab">` with roving
-  tabindex; `←`/`→` move between tabs and `Delete` closes the focused one.
-- The omnibox is a `role="combobox"` wired to the dropdown with
-  `aria-expanded` and `aria-activedescendant`.
-- Contrast is measured, not asserted; see the table above.
-- Motion never carries information on its own — every animated state also has
-  a static representation (`aria-selected`, `aria-pressed`, text, colour).
+An earlier version of this file and of commit `5ec156e` stated that CEF does not
+fire `OnDraggableRegionsChanged` for a Views browser view. That was wrong. The
+logging used to check it never printed; once replaced, the callback fired as
+documented. The conclusion has no bearing on the current build, which has no
+custom title bar, but it was published as fact and is corrected here.

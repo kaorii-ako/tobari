@@ -23,6 +23,8 @@ class App : public CefApp, public CefBrowserProcessHandler, public CefResourceBu
                                      CefRefPtr<CefCommandLine> command_line) override;
   void OnContextInitialized() override;
   CefRefPtr<CefClient> GetDefaultClient() override;
+  bool OnAlreadyRunningAppRelaunch(CefRefPtr<CefCommandLine> command_line,
+                                   const CefString& current_directory) override;
 
  private:
   IMPLEMENT_REFCOUNTING(App);

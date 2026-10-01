@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>dev.tobari.Browser</id>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>MIT</project_license>
+  <name>Tobari</name>
+  <summary>A browser that closes over the window</summary>
+  <developer id="dev.tobari">
+    <name>Tobari</name>
+  </developer>
+  <description>
+    <p>
+      Tobari is a Chromium browser for Linux that blocks ads and trackers at the
+      network layer, before they load, and sends nothing home. It has no account
+      system and no server.
+    </p>
+    <ul>
+      <li>Network-level blocking with EasyList, EasyPrivacy and uBlock Origin's lists, controlled per site from the toolbar</li>
+      <li>DuckDuckGo-style !bangs resolved on your machine, so the search engine never sees a bang query</li>
+      <li>Private defaults: no search suggestions, no prediction, third-party cookies blocked</li>
+      <li>Chrome Web Store extensions, including password managers</li>
+    </ul>
+    <p>
+      Tobari does not claim to make you anonymous. Its threat model and every
+      tradeoff it makes are published in SECURITY.md.
+    </p>
+  </description>
+  <launchable type="desktop-id">dev.tobari.Browser.desktop</launchable>
+  <url type="homepage">https://tobari.dev</url>
+  <url type="vcs-browser">https://github.com/kaorii-ako/tobari</url>
+  <url type="bugtracker">https://github.com/kaorii-ako/tobari/issues</url>
+  <categories>
+    <category>Network</category>
+    <category>WebBrowser</category>
+  </categories>
+  <provides>
+    <binary>tobari</binary>
+  </provides>
+  <supports>
+    <control>pointing</control>
+    <control>keyboard</control>
+  </supports>
+  <content_rating type="oars-1.1"/>
+  <releases>
+    <release version="0.1.0" date="2026-10-01" type="development">
+      <description>
+        <p>First development build: Chromium 154 via CEF, built-in blocking, bangs, private defaults.</p>
+      </description>
+    </release>
+  </releases>
+</component>

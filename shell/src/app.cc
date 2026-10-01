@@ -14,6 +14,7 @@
 #include "paths.h"
 #include "include/cef_pack_strings.h"
 #include "include/base/cef_callback.h"
+#include "include/cef_command_ids.h"
 #include "include/cef_command_line.h"
 #include "include/wrapper/cef_closure_task.h"
 #include "include/cef_parser.h"
@@ -61,6 +62,25 @@ void App::OnBeforeCommandLineProcessing(const CefString& process_type,
   command_line->AppendSwitch("disable-component-update");
   command_line->AppendSwitch("disable-sync");
 
+  // Measured with --log-net-log on an idle fresh profile: the component
+  // updater, Chromium's account-cookie check (ListAccounts) and the network
+  // time service all contact Google despite --disable-component-update and
+  // sign-in being off. Point the first two at a closed local port so nothing
+  // leaves the machine; this is Chromium's own endpoint configuration and does
+  // not touch navigation in tabs. The extension updater has its own URL, so
+  // Web Store extensions still update.
+  command_line->AppendSwitchWithValue("component-updater", "url-source=http://127.0.0.1:9/");
+  command_line->AppendSwitchWithValue("gaia-url", "http://127.0.0.1:9/");
+
+  std::string disabled = command_line->GetSwitchValue("disable-features").ToString();
+  for (const char* feature : {"NetworkTimeServiceQuerying"}) {
+    if (disabled.find(feature) == std::string::npos) {
+      if (!disabled.empty()) disabled += ",";
+      disabled += feature;
+    }
+  }
+  command_line->AppendSwitchWithValue("disable-features", disabled);
+
   std::vector<std::string> dirs = ExtensionDirs(ExecutableDir() + "/extensions");
   for (const std::string& d : ExtensionDirs(ExtensionsDir())) dirs.push_back(d);
   if (command_line->HasSwitch("load-extension")) {
@@ -94,14 +114,17 @@ namespace {
 
 // The first argument that is not a switch is a URL or path handed to us by the
 // desktop (default-browser handler, `tobari https://...`, or a file manager).
-std::string StartUrlFromCommandLine() {
-  CefRefPtr<CefCommandLine> cl = CefCommandLine::GetGlobalCommandLine();
+std::string UrlFromCommandLine(CefRefPtr<CefCommandLine> cl, const std::string& cwd) {
   std::vector<CefString> args;
   cl->GetArguments(args);
   for (const CefString& a : args) {
     std::string v = a.ToString();
     if (v.empty()) continue;
     if (v[0] == '/') return "file://" + v;
+    if (v.find("://") == std::string::npos && v.rfind("about:", 0) != 0 &&
+        v.rfind("data:", 0) != 0 && Readable((cwd.empty() ? std::string(".") : cwd) + "/" + v)) {
+      return "file://" + (cwd.empty() ? std::string(".") : cwd) + "/" + v;
+    }
     return v;
   }
   return std::string();
@@ -124,8 +147,19 @@ void App::OnContextInitialized() {
     v->SetDictionary(prefs);
     WriteFileAtomic(dump, CefWriteJSON(v, JSON_WRITER_PRETTY_PRINT).ToString());
   }
-  const std::string requested = StartUrlFromCommandLine();
+  const std::string requested = UrlFromCommandLine(CefCommandLine::GetGlobalCommandLine(), std::string());
   ChromeClient::Get()->OpenWindow(requested.empty() ? kStartUrl : requested);
+}
+
+bool App::OnAlreadyRunningAppRelaunch(CefRefPtr<CefCommandLine> command_line,
+                                      const CefString& current_directory) {
+  const std::string url = UrlFromCommandLine(command_line, current_directory.ToString());
+  if (url.empty()) {
+    ChromeClient::Get()->OpenWindow(kStartUrl);
+  } else {
+    ChromeClient::Get()->OpenInLastWindow(url);
+  }
+  return true;
 }
 
 CefRefPtr<CefClient> App::GetDefaultClient() {

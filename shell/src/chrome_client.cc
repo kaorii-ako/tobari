@@ -84,8 +84,36 @@ void ChromeClient::OpenWindow(const std::string& url) {
 }
 
 void ChromeClient::OnAfterCreated(CefRefPtr<CefBrowser> browser) {
+  std::string pending;
+  {
+    std::lock_guard<std::mutex> lock(mutex_);
+    ++open_browsers_;
+    if (!last_focused_) last_focused_ = browser;
+    pending.swap(pending_tab_url_);
+  }
+  if (!pending.empty()) browser->GetMainFrame()->LoadURL(pending);
+}
+
+void ChromeClient::OnGotFocus(CefRefPtr<CefBrowser> browser) {
   std::lock_guard<std::mutex> lock(mutex_);
-  ++open_browsers_;
+  last_focused_ = browser;
+}
+
+void ChromeClient::OpenInLastWindow(const std::string& url) {
+  CefRefPtr<CefBrowser> target;
+  {
+    std::lock_guard<std::mutex> lock(mutex_);
+    target = last_focused_;
+  }
+  if (!target || !target->GetHost()->CanExecuteChromeCommand(IDC_NEW_TAB)) {
+    OpenWindow(url);
+    return;
+  }
+  {
+    std::lock_guard<std::mutex> lock(mutex_);
+    pending_tab_url_ = url;
+  }
+  target->GetHost()->ExecuteChromeCommand(IDC_NEW_TAB, CEF_WOD_NEW_FOREGROUND_TAB);
 }
 
 void ChromeClient::OnBeforeClose(CefRefPtr<CefBrowser> browser) {
@@ -93,6 +121,7 @@ void ChromeClient::OnBeforeClose(CefRefPtr<CefBrowser> browser) {
   {
     std::lock_guard<std::mutex> lock(mutex_);
     pages_.erase(browser->GetIdentifier());
+    if (last_focused_ && last_focused_->IsSame(browser)) last_focused_ = nullptr;
     quit = --open_browsers_ <= 0;
   }
   if (quit) {

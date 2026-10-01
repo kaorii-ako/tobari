@@ -2,86 +2,100 @@
 
 **A browser that closes over the window.**
 
-A privacy-first Chromium browser for Linux and macOS. Less RAM than stock
-Chrome at equal tab count, nothing sent home, and honest about where the
-savings come from and what they cost.
+A Chromium browser for Linux that blocks ads and trackers before they load,
+resolves `!bangs` on your machine, sends nothing home, and publishes what it
+costs and what it gives up.
 
 Tobari does not claim to make you invisible. It gives you something you close
-deliberately. No "untraceable", no "anonymous", no claim we cannot defend in
-`SECURITY.md`.
+deliberately. No "untraceable", no "anonymous", no claim that is not backed by
+[SECURITY.md](SECURITY.md) or [BENCHMARKS.md](BENCHMARKS.md).
 
-## Status
+> **Security notice (2026-10-01).** Tobari runs Chromium 154.0.8037.58. Chrome
+> 154.0.8037.92 fixes 32 security bugs, one Critical, and no CEF build carrying
+> it exists yet. Tobari will ship it within 3 days of one appearing. Details and
+> the running record are at the top of [SECURITY.md](SECURITY.md).
 
-**Phase 1 in progress.** The browser shell runs: a CEF 154 window with its own
-chrome (tab strip, omnibox, side panel, menu, settings), a new-tab page, and
-locally-resolved DuckDuckGo-style `!bangs`. The Chromium sandbox stays on.
-
-Built and measured on Bazzite / Wayland, 2026-09-30:
+## What it is
 
 | | |
 |---|---|
-| Chrome UI | vanilla ES modules + GSAP, no framework, no bundler |
-| Blocking | adblock-rust, 141,987 rules, cancels before load |
-| Window | frameless — the tab strip is the title bar |
-| UI payload | 245 KB total incl. bundled fonts (three.js lazy, opt-in only) |
-| Idle CPU | 0.30% of one core, GSAP ticker asleep |
-| Idle memory | 378 MB PSS across 11 processes |
-| Contrast | every informational token clears WCAG AA in both themes |
+| Engine | Chromium 154 via CEF, Chromium's own tabs and toolbar |
+| Blocking | `adblock-rust`, ~142,000 rules from EasyList, EasyPrivacy and uBlock Origin; cancels requests before they load; per-site switch and badge count in the toolbar |
+| Bangs | 35 DuckDuckGo-style bangs, resolved locally; the search engine never sees a bang query |
+| Extensions | Chrome Web Store, including password managers |
+| Defaults | DuckDuckGo, no suggestions, no prediction, third-party cookies blocked |
+| Phoning home | none on its own except weekly filter-list updates — measured, see SECURITY.md |
+| Sandbox | always on; never `--no-sandbox` |
+| Packages | Flatpak (primary), per-user install |
 
-Bookmarks, history and reading list persist to
-`$XDG_DATA_HOME/tobari/profiles/default/` as JSON.
+Measured on 2026-10-01, ten identical tabs, three interleaved runs:
+**905.9 MB PSS against Chrome's 1,285.4 MB (29.5% lower), 20 processes against
+66.** Blocking accounts for 200 MB and 14 of those processes. Some of the gap
+is features Tobari does not have. Method and caveats in
+[BENCHMARKS.md](BENCHMARKS.md).
 
-**RAM at 10 identical tabs: 821.8 MB PSS against Chrome's 933.2 MB — 11.9%
-lower, with 20 processes against 45.** Blocking accounts for 7.7 points of
-that. Method, caveats and the Phase 2 decision are in `BENCHMARKS.md`; the
-short version is that Phase 2 is **not** justified by this measurement.
+## Status
 
-Not yet done in Phase 1: a week of daily-driver use, and the extension question
-below.
+Phase 1 — the browser — works end to end and is packaged. Not yet done:
 
-**Known constraint, from CEF's own headers:** an Alloy-style window can host
-only Alloy-style browser views, and a Chrome-style window can host *at most one*
-Chrome-style browser view. Tobari uses Alloy style to get a custom UI with real
-multi-tab, which means Chrome extension support is not available in this
-configuration. That is the open architectural question for Phase 1 acceptance.
+- a week of daily-driver use on Wayland (the acceptance test in the brief);
+- the from-source Flatpak manifest Flathub requires (`docs/PACKAGING.md`);
+- a published release and signing key (`docs/RELEASING.md`).
 
-## Phases
+[docs/VALIDATION.md](docs/VALIDATION.md) still records **no go/pivot/stop
+decision**; Phase 1 was built under a waiver.
 
-| Phase | What | Gate |
-|---|---|---|
-| 1 | Browser shell on CEF with built-in `adblock-rust` blocking | Daily driver for a week on Wayland; Flatpak; extensions work; RAM measured vs Chrome |
-| 2 | Chromium patch set | **Conditional** — only if Phase 1 numbers show a named limit CEF cannot pass |
-| 3 | Local AI assistant in the side panel | Browser is a stable daily driver |
+The local AI assistant is planned for Phase 3 and is not in this build. Earlier
+AI work is kept on the `phase-3-ai` branch.
+
+## Build
+
+Inside a distrobox container on immutable distributions; nothing is layered onto
+the host. Full steps in [docs/DEV-LINUX.md](docs/DEV-LINUX.md).
+
+```sh
+CEF_ROOT=$(shell/provision-cef.sh | tail -1)      # pinned CEF, SHA-1 checked, cached
+cmake -S shell -B build -G Ninja -DCEF_ROOT="$CEF_ROOT" -DCMAKE_BUILD_TYPE=Release
+cmake --build build
+./build/tobari
+```
+
+Install:
+
+```sh
+packaging/flatpak/build.sh build --install        # Flatpak
+packaging/install.sh build [--set-default]        # per-user, into ~/.local
+```
 
 ## Layout
 
 ```
-blocker/    Rust staticlib wrapping adblock-rust behind a C ABI
-shell/      Phase 1: CEF browser shell — src/ (C++), ui/ (chrome + new tab),
-            filters/ (EasyList, EasyPrivacy, uBO)
-patches/    Phase 2: patch set against Chromium stable (conditional)
-docs/       VALIDATION, DEV-LINUX, DEV-MACOS, PACKAGING, RELEASING
-site/       Static marketing site for Netlify — no trackers (not started)
-SECURITY.md Threat model and every security tradeoff, stated plainly
+shell/src/         C++: Chromium client, blocking, bangs, defaults, list updates,
+                   the bridge to the toolbar extension
+shell/extensions/  bundled extensions: new-tab page, blocking control
+shell/ui/          design tokens, new-tab page, bang table (bangs.json)
+shell/filters/     bundled filter-list snapshot
+blocker/           Rust staticlib wrapping adblock-rust behind a C ABI
+packaging/         desktop entry, AppStream data, installer, Flatpak
+site/              tobari.dev — static, no trackers, no cookies
+scripts/           benchmarks, contrast check, filter refresh, engine watch
 ```
+
+## Docs
+
+- [SECURITY.md](SECURITY.md) — threat model, every tradeoff, the engine-currency record
+- [BENCHMARKS.md](BENCHMARKS.md) — memory method, raw numbers, the Phase 2 question
+- [docs/DESIGN.md](docs/DESIGN.md) — visual system and why the browser chrome is Chromium's
+- [docs/PACKAGING.md](docs/PACKAGING.md) — Flatpak, per-user install, sandboxing per format
+- [docs/RELEASING.md](docs/RELEASING.md) — the CEF security bump, signing, distribution
+- [docs/DEV-LINUX.md](docs/DEV-LINUX.md) — building
+- [docs/DEV-MACOS.md](docs/DEV-MACOS.md) — why macOS is not a Phase 1 target
 
 ## Platforms
 
-Linux and macOS. Windows is permanently out of scope.
+Linux. macOS is not a Phase 1 target (no Mac to test on, no notarization
+account). Windows is out of scope permanently.
 
-macOS is **deferred until after Phase 1**: there is no Mac to test on and no
-paid Apple Developer account, so a `.dmg` would be Gatekeeper-blocked. Treat
-macOS as a build-from-source target. See `docs/DEV-MACOS.md`.
+## License
 
-## Build
-
-Linux builds happen inside a distrobox container. Start at
-`docs/DEV-LINUX.md` step one. Nothing is ever layered onto the Bazzite host.
-
-## Docs needing rewrite for the new phase order
-
-`docs/DESIGN.md` is the normative visual system. `docs/PACKAGING.md`,
-`docs/RELEASING.md` and `docs/DEV-MACOS.md` were written
-when Phase 1 shipped an AppImage carrying an AI sidecar. Flatpak is now the
-primary format and the payload is a browser. `SECURITY.md` still describes the
-Phase 3 prompt-injection design.
+MIT.
