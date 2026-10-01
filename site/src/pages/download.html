@@ -1,0 +1,162 @@
+      <div class="wrap">
+        <header class="grid page-head">
+          <p class="crumb caps">Download</p>
+          <h1 class="page-title">There is no release yet.</h1>
+          <p class="status-line"><span class="status-dot" aria-hidden="true"></span>Status: Phase 1 in progress · no binaries · no signing key · no checksums</p>
+          <p class="page-meta">
+            Nothing has been published, so there is nothing to download. When a release exists it will be on
+            <a href="https://github.com/kaorii-ako/tobari/releases" rel="noreferrer">GitHub Releases</a>, never on this site.
+            Until then, Tobari can be built from source on Linux.
+          </p>
+        </header>
+
+        <section class="section" aria-labelledby="verify-title">
+          <div class="grid">
+            <header class="section-head" data-reveal>
+              <p class="section-no caps">01 · Verify</p>
+              <h2 class="section-title" id="verify-title">How a release will be verified</h2>
+              <p class="section-sub">Every release will be signed with minisign. These steps are here so you can check the process before there is anything to check.</p>
+            </header>
+            <ol class="steps section-body">
+              <li data-reveal>
+                <div>
+                  <h3>Get the public key from two places</h3>
+                  <p>
+                    The key will be committed to the repository root as <code>tobari-release.pub</code> and published on
+                    this site, so one copy can be checked against the other. Neither exists yet.
+                  </p>
+                  <dl class="keybox">
+                    <dt>Public key</dt><dd>not yet published</dd>
+                    <dt>Repository</dt><dd>tobari-release.pub · not yet published</dd>
+                    <dt>This site</dt><dd>/tobari-release.pub · not yet published</dd>
+                  </dl>
+                </div>
+              </li>
+              <li data-reveal>
+                <div>
+                  <h3>Download the release files</h3>
+                  <p>
+                    From <a href="https://github.com/kaorii-ako/tobari/releases" rel="noreferrer">GitHub Releases</a>:
+                    the build, plus <code>SHA256SUMS</code> and <code>SHA256SUMS.minisig</code>. One signature covers the
+                    checksum file, and the checksum file covers every artifact.
+                  </p>
+                </div>
+              </li>
+              <li data-reveal>
+                <div>
+                  <h3>Check the signature, then the checksums</h3>
+<pre class="block" tabindex="0"><code>minisign -Vm SHA256SUMS -P &lt;public key, not yet published&gt;
+sha256sum -c SHA256SUMS --ignore-missing</code></pre>
+                  <p>
+                    <code>minisign -V</code> must print <code>Signature and comment signature verified</code>. If it does
+                    not, the download is not Tobari. Stop, and
+                    <a href="https://github.com/kaorii-ako/tobari/issues" rel="noreferrer">open an issue</a>.
+                  </p>
+                  <p>
+                    Signing happens on the developer's machine, not in CI, so a compromised workflow cannot produce a
+                    signed build. If Tobari later ships on Flathub, those builds carry Flathub's signature, not this key.
+                    <a href="/docs/releasing/#signing-key">RELEASING § Signing key</a>
+                  </p>
+                </div>
+              </li>
+            </ol>
+          </div>
+        </section>
+
+        <section class="section" id="build" aria-labelledby="build-title">
+          <div class="grid">
+            <header class="section-head" data-reveal>
+              <p class="section-no caps">02 · Linux</p>
+              <h2 class="section-title" id="build-title">Build from source</h2>
+              <p class="section-sub">
+                Everything happens inside a distrobox container; nothing is installed on the host. The steps follow
+                <code>shell/CMakeLists.txt</code> and the CEF provisioning script in the repository.
+              </p>
+            </header>
+            <ol class="steps section-body">
+              <li data-reveal>
+                <div>
+                  <h3>Create and enter the container</h3>
+<pre class="block" tabindex="0"><code>distrobox create --name tobari --image registry.fedoraproject.org/fedora:41
+distrobox enter tobari</code></pre>
+                  <p>All later steps run inside it. On an atomic system such as Bazzite, never layer build tools onto the host.</p>
+                </div>
+              </li>
+              <li data-reveal>
+                <div>
+                  <h3>Install the toolchain</h3>
+<pre class="block" tabindex="0"><code>sudo dnf install -y git curl cmake ninja-build gcc-c++ python3 bzip2
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+source "$HOME/.cargo/env"</code></pre>
+                  <p>Rust is needed because the blocking engine is a Rust library that CMake builds with Cargo.</p>
+                </div>
+              </li>
+              <li data-reveal>
+                <div>
+                  <h3>Clone the repository</h3>
+<pre class="block" tabindex="0"><code>git clone https://github.com/kaorii-ako/tobari
+cd tobari</code></pre>
+                </div>
+              </li>
+              <li data-reveal>
+                <div>
+                  <h3>Provision CEF</h3>
+<pre class="block" tabindex="0"><code>export CEF_ROOT="$(shell/provision-cef.sh | tail -n 1)"</code></pre>
+                  <p>
+                    <code>shell/provision-cef.sh</code> downloads the pinned CEF build
+                    (<code>154.0.32+g682c378+chromium-154.0.8037.58</code>, minimal distribution) from the CEF build index,
+                    checks it against the SHA-1 published in that index, refuses it on a mismatch, and unpacks it into
+                    <code>~/.cache/tobari-dev/</code>. It prints the CEF root as its last line, and a second run reuses the
+                    verified copy. CMake stops with an error if <code>CEF_ROOT</code> is not set.
+                  </p>
+                </div>
+              </li>
+              <li data-reveal>
+                <div>
+                  <h3>Configure and build</h3>
+<pre class="block" tabindex="0"><code>cmake -S shell -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
+cmake --build build</code></pre>
+                  <p>One build produces everything: CMake drives Cargo for the <code>adblock-rust</code> library and links it into the browser.</p>
+                </div>
+              </li>
+              <li data-reveal>
+                <div>
+                  <h3>Run it</h3>
+<pre class="block" tabindex="0"><code>./build/tobari</code></pre>
+                  <p>
+                    <code>TOBARI_NO_BLOCKING=1</code> starts it without the blocking engine; <code>TOBARI_LOG=info</code>
+                    raises log verbosity. The container and toolchain are described in more detail in
+                    <a href="/docs/dev-linux/">DEV-LINUX</a>.
+                  </p>
+                </div>
+              </li>
+            </ol>
+          </div>
+        </section>
+
+        <section class="section" aria-labelledby="other-title">
+          <div class="grid">
+            <header class="section-head" data-reveal>
+              <p class="section-no caps">03 · Elsewhere</p>
+              <h2 class="section-title" id="other-title">Other platforms</h2>
+            </header>
+            <dl class="platforms section-body" data-reveal>
+              <div>
+                <dt>macOS</dt>
+                <dd class="state">Build from source only</dd>
+                <dd class="why">
+                  A <code>.dmg</code> that people can open needs notarization, which needs a paid Apple Developer account.
+                  There is no such account and no Mac to test on, so an unnotarized <code>.dmg</code> would be blocked by
+                  Gatekeeper on first launch. None will be published until both exist. The build has not been run on a Mac.
+                  <a href="/docs/dev-macos/#signing-and-notarization">DEV-MACOS § Signing</a>
+                </dd>
+              </div>
+              <div>
+                <dt>Windows</dt>
+                <dd class="state">Not supported</dd>
+                <dd class="why">Permanently out of scope. There will be no Windows build.</dd>
+              </div>
+            </dl>
+          </div>
+        </section>
+      </div>

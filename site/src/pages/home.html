@@ -1,0 +1,253 @@
+      <section class="hero" aria-labelledby="hero-title">
+        <div class="fog" data-fog aria-hidden="true"></div>
+        <span class="hero-glyph" lang="ja" aria-hidden="true">帳</span>
+        <div class="wrap grid hero-inner">
+          <p class="hero-kicker caps" data-reveal>Chromium browser for Linux · CEF 154 · pre-release</p>
+          <div class="hero-tools">
+            <button class="fog-toggle" type="button" data-fog-toggle aria-pressed="false" hidden>
+              <span class="pip" aria-hidden="true"></span>Fog background: <span data-fog-state>off</span>
+            </button>
+          </div>
+          <h1 class="hero-title" id="hero-title" data-reveal>
+            <span class="line">A browser that</span>
+            <span class="line">closes over</span>
+            <span class="line muted">the window.</span>
+          </h1>
+          <p class="hero-lede" data-reveal>
+            Tobari is a privacy-first browser built on Chromium through CEF.
+            <strong>It blocks ads and trackers before they load, sends nothing home,
+            and publishes what it measured</strong>, including where the savings come
+            from and what they cost.
+          </p>
+          <dl class="hero-def" data-reveal>
+            <dt><span lang="ja">帳</span> <span class="mono">tobari, n.</span></dt>
+            <dd>The curtain drawn at nightfall.</dd>
+            <dd>Tobari does not claim to make you invisible. It gives you something you close deliberately.</dd>
+          </dl>
+          <div class="hero-actions" data-reveal>
+            <a class="btn btn-primary" href="/download/">Download status <span class="arrow" aria-hidden="true">→</span></a>
+            <a class="btn" href="/download/#build">Build from source</a>
+            <a class="btn" href="/security/">Threat model</a>
+          </div>
+        </div>
+      </section>
+
+      <section class="readout" aria-labelledby="readout-title">
+        <div class="wrap">
+          <div class="readout-head">
+            <h2 class="caps" id="readout-title">Readout · measured 2026-09-30 · Ryzen 5 9600X, Bazzite, Wayland</h2>
+            <span class="caps">Each figure links to its source</span>
+          </div>
+          <ul class="readout-list" data-reveal>
+            <li>
+              <a class="cell" href="/benchmarks/#result">
+                <span class="cell-label caps"><span class="tick" aria-hidden="true"></span>PSS vs Chrome</span>
+                <span class="cell-value">−11.9<span class="unit">%</span></span>
+                <span class="cell-note">821.8 MB against 933.2 MB at 10 identical tabs</span>
+                <span class="cell-src">BENCHMARKS § Result</span>
+              </a>
+            </li>
+            <li>
+              <a class="cell" href="/benchmarks/#result">
+                <span class="cell-label caps">Processes</span>
+                <span class="cell-value">20<span class="unit">/ 45</span></span>
+                <span class="cell-note">Tobari against stock Chrome, same ten pages</span>
+                <span class="cell-src">BENCHMARKS § Result</span>
+              </a>
+            </li>
+            <li>
+              <a class="cell" href="/benchmarks/#result">
+                <span class="cell-label caps">From blocking</span>
+                <span class="cell-value">−7.7<span class="unit">%</span></span>
+                <span class="cell-note">68.6 MB PSS, blocking on against off</span>
+                <span class="cell-src">BENCHMARKS § Result</span>
+              </a>
+            </li>
+            <li>
+              <a class="cell" href="/docs/design/#blocking">
+                <span class="cell-label caps">Filter rules</span>
+                <span class="cell-value">141,987</span>
+                <span class="cell-note">EasyList, EasyPrivacy, uBO filters and privacy</span>
+                <span class="cell-src">DESIGN § Blocking</span>
+              </a>
+            </li>
+            <li>
+              <a class="cell" href="/docs/design/#blocking">
+                <span class="cell-label caps">Engine cost</span>
+                <span class="cell-value">+5<span class="unit">MB</span></span>
+                <span class="cell-note">PSS for the resident blocking engine</span>
+                <span class="cell-src">DESIGN § Blocking</span>
+              </a>
+            </li>
+            <li>
+              <a class="cell" href="/docs/design/#measured-cost">
+                <span class="cell-label caps">Idle CPU</span>
+                <span class="cell-value">0.30<span class="unit">%</span></span>
+                <span class="cell-note">of one core, defaults, engine resident</span>
+                <span class="cell-src">DESIGN § Measured cost</span>
+              </a>
+            </li>
+          </ul>
+        </div>
+        <div class="caveat">
+          <div class="wrap grid">
+            <span class="caps">Caveats</span>
+            <p>
+              This is a single run against live sites, so treat it as one observation, not a distribution.
+              The gap against Chrome is not all efficiency: Tobari has no extension system, sync, Safe Browsing,
+              translate or prefetch yet, and some of the difference is those missing features.
+              <a href="/benchmarks/#what-this-does-and-does-not-show">What the measurement does and does not show</a>.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" aria-labelledby="index-title">
+        <div class="wrap grid">
+          <header class="section-head" data-reveal>
+            <p class="section-no caps">01 · Index</p>
+            <h2 class="section-title" id="index-title">What is in the build</h2>
+            <p class="section-sub">Phase 1 is a browser shell on CEF. These are the parts that exist today, each with the document that backs it.</p>
+          </header>
+          <ol class="index section-body">
+            <li data-reveal>
+              <span class="index-no">01</span>
+              <h3 class="index-title">Blocking before load</h3>
+              <p class="index-text">
+                <code>adblock-rust</code>, the engine Brave ships, is linked into the browser and cancels ad and tracker
+                requests before they load. Lists: <a href="https://easylist.to/" rel="noreferrer">EasyList and EasyPrivacy</a>,
+                and <a href="https://github.com/uBlockOrigin/uAssets" rel="noreferrer">uBlock Origin's</a> filters and privacy lists.
+                Pages you navigate to directly are never blocked.
+              </p>
+              <span class="index-src"><a href="/docs/design/#blocking">DESIGN § Blocking</a></span>
+            </li>
+            <li data-reveal>
+              <span class="index-no">02</span>
+              <h3 class="index-title">Nothing sent home</h3>
+              <p class="index-text">
+                Filter list updates are plain requests with no cookies, no query string and no identifier, and
+                <code>SHA256SUMS</code> records what was installed. Blocking can be turned off per site from the
+                omnibox shield.
+              </p>
+              <span class="index-src"><a href="/security/#network-layer-blocking-phase-1">SECURITY § Blocking</a></span>
+            </li>
+            <li data-reveal>
+              <span class="index-no">03</span>
+              <h3 class="index-title">Site isolation kept</h3>
+              <p class="index-text">
+                The Chromium sandbox stays on. The one memory lever left, <code>--process-per-site</code>, weakens
+                site isolation, so it is not used.
+              </p>
+              <span class="index-src"><a href="/benchmarks/#decision-on-phase-2">BENCHMARKS § Phase 2</a></span>
+            </li>
+            <li data-reveal>
+              <span class="index-no">04</span>
+              <h3 class="index-title">The tab strip is the title bar</h3>
+              <p class="index-text">
+                A frameless window whose whole chrome is 72px tall, with no OS title bar above it. Counting the title bar
+                it replaces, about 40px of page height comes back. Scheme, bang and block count sit inline in the omnibox so it never needs a second row.
+              </p>
+              <span class="index-src"><a href="/docs/design/#density">DESIGN § Density</a></span>
+            </li>
+            <li data-reveal>
+              <span class="index-no">05</span>
+              <h3 class="index-title">Idle means idle</h3>
+              <p class="index-text">
+                The animation ticker sleeps when nothing moves. Measured, that took idle CPU from 8.00% to 0.50% of
+                one core. Smooth scrolling and the animated new-tab background are off by default because both cost
+                idle CPU.
+              </p>
+              <span class="index-src"><a href="/docs/design/#enforced-performance-rules">DESIGN § Performance</a></span>
+            </li>
+            <li data-reveal>
+              <span class="index-no">06</span>
+              <h3 class="index-title">Contrast is measured</h3>
+              <p class="index-text">
+                Every colour that carries information clears WCAG AA against every surface it can sit on, in both
+                themes. Every control has a visible keyboard focus state.
+              </p>
+              <span class="index-src"><a href="/docs/design/#measured-contrast">DESIGN § Contrast</a></span>
+            </li>
+            <li data-reveal>
+              <span class="index-no">07</span>
+              <h3 class="index-title">Local by default</h3>
+              <p class="index-text">
+                Bookmarks, history and the reading list are JSON files under
+                <code>$XDG_DATA_HOME/tobari/</code>. DuckDuckGo-style <code>!bangs</code> resolve in the browser.
+                The interface fonts are bundled, so drawing the chrome makes no network request.
+              </p>
+              <span class="index-src"><a href="/changelog/#2026-09-30-persistence-and-the-first-ram-benchmark-0737baa">CHANGELOG</a></span>
+            </li>
+          </ol>
+        </div>
+      </section>
+
+      <section class="section" aria-labelledby="claims-title">
+        <div class="wrap grid">
+          <blockquote class="claims-quote" data-reveal>
+            <p>Blocking is not an anonymity feature. <span class="muted">It reduces what third parties receive; it does not make you unidentifiable to the sites you visit.</span></p>
+            <footer class="caps"><a href="/security/#network-layer-blocking-phase-1">SECURITY § Network-layer blocking</a></footer>
+          </blockquote>
+          <ul class="claims-list" aria-labelledby="claims-title" data-reveal>
+            <li><span class="caps" id="claims-title">What it does not claim</span></li>
+            <li><strong>Not all of the 11.9% is efficiency.</strong> Some of it is features Tobari does not have yet. <a href="/benchmarks/#what-this-does-and-does-not-show">Benchmarks</a></li>
+            <li><strong>Blocking removed one process, not several.</strong> Most of the saving was resources never fetched, not renderers never created. <a href="/benchmarks/#what-this-does-and-does-not-show">Benchmarks</a></li>
+            <li><strong>No Chrome extensions in this configuration.</strong> A CEF window that hosts real multi-tab cannot host Chrome-style views. That is the open question for Phase 1. <a href="https://github.com/kaorii-ako/tobari#status" rel="noreferrer">README</a></li>
+          </ul>
+        </div>
+      </section>
+
+      <section class="section" aria-labelledby="platforms-title">
+        <div class="wrap grid">
+          <header class="section-head" data-reveal>
+            <p class="section-no caps">02 · Platforms</p>
+            <h2 class="section-title" id="platforms-title">Where it runs</h2>
+          </header>
+          <dl class="platforms section-body" data-reveal>
+            <div>
+              <dt>Linux</dt>
+              <dd class="state">Phase 1, in progress</dd>
+              <dd class="why">Built and measured on Bazzite under Wayland. No release yet; build from source today. Flatpak is the planned format.</dd>
+            </div>
+            <div>
+              <dt>macOS</dt>
+              <dd class="state">Build from source only</dd>
+              <dd class="why">There is no Mac to test on and no paid Apple Developer account, so a <code>.dmg</code> could not be notarized and Gatekeeper would block it. <a href="/docs/dev-macos/">Why</a></dd>
+            </div>
+            <div>
+              <dt>Windows</dt>
+              <dd class="state">Not supported</dd>
+              <dd class="why">Permanently out of scope.</dd>
+            </div>
+          </dl>
+        </div>
+      </section>
+
+      <section class="section waitlist" aria-labelledby="waitlist-title">
+        <div class="wrap grid">
+          <header class="section-head" data-reveal>
+            <p class="section-no caps">03 · Later</p>
+            <h2 class="section-title" id="waitlist-title">One email, when it ships</h2>
+            <p class="section-sub">A fully local AI assistant is planned for a later release.</p>
+          </header>
+          <div class="section-body" data-reveal>
+            <form class="form" name="waitlist" method="POST" action="/waitlist/thanks/" data-netlify="true" netlify-honeypot="bot-field">
+              <input type="hidden" name="form-name" value="waitlist">
+              <p class="hp" aria-hidden="true">
+                <label>Leave this empty <input name="bot-field" tabindex="-1" autocomplete="off"></label>
+              </p>
+              <label class="field-label caps" for="waitlist-email">Email address</label>
+              <div class="field-row">
+                <input class="input" id="waitlist-email" type="email" name="email" required autocomplete="email" spellcheck="false" placeholder="you@example.org" aria-describedby="waitlist-use">
+                <button class="btn btn-primary" type="submit">Add my address</button>
+              </div>
+            </form>
+            <dl class="use" id="waitlist-use">
+              <div><dt>Used for</dt><dd>One email, sent when the release with the local AI assistant ships. Nothing else: no newsletter, no updates, not shared.</dd></div>
+              <div><dt>Stored by</dt><dd>Netlify Forms, the form handler of the host serving this site. The address is the only thing the form collects.</dd></div>
+              <div><dt>Afterwards</dt><dd>The list is deleted once that email has been sent.</dd></div>
+              <div><dt>To be removed</dt><dd>Submit the same address on the <a href="/waitlist/remove/">removal page</a> at any time, and it is deleted from the list by hand before anything is sent.</dd></div>
+            </dl>
+          </div>
+        </div>
+      </section>

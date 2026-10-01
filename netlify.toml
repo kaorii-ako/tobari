@@ -1,0 +1,25 @@
+[build]
+  base = "site"
+  command = "npm ci && node scripts/build.mjs"
+  publish = "dist"
+
+[build.environment]
+  NODE_VERSION = "22"
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    Content-Security-Policy = "default-src 'self'; script-src 'self'; style-src 'self'; font-src 'self'; img-src 'self' data:; connect-src 'self'; form-action 'self'; frame-ancestors 'none'; base-uri 'self'"
+    Referrer-Policy = "no-referrer"
+    Permissions-Policy = "interest-cohort=(), browsing-topics=(), camera=(), microphone=(), geolocation=()"
+    X-Content-Type-Options = "nosniff"
+
+[[headers]]
+  for = "/assets/fonts/*"
+  [headers.values]
+    Cache-Control = "public, max-age=604800"
+
+[[headers]]
+  for = "/assets/vendor/*"
+  [headers.values]
+    Cache-Control = "public, max-age=604800"
