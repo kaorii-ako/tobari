@@ -48,21 +48,34 @@ tar -C ~/.cache/tobari-dev -czf tobari-<version>-linux-x86_64.tar.gz build
 
 ## Signing
 
-Every artifact is signed with minisign. **No release key exists yet**; none is
-published, and nothing should be described as signed until one is.
+Every artifact is signed with minisign. The release key was created on
+2026-10-02:
+
+```
+key id      0F0DC333B8A4E968
+public key  RWRo6aS4M8MND+s3tkrSD2POK8Donu5pWez8QI5+Pf6KZike67q2L6iB
+```
+
+`tobari.pub` in the repository root holds it. The secret key lives at
+`~/.minisign/tobari.key` on the maintainer's machine, mode 0600, and never in
+the repository or CI. It was generated without a passphrase so it could be
+created unattended; add one before the first public release with
+`minisign -C -s ~/.minisign/tobari.key`, and keep an offline backup.
 
 ```sh
-minisign -G -p tobari.pub -s ~/.minisign/tobari.key   # once; keep the secret key offline
 sha256sum tobari.flatpak tobari-*.tar.gz > SHA256SUMS
-minisign -Sm SHA256SUMS -s ~/.minisign/tobari.key
+minisign -Sm SHA256SUMS -s ~/.minisign/tobari.key -t "tobari <version>"
 ```
 
-Publish `tobari.pub` in the repository root and on tobari.dev. Users verify
-with:
+Users verify with:
 
 ```sh
-minisign -Vm SHA256SUMS -p tobari.pub && sha256sum -c SHA256SUMS
+minisign -Vm SHA256SUMS -P RWRo6aS4M8MND+s3tkrSD2POK8Donu5pWez8QI5+Pf6KZike67q2L6iB \
+  && sha256sum -c SHA256SUMS
 ```
+
+A key that has to be replaced is announced in `SECURITY.md` and signed with the
+old key while it is still trusted.
 
 ## Distribution
 

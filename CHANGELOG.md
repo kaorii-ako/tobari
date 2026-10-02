@@ -7,6 +7,101 @@ names the commit it describes so it can be checked against `git log`.
 Numbers quoted here are the ones recorded at the time; the current figures and
 their caveats live in `BENCHMARKS.md`, `SECURITY.md` and `docs/DESIGN.md`.
 
+## 2026-10-02 — Extensions keep updating (`131e40d`)
+
+- Web Store extensions were never updated: the usual
+  `--disable-background-networking` switch also stops Chromium's extension
+  updater, which an 8-minute network log confirmed. The switch is gone; the
+  services it covered that phone home were already handled individually.
+- Without it, Chromium installed extensions that Linux packages register
+  system-wide, downloaded from Google without asking (GNOME Shell integration
+  on Fedora). Tobari now blocks external extensions; one already installed is
+  removed at the next launch.
+- A fresh profile left idle for 10 minutes still sends only the four
+  filter-list downloads.
+
+## 2026-10-02 — Security audit fixes (`43905ba`)
+
+An adversarial review of the whole tree found no critical or high issues and
+four medium ones. Every finding was fixed or documented:
+
+- Requests made by service and shared workers skipped the blocker, because
+  they have no tab. They now go through it; a test worker's tracker fetches
+  are cancelled.
+- Any web page could tell it was running in Tobari by probing
+  `tobari.internal`. Those requests now fail like an unknown host.
+- Unpacked extensions were loaded from the user's data directory, which let
+  any program running as the user plant one. Only the bundled extensions load
+  that way now.
+- Filter-list downloads are capped at 16 MB, refuse redirects and reject a
+  list that triples in size; a list the engine cannot load falls back to the
+  bundled copies.
+- The **Fast JavaScript** switch in the toolbar popup gives one site the V8
+  optimizer back. It is keyed on the site Chromium uses for process decisions
+  (registrable domain, no port): an exception keyed on the full origin was
+  stored but never matched, which the first measurement showed.
+- Smaller fixes: blocker calls serialized (adblock-rust is single-threaded), a
+  launch URL can no longer land in a page's popup, command-line URLs limited to
+  http, https and file, IPv6 hosts handled, state files fsynced.
+- CI: actions pinned to commits, the CEF archive re-verified on every run,
+  `cargo --locked`, and the engine watch fails when it crashes instead of
+  passing.
+
+## 2026-10-02 — CEF 154.0.33 and hardened defaults (`83268f6`)
+
+- The engine moves to CEF 154.0.33 (Chromium 154.0.8037.94), which carries the
+  32 security fixes from Chrome 154.0.8037.92, one Critical. It was published
+  on 2026-10-02 and closes the gap SECURITY.md had recorded as open.
+- New defaults, also applied to existing profiles unless the user already set
+  them: the V8 optimizing compilers are blocked (most exploited V8 bugs live
+  there; heavy JavaScript runs about 2× slower), HTTPS-Only mode is on, and USB,
+  serial, HID, Bluetooth, sensors, local fonts and idle detection are blocked.
+- Defaults that fail to apply are retried on the next launch.
+
+## 2026-10-02 — Flatpak from source (`251d51e`)
+
+- `packaging/flatpak/dev.tobari.Browser.source.yml` builds Tobari from source
+  offline, with the blocker's crates vendored, as Flathub requires. It
+  installs next to the prebuilt package and runs with the sandbox on.
+
+## 2026-10-01 — Site brought up to date (`84a418a`)
+
+- The landing, download and roadmap pages describe the Chrome-style browser.
+  The engine version and the engine-currency table are read from the source at
+  build time, and the build fails if a figure on the landing page no longer
+  appears in the document it cites.
+
+## 2026-10-01 — Packaging and measured privacy fixes (`98ef4a6`)
+
+- Flatpak (zypak built from source) and a per-user installer. The binary had
+  only run from its own directory; its library path is now relative to itself.
+- A second launch opens its URL as a tab in the existing window.
+- An idle network log showed Chromium still contacting Google (component
+  updater, network time, account check) despite the usual switches. Those are
+  now sent to a closed local port or disabled; only the four filter lists leave
+  the machine.
+- Benchmarks re-run three times interleaved: 905.9 MB median PSS against
+  Chrome's 1,285.4 MB, 20 processes against 66.
+
+## 2026-10-01 — Native Chrome-style window (`2f2c141`)
+
+- CEF refuses a second Chrome-style browser view in a window for its whole
+  lifetime, so custom HTML chrome, real tabs and Chrome extensions cannot
+  coexist. Tobari now uses Chromium's own window: tabs in the title bar,
+  extensions, and the Chrome Web Store.
+- Blocking, bangs, first-run defaults, the dark theme and the hidden Google
+  surfaces all live underneath Chromium's UI. The new-tab page and the
+  blocking control are bundled extensions; the control reaches native code
+  through `https://tobari.internal/`, answered only for that extension.
+- Filter lists update weekly through an isolated request context.
+- Fixed "stack smashing detected" aborting every subprocess on exit.
+
+## 2026-10-01 — Static site and this changelog (`df1d3a3`)
+
+- `site/` builds a static site with no trackers, cookies or third-party
+  requests, and fails the build on inline scripts, foreign resources or broken
+  links.
+
 ## 2026-09-30 — Side panel in its own browser view (`51e790e`)
 
 - The side panel used to live inside the 72px chrome document, so it was

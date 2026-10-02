@@ -81,7 +81,7 @@ const DOC_META = {
   "dev-linux": { summary: "Building Tobari in a distrobox container: toolchain, CEF, build, run, verify." },
   "dev-macos": { summary: "Why macOS is not a Phase 1 target, and what would change that." },
   packaging: { summary: "Flatpak, the per-user install, and how each format keeps Chromium's sandbox on." },
-  releasing: { summary: "The CEF security bump, filter lists, signing with minisign and distribution. No release key exists yet." },
+  releasing: { summary: "The CEF security bump, filter lists, signing with minisign and distribution." },
   validation: { summary: "Stage 0 market validation. The gate was waived for Phase 1; the research is unfilled.", flag: "unfilled" },
 };
 
@@ -379,6 +379,9 @@ async function build() {
   await mkdir(DIST, { recursive: true });
 
   await cp(path.join(SITE, "assets"), path.join(DIST, "assets"), { recursive: true });
+  // The release key is served from the repository's own copy, so the site and
+  // the repo can never disagree about it.
+  await cp(path.join(REPO, "tobari.pub"), path.join(DIST, "tobari.pub"));
   await writeFile(path.join(DIST, "assets", "tokens.css"), await tokensWithSystemTheme());
 
   // Landing
@@ -528,6 +531,7 @@ const ALLOWED_ORIGINS = [
   "https://github.com/kaorii-ako/tobari",
   "https://easylist.to/",
   "https://github.com/uBlockOrigin/uAssets",
+  "https://github.com/flatpak/flatpak-builder-tools",
 ];
 
 function idsIn(html) {
@@ -578,7 +582,7 @@ async function verify() {
       if (/^[a-z]+:/i.test(href)) continue;
       const [p, frag] = href.split("#");
       const targetUrl = p === "" ? url : p;
-      if (targetUrl.startsWith("/assets/")) continue;
+      if (targetUrl.startsWith("/assets/") || targetUrl === "/tobari.pub") continue;
       const target = outputs.get(targetUrl);
       if (!target) {
         problems.push(`${url}: link to missing page ${href}`);

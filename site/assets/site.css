@@ -830,7 +830,7 @@ pre .c { color: var(--fg-2); }
   line-height: calc(var(--u) * 2.5);
 }
 .keybox dt { color: var(--fg-2); }
-.keybox dd { color: var(--fg-0); }
+.keybox dd { color: var(--fg-0); overflow-wrap: anywhere; }
 
 .prose-col { grid-column: 4 / span 8; }
 .prose-col > * + * { margin-top: calc(var(--u) * 2); }

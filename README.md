@@ -10,10 +10,10 @@ Tobari does not claim to make you invisible. It gives you something you close
 deliberately. No "untraceable", no "anonymous", no claim that is not backed by
 [SECURITY.md](SECURITY.md) or [BENCHMARKS.md](BENCHMARKS.md).
 
-> **Security notice (2026-10-01).** Tobari runs Chromium 154.0.8037.58. Chrome
-> 154.0.8037.92 fixes 32 security bugs, one Critical, and no CEF build carrying
-> it exists yet. Tobari will ship it within 3 days of one appearing. Details and
-> the running record are at the top of [SECURITY.md](SECURITY.md).
+> **Engine (2026-10-02).** Tobari runs Chromium 154.0.8037.94 (CEF 154.0.33),
+> which includes the 32 security fixes from Chrome 154.0.8037.92. Builds made
+> before 2026-10-02 lack them. The running record is at the top of
+> [SECURITY.md](SECURITY.md).
 
 ## What it is
 
@@ -23,7 +23,8 @@ deliberately. No "untraceable", no "anonymous", no claim that is not backed by
 | Blocking | `adblock-rust`, ~142,000 rules from EasyList, EasyPrivacy and uBlock Origin; cancels requests before they load; per-site switch and badge count in the toolbar |
 | Bangs | 35 DuckDuckGo-style bangs, resolved locally; the search engine never sees a bang query |
 | Extensions | Chrome Web Store, including password managers |
-| Defaults | DuckDuckGo, no suggestions, no prediction, third-party cookies blocked |
+| Defaults | DuckDuckGo, no suggestions, no prediction, third-party cookies blocked, HTTPS-Only on |
+| Hardening | V8 optimizing compilers off by default (per-site "Fast JavaScript" switch), device APIs blocked, workers filtered too |
 | Phoning home | none on its own except weekly filter-list updates — measured, see SECURITY.md |
 | Sandbox | always on; never `--no-sandbox` |
 | Packages | Flatpak (primary), per-user install |

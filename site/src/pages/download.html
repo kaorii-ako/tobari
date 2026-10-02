@@ -2,7 +2,7 @@
         <header class="grid page-head">
           <p class="crumb caps">Download</p>
           <h1 class="page-title">There is no release yet.</h1>
-          <p class="status-line"><span class="status-dot" aria-hidden="true"></span>Status: Phase 1 built and packaged · no published release · no signing key · no checksums</p>
+          <p class="status-line"><span class="status-dot" aria-hidden="true"></span>Status: Phase 1 built and packaged · signing key published · no published release yet</p>
           <p class="page-meta">
             Tobari builds, runs and packages as a Flatpak or a per-user install, but nothing has been published, so there
             is nothing to download. When a release exists it will be on
@@ -19,22 +19,22 @@
           <div class="grid">
             <header class="section-head" data-reveal>
               <p class="section-no caps">01 · Verify</p>
-              <h2 class="section-title" id="verify-title">How a release will be verified</h2>
-              <p class="section-sub">Every release will be signed with minisign. No release key exists yet. These steps are here so you can check the process before there is anything to check.</p>
+              <h2 class="section-title" id="verify-title">How a release is verified</h2>
+              <p class="section-sub">Every release is signed with minisign. The key exists and is published below; there is no published release to check against it yet.</p>
             </header>
             <ol class="steps section-body">
               <li data-reveal>
                 <div>
                   <h3>Get the public key from two places</h3>
                   <p>
-                    The key will be committed to the repository root as <code>tobari.pub</code> and published on this
-                    site, so one copy can be checked against the other. Neither exists yet, and nothing should be
-                    described as signed until one does.
+                    The key is committed to the repository root as <code>tobari.pub</code> and served by this site, so
+                    one copy can be checked against the other.
                   </p>
                   <dl class="keybox">
-                    <dt>Public key</dt><dd>not yet published</dd>
-                    <dt>Repository</dt><dd>tobari.pub · not yet published</dd>
-                    <dt>This site</dt><dd>/tobari.pub · not yet published</dd>
+                    <dt>Key id</dt><dd>0F0DC333B8A4E968</dd>
+                    <dt>Public key</dt><dd>RWRo6aS4M8MND+s3tkrSD2POK8Donu5pWez8QI5+Pf6KZike67q2L6iB</dd>
+                    <dt>Repository</dt><dd><a href="https://github.com/kaorii-ako/tobari/blob/browser/tobari.pub" rel="noreferrer">tobari.pub</a></dd>
+                    <dt>This site</dt><dd><a href="/tobari.pub">/tobari.pub</a></dd>
                   </dl>
                 </div>
               </li>
@@ -59,7 +59,7 @@
                     and <a href="https://github.com/kaorii-ako/tobari/issues" rel="noreferrer">open an issue</a>.
                   </p>
                   <p>
-                    The secret key is kept offline. If Tobari later ships on Flathub, which needs a manifest that builds
+                    The secret key never enters the repository or CI. If Tobari later ships on Flathub, which needs a manifest that builds
                     from source, those builds carry Flathub's signature, not this key.
                     <a href="/docs/releasing/#signing">RELEASING § Signing</a>
                   </p>

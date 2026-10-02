@@ -41,6 +41,9 @@ enough: across two days the same Chrome configuration measured 933 MB and
 Machine: Ryzen 5 9600X, 32 GB, Bazzite, Wayland. 2026-10-01. Tobari on CEF
 154.0.32 (Chromium 154.0.8037.58); Chrome 154.0.8037.92 from Flathub.
 
+These figures predate CEF 154.0.33 and the v5/v6 defaults (V8 optimizing
+compilers blocked, device APIs blocked) and have not been re-measured since.
+
 ### Result
 
 | configuration | PSS run 1 / 2 / 3 | **median PSS** | processes | median RSS |
