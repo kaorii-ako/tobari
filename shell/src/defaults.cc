@@ -11,7 +11,7 @@
 namespace tobari {
 namespace {
 
-constexpr int kDefaultsVersion = 5;
+constexpr int kDefaultsVersion = 6;
 
 // ContentSetting values as Chromium stores them.
 constexpr int kBlock = 2;
@@ -130,6 +130,9 @@ void SeedNewProfile() {
   ext_theme->SetInt("system_theme", kSystemThemeClassic);
   CefRefPtr<CefDictionaryValue> extensions = CefDictionaryValue::Create();
   extensions->SetDictionary("theme", ext_theme);
+  // Read when the extension system starts, before any runtime preference
+  // write could land, so a new profile gets it here (see ApplyFirstRunDefaults).
+  extensions->SetBool("block_external_extensions", true);
 
   CefRefPtr<CefDictionaryValue> root = CefDictionaryValue::Create();
   root->SetDictionary("browser", browser);
@@ -145,6 +148,14 @@ bool ApplyFirstRunDefaults() {
   if (applied >= kDefaultsVersion) return false;
   CefRefPtr<CefRequestContext> ctx = CefRequestContext::GetGlobalContext();
 
+  if (applied < 6) {
+    // Distribution packages drop JSON files into /usr/share/chromium/extensions
+    // (GNOME Shell integration does on Fedora), and Chromium would download and
+    // install them from Google into every profile without asking. Only
+    // extensions the user installs, and the two bundled ones, should run.
+    // Takes effect from the next launch on profiles that predate it.
+    Set(ctx, "extensions.block_external_extensions", Bool(true));
+  }
   if (applied < 5) {
     // The V8 optimizing compilers are where most exploited V8 bugs live (type
     // confusions in TurboFan/Maglev). Chromium's per-site setting turns them

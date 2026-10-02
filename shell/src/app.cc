@@ -62,7 +62,9 @@ void App::OnBeforeCommandLineProcessing(const CefString& process_type,
   command_line->AppendSwitch("disable-crash-reporter");
   command_line->AppendSwitch("disable-domain-reliability");
   command_line->AppendSwitch("no-pings");
-  command_line->AppendSwitch("disable-background-networking");
+  // Not --disable-background-networking: besides the services handled
+  // individually here, it silently stops Web Store extensions from updating,
+  // which leaves installed password managers and blockers stale.
   command_line->AppendSwitch("disable-component-update");
   command_line->AppendSwitch("disable-sync");
 
