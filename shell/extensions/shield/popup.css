@@ -81,6 +81,7 @@ button:focus-visible { outline: 2px solid var(--signal); outline-offset: 2px; }
   letter-spacing: var(--track-normal);
   font-variant-numeric: tabular-nums;
   color: var(--fg-1);
+  white-space: nowrap;
 }
 
 .option {

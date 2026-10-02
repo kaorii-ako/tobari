@@ -9,9 +9,10 @@ let tabUrl = "";
 function age(seconds) {
   if (!seconds) return "—";
   const elapsed = Date.now() / 1000 - seconds;
-  if (elapsed < 3600) return "just now";
-  if (elapsed < 86400) return `${Math.floor(elapsed / 3600)}h ago`;
-  return `${Math.floor(elapsed / 86400)}d ago`;
+  // Compact on purpose: the readout column is about 11 characters wide.
+  if (elapsed < 3600) return "<1h";
+  if (elapsed < 86400) return `${Math.floor(elapsed / 3600)}h`;
+  return `${Math.floor(elapsed / 86400)}d`;
 }
 
 function paint(state, stats) {
