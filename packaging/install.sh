@@ -14,6 +14,9 @@ ICONS="$PREFIX/icons/hicolor"
 META="$PREFIX/metainfo"
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT="$(cd "$HERE/.." && pwd)"
+# In the repository the icons live in shell/icons; in a release tarball they
+# sit next to this script.
+if [ -d "$HERE/icons/hicolor" ]; then ICON_SRC="$HERE/icons/hicolor"; else ICON_SRC="$ROOT/shell/icons/hicolor"; fi
 
 uninstall() {
   rm -rf "$LIB"
@@ -59,7 +62,7 @@ install -m644 "$HERE/dev.tobari.Browser.desktop" "$APPS/"
 sed -i "s|^Exec=tobari|Exec=$BIN/tobari|" "$APPS/dev.tobari.Browser.desktop"
 install -m644 "$HERE/dev.tobari.Browser.metainfo.xml" "$META/"
 for size in 16 24 32 48 64 128 256 512; do
-  install -Dm644 "$ROOT/shell/icons/hicolor/${size}x${size}/apps/dev.tobari.Browser.png" \
+  install -Dm644 "$ICON_SRC/${size}x${size}/apps/dev.tobari.Browser.png" \
     "$ICONS/${size}x${size}/apps/dev.tobari.Browser.png"
 done
 command -v update-desktop-database >/dev/null && update-desktop-database "$APPS" || true

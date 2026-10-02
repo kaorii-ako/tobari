@@ -29,9 +29,9 @@ deliberately. No "untraceable", no "anonymous", no claim that is not backed by
 | Sandbox | always on; never `--no-sandbox` |
 | Packages | Flatpak (primary), per-user install |
 
-Measured on 2026-10-01, ten identical tabs, three interleaved runs:
-**905.9 MB PSS against Chrome's 1,285.4 MB (29.5% lower), 20 processes against
-66.** Blocking accounts for 200 MB and 14 of those processes. Some of the gap
+Measured on 2026-10-02 (Tobari 0.1.0, CEF 154.0.33), ten identical tabs, three interleaved runs:
+**861.1 MB PSS against Chrome's 1,219.6 MB (29.4% lower), 20 processes against
+69.** Blocking accounts for 151 MB and 13 of those processes. Some of the gap
 is features Tobari does not have. Method and caveats in
 [BENCHMARKS.md](BENCHMARKS.md).
 
@@ -41,14 +41,26 @@ Phase 1 — the browser — works end to end and is packaged. Not yet done:
 
 - a week of daily-driver use on Wayland (the acceptance test in the brief);
 - the Flathub submission itself; the from-source manifest builds and runs
-  sandboxed, and `docs/PACKAGING.md` lists what remains;
-- a published release and signing key (`docs/RELEASING.md`).
+  sandboxed, and `docs/PACKAGING.md` lists what remains.
 
 [docs/VALIDATION.md](docs/VALIDATION.md) still records **no go/pivot/stop
 decision**; Phase 1 was built under a waiver.
 
 The local AI assistant is planned for Phase 3 and is not in this build. Earlier
 AI work is kept on the `phase-3-ai` branch.
+
+## Install
+
+```sh
+curl -fsSL https://kaorii-ako.github.io/tobari/install.sh | bash
+```
+
+Linux x86_64. Installs the Flatpak if you have Flatpak, otherwise a per-user
+build in `~/.local`; either way only for your user. The script checks the
+release's minisign signature (key `0F0DC333B8A4E968`, in `tobari.pub`) and the
+artifact's checksum before installing anything. Options, manual verification
+and uninstalling: [the install page](https://kaorii-ako.github.io/tobari/install/)
+or `bash install.sh --help`.
 
 ## Build
 

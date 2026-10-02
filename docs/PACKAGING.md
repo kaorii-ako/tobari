@@ -134,6 +134,18 @@ The from-source build works locally; nothing has been submitted. Still to do:
    compiled from source here), the `finish-args` a browser needs, and the
    MPRIS name it owns. Verifying the app ID needs control of `tobari.dev`.
 
+## The installer
+
+Users install with one command, which picks the Flatpak when `flatpak` is
+present and the per-user build otherwise, after checking the release
+signature:
+
+```sh
+curl -fsSL https://kaorii-ako.github.io/tobari/install.sh | bash
+```
+
+How it verifies and what it writes are in `docs/RELEASING.md` § The installer.
+
 ## Per-user install
 
 ```sh

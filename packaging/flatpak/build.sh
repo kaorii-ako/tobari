@@ -18,7 +18,10 @@ cp "$HERE/tobari.sh" "$ROOT/packaging/dev.tobari.Browser.desktop" \
 cp -a "$ROOT/shell/icons/hicolor/." "$STAGE/icons/"
 
 flatpak-builder --user --force-clean --repo="$REPO" "$ROOT/.flatpak-build" "$HERE/dev.tobari.Browser.yml"
-flatpak build-bundle "$REPO" "$ROOT/tobari.flatpak" dev.tobari.Browser
+# --runtime-repo lets `flatpak install` fetch the runtime from Flathub on a
+# machine that has never added it.
+flatpak build-bundle --runtime-repo=https://dl.flathub.org/repo/flathub.flatpakrepo \
+  "$REPO" "$ROOT/tobari.flatpak" dev.tobari.Browser
 echo "bundle: $ROOT/tobari.flatpak"
 
 if [ "${2:-}" = "--install" ]; then

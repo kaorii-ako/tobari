@@ -40,11 +40,22 @@
     <control>pointing</control>
     <control>keyboard</control>
   </supports>
+  <screenshots>
+    <screenshot type="default">
+      <caption>Chromium's window with the Tobari toolbar popup open</caption>
+      <image>https://kaorii-ako.github.io/tobari/assets/shots/window.webp</image>
+    </screenshot>
+    <screenshot>
+      <caption>The new-tab page resolving a bang</caption>
+      <image>https://kaorii-ako.github.io/tobari/assets/shots/newtab.webp</image>
+    </screenshot>
+  </screenshots>
   <content_rating type="oars-1.1"/>
   <releases>
-    <release version="0.1.0" date="2026-10-01" type="development">
+    <release version="0.1.0" date="2026-10-02" type="development">
+      <url>https://github.com/kaorii-ako/tobari/releases/tag/v0.1.0</url>
       <description>
-        <p>First development build: Chromium 154 via CEF, built-in blocking, bangs, private defaults.</p>
+        <p>First development build: Chromium 154.0.8037.94 via CEF, built-in blocking, local bangs, private and hardened defaults, signed releases.</p>
       </description>
     </release>
   </releases>
