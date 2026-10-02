@@ -4,7 +4,7 @@
 # Prints the resulting CEF_ROOT on the last line.
 set -euo pipefail
 
-CEF_VERSION="${CEF_VERSION:-154.0.32+g682c378+chromium-154.0.8037.58}"
+CEF_VERSION="${CEF_VERSION:-154.0.33+ga03e714+chromium-154.0.8037.94}"
 PLATFORM="${CEF_PLATFORM:-linux64}"
 FLAVOR="minimal"
 CACHE="${XDG_CACHE_HOME:-$HOME/.cache}/tobari-dev"
@@ -20,7 +20,7 @@ fi
 
 # Pinned SHA-1 from Spotify's CEF build index. Bumping CEF means updating both
 # CEF_VERSION and this hash together; see docs/RELEASING.md.
-SHA1="${CEF_SHA1:-943abce909ca07b96abc9258266629b4fac616d4}"
+SHA1="${CEF_SHA1:-9794ecf85ccd4dfcca42bfaac7a7666004f051e8}"
 
 ARCHIVE="$CACHE/$NAME.tar.bz2"
 ENC=$(python3 -c 'import sys, urllib.parse; print(urllib.parse.quote(sys.argv[1]))' "$NAME.tar.bz2")

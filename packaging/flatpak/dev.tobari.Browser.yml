@@ -4,10 +4,8 @@
 # the comment on that module.
 #
 # This manifest packages a build produced by the CMake project (see
-# docs/PACKAGING.md), which is how it is tested locally. It is not yet the
-# from-source manifest Flathub requires: that needs the pinned CEF archive as a
-# sha256-verified source and the adblock crate's dependencies vendored with
-# flatpak-cargo-generator, which docs/PACKAGING.md lists as the remaining step.
+# docs/PACKAGING.md), which is the quick local loop. The from-source manifest
+# Flathub requires is dev.tobari.Browser.source.yml next to this file.
 app-id: dev.tobari.Browser
 runtime: org.freedesktop.Platform
 runtime-version: '26.08'

@@ -1,0 +1,136 @@
+# Tobari as a Flatpak, built entirely from source inside flatpak-builder.
+#
+# This is the manifest meant for Flathub. Every source is pinned and
+# checksummed, and nothing is fetched during the build itself: flatpak-builder
+# downloads the sources below up front, then compiles in its sandbox with no
+# network.
+#
+#   flatpak-builder --user --force-clean --default-branch=source \
+#     --repo=<repo> <builddir> packaging/flatpak/dev.tobari.Browser.source.yml
+#
+# dev.tobari.Browser.yml next to this file is the other manifest: it packages a
+# CMake build made outside flatpak-builder and stays the quick local loop.
+#
+# Install layout, wrapper and finish-args are identical to that manifest.
+app-id: dev.tobari.Browser
+runtime: org.freedesktop.Platform
+runtime-version: '26.08'
+sdk: org.freedesktop.Sdk
+sdk-extensions:
+  - org.freedesktop.Sdk.Extension.rust-stable
+command: tobari
+separate-locales: false
+
+finish-args:
+  - --require-version=1.8.2
+  - --share=ipc
+  - --share=network
+  - --socket=wayland
+  - --socket=fallback-x11
+  - --socket=pulseaudio
+  - --socket=cups
+  - --device=dri
+  - --filesystem=xdg-download
+  - --filesystem=xdg-run/pipewire-0
+  - --talk-name=org.freedesktop.Notifications
+  - --talk-name=org.freedesktop.FileManager1
+  - --talk-name=org.freedesktop.ScreenSaver
+  - --talk-name=org.freedesktop.secrets
+  - --system-talk-name=org.freedesktop.UPower
+  - --own-name=org.mpris.MediaPlayer2.chromium.*
+
+modules:
+  # zypak lets Chromium's sandbox work inside Flatpak's. Built here rather than
+  # taken from org.chromium.Chromium.BaseApp: on SELinux hosts (Fedora,
+  # Bazzite) a user-installed BaseApp cannot be layered, because flatpak copies
+  # its files with their flatpak_home_t label and the relabel is refused.
+  - name: zypak
+    buildsystem: simple
+    sources:
+      - type: git
+        url: https://github.com/refi64/zypak
+        tag: v2025.09
+        commit: 693a71c5ffa80ec9c9ce2ae03b1ccc493c698e53
+    build-commands:
+      - make SHELL=/bin/bash
+      - make install SHELL=/bin/bash FLATPAK_DEST=/app
+
+  - name: tobari
+    buildsystem: simple
+    build-options:
+      append-path: /usr/lib/sdk/rust-stable/bin
+      # The SDK's default flags minus -Wp,-D_FORTIFY_SOURCE=3. CEF's CMake
+      # sets -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=2 itself and builds with
+      # -Werror, so the SDK's define makes every wrapper file fail with
+      # "'_FORTIFY_SOURCE' redefined". Fortification stays on, at level 2.
+      cflags: -O2 -pipe -g -Wp,-D_GLIBCXX_ASSERTIONS -fexceptions -fstack-protector-strong
+        -grecord-gcc-switches -fasynchronous-unwind-tables -fstack-clash-protection
+        -fcf-protection -fno-omit-frame-pointer -mno-omit-leaf-frame-pointer
+      cflags-override: true
+      cxxflags: -O2 -pipe -g -Wp,-D_GLIBCXX_ASSERTIONS -fexceptions -fstack-protector-strong
+        -grecord-gcc-switches -fasynchronous-unwind-tables -fstack-clash-protection
+        -fcf-protection -fno-omit-frame-pointer -mno-omit-leaf-frame-pointer
+      cxxflags-override: true
+      env:
+        # CMake drives cargo (shell/CMakeLists.txt). CARGO_HOME holds the
+        # vendored crates and the source replacement written by
+        # cargo-sources.json; CARGO_NET_OFFLINE makes that cargo invocation
+        # behave as `cargo build --release --offline`.
+        CARGO_HOME: /run/build/tobari/cargo
+        CARGO_NET_OFFLINE: 'true'
+    sources:
+      # The repository itself: shell/, blocker/, filter lists, icons, desktop
+      # entry and AppStream data. For local builds this is the working tree.
+      # For a Flathub submission replace it with the pinned release commit:
+      #   - type: git
+      #     url: https://github.com/<owner>/Tobari
+      #     tag: v<version>
+      #     commit: <full sha>
+      - type: dir
+        path: ../..
+        skip:
+          - .git
+          - .claude
+          - .flatpak-build
+          - .flatpak-builder
+          - .flatpak-repo
+          - .flatpak-stage
+          - blocker/target
+          - build
+          - site
+          - tobari.flatpak
+
+      # Pinned CEF binary distribution; the same build shell/provision-cef.sh
+      # pins (CEF_VERSION, verified there by Spotify's published SHA-1
+      # 9794ecf85ccd4dfcca42bfaac7a7666004f051e8). Bumping CEF means updating
+      # the URL and sha256 here together with that script.
+      - type: archive
+        url: https://cef-builds.spotifycdn.com/cef_binary_154.0.33%2Bga03e714%2Bchromium-154.0.8037.94_linux64_minimal.tar.bz2
+        sha256: cd89e366055d4412942fa25334a9fc98a5b69ff5b0abf6209c94e2d9e38005a2
+        dest: cef
+        only-arches:
+          - x86_64
+
+      # blocker/'s crates, generated from blocker/Cargo.lock with
+      # flatpak-cargo-generator (see docs/PACKAGING.md to regenerate).
+      - cargo-sources.json
+
+    build-commands:
+      - cmake -S shell -B _build -G Ninja
+          -DCMAKE_BUILD_TYPE=Release
+          -DCEF_ROOT=/run/build/tobari/cef
+          -DTOBARI_CARGO_HOME=/run/build/tobari/cargo
+      - cmake --build _build
+      - install -d /app/lib/tobari
+      - cp -a _build/. /app/lib/tobari/
+      - rm -rf /app/lib/tobari/CMakeFiles /app/lib/tobari/libcef_dll_wrapper
+          /app/lib/tobari/build.ninja /app/lib/tobari/.ninja_deps /app/lib/tobari/.ninja_log
+          /app/lib/tobari/CMakeCache.txt /app/lib/tobari/cmake_install.cmake
+      - install -Dm755 packaging/flatpak/tobari.sh /app/bin/tobari
+      - install -Dm644 packaging/dev.tobari.Browser.desktop /app/share/applications/dev.tobari.Browser.desktop
+      - install -Dm644 packaging/dev.tobari.Browser.metainfo.xml /app/share/metainfo/dev.tobari.Browser.metainfo.xml
+      - |
+        for size in 16 24 32 48 64 128 256 512; do
+          install -Dm644 shell/icons/hicolor/${size}x${size}/apps/dev.tobari.Browser.png \
+            /app/share/icons/hicolor/${size}x${size}/apps/dev.tobari.Browser.png
+        done

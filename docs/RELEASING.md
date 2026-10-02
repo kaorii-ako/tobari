@@ -14,7 +14,10 @@ Steps:
 
 1. Find the new build in `https://cef-builds.spotifycdn.com/index.json` under
    `linux64`, channel `stable`, file type `minimal`.
-2. Update `CEF_VERSION` and `CEF_SHA1` in `shell/provision-cef.sh` together.
+2. Update `CEF_VERSION` and `CEF_SHA1` in `shell/provision-cef.sh` together,
+   and the CEF `url` and `sha256` in
+   `packaging/flatpak/dev.tobari.Browser.source.yml` (download the archive,
+   check its SHA-1 against the index, then take its `sha256sum`).
 3. Build, run the checks in `docs/DEV-LINUX.md` §5, launch on a throwaway
    profile, and confirm the blocker, bangs, both bundled extensions and a Web
    Store install still work.

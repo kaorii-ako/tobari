@@ -39,7 +39,8 @@ is features Tobari does not have. Method and caveats in
 Phase 1 — the browser — works end to end and is packaged. Not yet done:
 
 - a week of daily-driver use on Wayland (the acceptance test in the brief);
-- the from-source Flatpak manifest Flathub requires (`docs/PACKAGING.md`);
+- the Flathub submission itself; the from-source manifest builds and runs
+  sandboxed, and `docs/PACKAGING.md` lists what remains;
 - a published release and signing key (`docs/RELEASING.md`).
 
 [docs/VALIDATION.md](docs/VALIDATION.md) still records **no go/pivot/stop
