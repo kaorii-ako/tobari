@@ -174,8 +174,8 @@ async function startFog() {
   if (fog.effect || fog.loading || !fogAllowed()) return;
   fog.loading = true;
   try {
-    if (!window.THREE) await loadScript("/assets/vendor/three.min.js");
-    if (!window.VANTA || !window.VANTA.FOG) await loadScript("/assets/vendor/vanta.fog.min.js");
+    if (!window.THREE) await loadScript(new URL("../vendor/three.min.js", import.meta.url).href);
+    if (!window.VANTA || !window.VANTA.FOG) await loadScript(new URL("../vendor/vanta.fog.min.js", import.meta.url).href);
     if (!fogAllowed()) return;
     fog.effect = window.VANTA.FOG({
       el: fog.el,
@@ -264,9 +264,74 @@ function setupFog() {
   startFog();
 }
 
+/* -------------------------------------------------------------- copy */
+// <button data-copy="#id"> copies the text of #id. The button is hidden in the
+// markup and shown here, so it never appears where it cannot work.
+
+function setupCopy() {
+  for (const button of document.querySelectorAll("[data-copy]")) {
+    const target = document.querySelector(button.dataset.copy);
+    if (!target || !navigator.clipboard) continue;
+    const label = button.querySelector("[data-copy-label]") || button;
+    const idle = label.textContent;
+    let timer = null;
+    button.hidden = false;
+    button.addEventListener("click", async () => {
+      try {
+        await navigator.clipboard.writeText(target.textContent.trim());
+        label.textContent = "Copied";
+      } catch {
+        label.textContent = "Select and copy";
+      }
+      button.dataset.state = "done";
+      clearTimeout(timer);
+      timer = setTimeout(() => {
+        label.textContent = idle;
+        delete button.dataset.state;
+      }, 1800);
+    });
+  }
+}
+
+/* -------------------------------------------------------------- tabs */
+// [data-tabs] holds role=tab buttons that control role=tabpanel siblings.
+// Without script every panel shows, stacked, which reads fine.
+
+function setupTabs() {
+  for (const root of document.querySelectorAll("[data-tabs]")) {
+    const tabs = [...root.querySelectorAll('[role="tab"]')];
+    const panels = tabs.map((t) => document.getElementById(t.getAttribute("aria-controls")));
+    if (!tabs.length || panels.some((p) => !p)) continue;
+    root.dataset.ready = "true";
+    const select = (i, focus) => {
+      tabs.forEach((t, j) => {
+        const on = i === j;
+        t.setAttribute("aria-selected", String(on));
+        t.tabIndex = on ? 0 : -1;
+        panels[j].hidden = !on;
+      });
+      if (focus) tabs[i].focus();
+    };
+    tabs.forEach((t, i) => {
+      t.addEventListener("click", () => select(i, false));
+      t.addEventListener("keydown", (e) => {
+        const step = e.key === "ArrowRight" ? 1 : e.key === "ArrowLeft" ? -1 : 0;
+        if (e.key === "Home") select(0, true);
+        else if (e.key === "End") select(tabs.length - 1, true);
+        else if (step) select((i + step + tabs.length) % tabs.length, true);
+        else return;
+        e.preventDefault();
+      });
+    });
+    select(0, false);
+  }
+}
+
 /* -------------------------------------------------------------- boot */
 
 setupReveals();
+setupCopy();
+setupTabs();
 
 if (document.body.dataset.page === "home") {
   startLenis();

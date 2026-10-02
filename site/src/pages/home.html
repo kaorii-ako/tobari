@@ -2,7 +2,7 @@
         <div class="fog" data-fog aria-hidden="true"></div>
         <span class="hero-glyph" lang="ja" aria-hidden="true">帳</span>
         <div class="wrap grid hero-inner">
-          <p class="hero-kicker caps" data-reveal>Chromium browser for Linux · CEF {{cef_major}} · pre-release</p>
+          <p class="hero-kicker caps" data-reveal>Chromium browser for Linux · {{version}} · Chromium {{chromium_version}}</p>
           <div class="hero-tools">
             <button class="fog-toggle" type="button" data-fog-toggle aria-pressed="false" hidden>
               <span class="pip" aria-hidden="true"></span>Fog background: <span data-fog-state>off</span>
@@ -14,60 +14,78 @@
             <span class="line muted">the window.</span>
           </h1>
           <p class="hero-lede" data-reveal>
-            Tobari is a privacy-first browser built on Chromium through CEF, in Chromium's own window, with Chrome
-            extensions from the Web Store.
-            <strong>It blocks ads and trackers before they load, sends nothing home, and publishes what it
-            measured</strong>, including where the savings come from and what they cost.
+            Tobari is Chromium, with its own tabs and the Chrome Web Store,
+            <strong>made to block ads and trackers before they load, send nothing home, and switch off the riskiest
+            parts of the engine by default.</strong> Every claim it makes is measured and linked.
           </p>
           <dl class="hero-def" data-reveal>
             <dt><span lang="ja">帳</span> <span class="mono">tobari, n.</span></dt>
             <dd>The curtain drawn at nightfall.</dd>
             <dd>Tobari does not claim to make you invisible. It gives you something you close deliberately.</dd>
           </dl>
+          <div class="hero-install" data-reveal>
+            <p class="caps install-label" id="install-label">Install · signed · no root</p>
+            <div class="cmd" role="group" aria-labelledby="install-label">
+              <span class="cmd-prompt" aria-hidden="true">$</span>
+              <code class="cmd-text" id="install-cmd">{{install_cmd}}</code>
+              <button class="cmd-copy" type="button" data-copy="#install-cmd" hidden><span data-copy-label>Copy</span></button>
+            </div>
+            <p class="install-note">
+              Installs the Flatpak if you have Flatpak, otherwise a per-user build in <code>~/.local</code>. The script
+              checks the release signature before installing anything.
+              <a href="/install/">Other ways to install</a> · <a href="/install.sh">read the script</a>
+            </p>
+          </div>
           <div class="hero-actions" data-reveal>
-            <a class="btn btn-primary" href="/download/">Download status <span class="arrow" aria-hidden="true">→</span></a>
-            <a class="btn" href="/download/#build">Build from source</a>
+            <a class="btn btn-primary" href="/install/">Install guide <span class="arrow" aria-hidden="true">→</span></a>
+            <a class="btn" href="{{release_url}}" rel="noreferrer">Release {{version}}</a>
             <a class="btn" href="/security/">Threat model</a>
           </div>
+        </div>
+        <div class="wrap shot-wrap" data-reveal>
+          <figure class="shot shot-hero">
+            <img src="/assets/shots/window.webp" width="1568" height="958" alt="Tobari's window: Chromium's tab strip in a dark grayscale theme, MDN's CSS reference open, and the Tobari toolbar popup showing one request blocked on the page, the blocking switch on and Fast JavaScript off." decoding="async" fetchpriority="high">
+            <figcaption class="mono">Tobari {{version}} on Linux. The toolbar popup counts what was blocked on this page; the switches are per site.</figcaption>
+          </figure>
         </div>
       </section>
 
       <section class="readout" aria-labelledby="readout-title">
         <div class="wrap">
           <div class="readout-head">
-            <h2 class="caps" id="readout-title">Readout · measured 2026-10-01 · Ryzen 5 9600X, Bazzite, Wayland</h2>
+            <h2 class="caps" id="readout-title">Readout · measured 2026-10-02 · Tobari 0.1.0 · Ryzen 5 9600X, Bazzite, Wayland</h2>
             <span class="caps">Each figure links to its source</span>
           </div>
           <ul class="readout-list" data-reveal>
             <li>
-              <a class="cell" href="/benchmarks/#result" data-figures="905.9 MB|1,285.4 MB|29.5% lower">
+              <a class="cell" href="/benchmarks/#result" data-figures="861.1 MB|1,219.6 MB|29.4% lower">
                 <span class="cell-label caps"><span class="tick" aria-hidden="true"></span>PSS vs Chrome</span>
-                <span class="cell-value">−29.5<span class="unit">%</span></span>
-                <span class="cell-note">905.9 MB against 1,285.4 MB at 10 identical tabs, medians of three runs</span>
+                <span class="cell-value">−29.4<span class="unit">%</span></span>
+                <span class="cell-note">861.1 MB against 1,219.6 MB at 10 identical tabs, medians of three runs</span>
                 <span class="cell-src">BENCHMARKS § Result</span>
               </a>
             </li>
             <li>
-              <a class="cell" href="/benchmarks/#result" data-figures="20 processes against 66">
+              <a class="cell" href="/benchmarks/#result" data-figures="20 processes against 69">
                 <span class="cell-label caps">Processes</span>
-                <span class="cell-value">20<span class="unit">/ 66</span></span>
+                <span class="cell-value">20<span class="unit">/ 69</span></span>
                 <span class="cell-note">Tobari against stock Chrome, same ten pages</span>
                 <span class="cell-src">BENCHMARKS § Result</span>
               </a>
             </li>
             <li>
-              <a class="cell" href="/benchmarks/#result" data-figures="200.5 MB less PSS|18.1% lower|14 fewer processes">
+              <a class="cell" href="/benchmarks/#result" data-figures="150.9 MB less PSS|14.9% lower|13 fewer processes">
                 <span class="cell-label caps">From blocking</span>
-                <span class="cell-value">−18.1<span class="unit">%</span></span>
-                <span class="cell-note">200.5 MB PSS and 14 fewer processes, blocking on against off</span>
+                <span class="cell-value">−14.9<span class="unit">%</span></span>
+                <span class="cell-note">150.9 MB PSS and 13 fewer processes, blocking on against off</span>
                 <span class="cell-src">BENCHMARKS § Result</span>
               </a>
             </li>
             <li>
-              <a class="cell" href="/benchmarks/#result" data-figures="917.5 MB|1,017.2 MB|9.8% below">
+              <a class="cell" href="/benchmarks/#result" data-figures="876.9 MB|1,200.2 MB|26.9% below">
                 <span class="cell-label caps">Worst vs best</span>
-                <span class="cell-value">−9.8<span class="unit">%</span></span>
-                <span class="cell-note">Tobari's worst run, 917.5 MB, against Chrome's best, 1,017.2 MB</span>
+                <span class="cell-value">−26.9<span class="unit">%</span></span>
+                <span class="cell-note">Tobari's worst run, 876.9 MB, against Chrome's best, 1,200.2 MB</span>
                 <span class="cell-src">BENCHMARKS § Result</span>
               </a>
             </li>
@@ -92,105 +110,161 @@
         <div class="caveat">
           <div class="wrap grid">
             <span class="caps">Caveats</span>
-            <p>
-              Three interleaved runs against live sites, on one machine; the headline figures are medians.
-              The gap against Chrome is not all efficiency: with blocking off Tobari is still 13.9% below Chrome, and
-              part of that is services Tobari does not run — Safe Browsing, sync, the Google account integration,
-              optimisation hints and on-device model services. That is a difference in features, not engineering.
-              <a href="/benchmarks/#what-this-does-and-does-not-show">What the measurement does and does not show</a>.
-            </p>
+            <p>Three interleaved runs against live sites, on one machine; the headline figures are medians. The gap against Chrome is not all efficiency: with blocking off Tobari is still 17.0% below Chrome, and part of that is services Tobari does not run — Safe Browsing, sync, the Google account integration, optimisation hints and on-device model services. That is a difference in features, not engineering. <a href="/benchmarks/#what-this-does-and-does-not-show">What the measurement does and does not show</a>.</p>
           </div>
+        </div>
+      </section>
+
+      <section class="section" aria-labelledby="tour-title">
+        <div class="wrap grid">
+          <header class="section-head" data-reveal>
+            <p class="section-no caps">01 · Tour</p>
+            <h2 class="section-title" id="tour-title">It is Chromium, quieter</h2>
+            <p class="section-sub">Chromium's own window, tabs and settings, so nothing has to be relearned. What Tobari adds sits underneath, plus two small pieces of its own.</p>
+          </header>
+          <div class="section-body tour">
+            <figure class="tour-item" data-reveal>
+              <div class="shot"><img src="/assets/shots/newtab.webp" width="1200" height="733" alt="Tobari's new-tab page: the search field holds '!gh tokio runtime' and marks it as a GitHub bang; below, a readout of 35 bangs, the Chromium engine and no telemetry." loading="lazy" decoding="async"></div>
+              <figcaption>
+                <h3>A new tab that answers bangs</h3>
+                <p>Type <code>!gh</code>, <code>!w</code> or <code>!mdn</code> and a query. The bang is resolved on your machine, so the search engine never sees it. From the address bar too.</p>
+              </figcaption>
+            </figure>
+            <figure class="tour-item" data-reveal>
+              <div class="shot shot-narrow"><img src="/assets/shots/popup.webp" width="592" height="620" alt="The Tobari toolbar popup on a news site: requests blocked on this page, a blocking switch for the site, a Fast JavaScript switch, session total, rule count and filter-list age." loading="lazy" decoding="async"></div>
+              <figcaption>
+                <h3>One popup, two switches</h3>
+                <p>The badge counts what was blocked on the page. Turn blocking off for a site that breaks, or give a site you trust the JavaScript optimizer back. Both choices persist.</p>
+              </figcaption>
+            </figure>
+            <figure class="tour-item" data-reveal>
+              <div class="shot"><img src="/assets/shots/store.webp" width="1200" height="459" alt="The Chrome Web Store open in Tobari, offering 'Add to Chrome' for the Bitwarden password manager." loading="lazy" decoding="async"></div>
+              <figcaption>
+                <h3>Your extensions work</h3>
+                <p>The Chrome Web Store installs extensions with Chromium's own permission prompt, and they keep updating. The store suggests switching to Chrome, because Tobari says it is Chromium; "Add to Chrome" works regardless.</p>
+              </figcaption>
+            </figure>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" aria-labelledby="bang-title">
+        <div class="wrap grid">
+          <header class="section-head" data-reveal>
+            <p class="section-no caps">02 · Try it</p>
+            <h2 class="section-title" id="bang-title">Bangs, resolved here</h2>
+            <p class="section-sub">This box runs the resolver and table from Tobari's new-tab page, in this page. Nothing you type is sent anywhere.</p>
+          </header>
+          <form class="section-body bang-demo" data-bang-demo data-reveal autocomplete="off">
+            <label class="caps" for="bang-input">Query</label>
+            <div class="bang-field">
+              <span class="cmd-prompt" aria-hidden="true">›</span>
+              <input class="bang-input" id="bang-input" data-bang-input type="text" spellcheck="false" value="!gh tokio runtime" aria-describedby="bang-note">
+            </div>
+            <div class="bang-examples" aria-label="Examples">
+              <button type="button" class="bang-chip" data-bang-example="!w Kyoto">!w Kyoto</button>
+              <button type="button" class="bang-chip" data-bang-example="css grid !mdn">css grid !mdn</button>
+              <button type="button" class="bang-chip" data-bang-example="!r/linux wayland">!r/linux wayland</button>
+              <button type="button" class="bang-chip" data-bang-example="!aw pipewire">!aw pipewire</button>
+            </div>
+            <div class="bang-out" data-bang-out aria-live="polite">
+              <span class="bang-token mono" data-bang-token>—</span>
+              <span class="bang-name" data-bang-name></span>
+              <span class="bang-dest mono" data-bang-dest></span>
+              <a class="bang-open" data-bang-open href="#bang-title" rel="noreferrer" target="_blank" hidden>Open <span aria-hidden="true">↗</span></a>
+            </div>
+            <p class="bang-note" id="bang-note" data-bang-note>Resolved in this page. In Tobari the same rewrite happens before the request leaves, whichever search engine you use.</p>
+            <details class="bang-all">
+              <summary class="caps">All <span data-bang-count>35</span> bangs</summary>
+              <ul class="bang-list" data-bang-list></ul>
+            </details>
+          </form>
         </div>
       </section>
 
       <section class="section" aria-labelledby="index-title">
         <div class="wrap grid">
           <header class="section-head" data-reveal>
-            <p class="section-no caps">01 · Index</p>
+            <p class="section-no caps">03 · Index</p>
             <h2 class="section-title" id="index-title">What is in the build</h2>
-            <p class="section-sub">Phase 1 is a browser on CEF, built and packaged. These are the parts that exist today, each with the document that backs it.</p>
+            <p class="section-sub">Each part, with the document that backs it.</p>
           </header>
           <ol class="index section-body">
             <li data-reveal>
               <span class="index-no">01</span>
-              <h3 class="index-title">Chromium's own window</h3>
-              <p class="index-text">
-                Tobari uses CEF's Chrome-style window: Chromium's tab strip in the title bar, its omnibox and its
-                extension toolbar, themed dark and grayscale on first run. An earlier build drew its own interface in
-                HTML; CEF cannot give that interface real tabs and Chrome extensions at the same time, so it was
-                replaced.
-              </p>
-              <span class="index-src"><a href="/docs/design/#where-the-design-lives">DESIGN § Where the design lives</a></span>
-            </li>
-            <li data-reveal>
-              <span class="index-no">02</span>
               <h3 class="index-title">Blocking before load</h3>
               <p class="index-text">
                 <code>adblock-rust</code>, the engine Brave ships, is linked into the browser and cancels ad and tracker
-                requests before they load, in every tab. Lists: <a href="https://easylist.to/" rel="noreferrer">EasyList and EasyPrivacy</a>,
-                and <a href="https://github.com/uBlockOrigin/uAssets" rel="noreferrer">uBlock Origin's</a> filters and privacy lists.
-                Pages you navigate to directly are never blocked. Blocking is network-level only: no cosmetic filtering.
+                requests before they load: in every tab, and in service workers. Lists:
+                <a href="https://easylist.to/" rel="noreferrer">EasyList and EasyPrivacy</a>, and
+                <a href="https://github.com/uBlockOrigin/uAssets" rel="noreferrer">uBlock Origin's</a> filters and privacy lists.
+                Network-level only: no cosmetic filtering.
               </p>
               <span class="index-src"><a href="/security/#network-layer-blocking">SECURITY § Blocking</a></span>
             </li>
             <li data-reveal>
-              <span class="index-no">03</span>
-              <h3 class="index-title">A switch in the toolbar</h3>
+              <span class="index-no">02</span>
+              <h3 class="index-title">Hardened by default</h3>
               <p class="index-text">
-                Blocking is controlled by a bundled extension pinned to the toolbar. Its badge shows how many requests
-                were blocked on the current page; its popup switches blocking off for a site, and that choice persists.
-                It talks to the browser over a bridge that answers only that extension and refuses web pages.
-              </p>
-              <span class="index-src"><a href="/security/#the-toolbar-extension-and-its-bridge">SECURITY § Toolbar extension</a></span>
-            </li>
-            <li data-reveal>
-              <span class="index-no">04</span>
-              <h3 class="index-title">Chrome extensions</h3>
-              <p class="index-text">
-                The Chrome Web Store works. Bitwarden and uBlock Origin Lite were installed from the store in testing.
-                Extensions you install are kept current by Chromium's extension updater, which tells Google which
-                extensions you have; if you install none, it does not run.
-              </p>
-              <span class="index-src"><a href="/security/#extensions-you-install">SECURITY § Extensions</a></span>
-            </li>
-            <li data-reveal>
-              <span class="index-no">05</span>
-              <h3 class="index-title">Nothing sent home</h3>
-              <p class="index-text">
-                On an idle fresh profile, the only requests that leave the machine are the four weekly filter-list
-                downloads, sent with no cookies, credentials or query string. Chromium's own calls to Google — the
-                component updater, network time, an account check — were found in a network log and redirected to a
-                closed local port or disabled.
-              </p>
-              <span class="index-src"><a href="/security/#contacts-tobari-makes-on-its-own">SECURITY § Contacts</a></span>
-            </li>
-            <li data-reveal>
-              <span class="index-no">06</span>
-              <h3 class="index-title">Local bangs, quiet defaults</h3>
-              <p class="index-text">
-                DuckDuckGo-style <code>!bangs</code> are resolved on your machine, so the search engine never sees a
-                bang query. First run sets DuckDuckGo, no search suggestions, no network prediction, third-party
-                cookies blocked and Translate off; anything you change afterwards stays changed.
+                V8's optimizing compilers, where most exploited Chrome bugs of recent years live, are off unless you
+                allow them for a site. HTTPS-Only mode is on. USB, serial, HID, Bluetooth, sensors and local-font
+                access are blocked. Extensions that Linux packages push system-wide are not installed.
               </p>
               <span class="index-src"><a href="/security/#first-run-defaults">SECURITY § Defaults</a></span>
             </li>
             <li data-reveal>
-              <span class="index-no">07</span>
+              <span class="index-no">03</span>
+              <h3 class="index-title">Nothing sent home</h3>
+              <p class="index-text">
+                On an idle fresh profile, the only requests that leave the machine are the four weekly filter-list
+                downloads, with no cookies or query string. Chromium's own calls to Google — component updater, network
+                time, an account check — were found in a network log and shut off.
+              </p>
+              <span class="index-src"><a href="/security/#contacts-tobari-makes-on-its-own">SECURITY § Contacts</a></span>
+            </li>
+            <li data-reveal>
+              <span class="index-no">04</span>
+              <h3 class="index-title">Quiet defaults</h3>
+              <p class="index-text">
+                DuckDuckGo, no search suggestions, no network prediction, third-party cookies blocked, WebRTC limited to
+                the public interface, Translate off. Anything you change afterwards stays changed.
+              </p>
+              <span class="index-src"><a href="/security/#first-run-defaults">SECURITY § Defaults</a></span>
+            </li>
+            <li data-reveal>
+              <span class="index-no">05</span>
               <h3 class="index-title">Sandbox always on</h3>
               <p class="index-text">
-                Chromium's sandbox is on in every build and package; Tobari never passes <code>--no-sandbox</code>.
-                The Flatpak sandboxes renderers through <code>zypak</code>. The per-user installer refuses to install
-                where unprivileged user namespaces are disabled.
+                Chromium's sandbox runs in every build and package; Tobari never passes <code>--no-sandbox</code>. The
+                Flatpak sandboxes renderers through <code>zypak</code>; the per-user installer refuses systems where
+                user namespaces are disabled.
               </p>
               <span class="index-src"><a href="/security/#sandbox">SECURITY § Sandbox</a></span>
             </li>
             <li data-reveal>
-              <span class="index-no">08</span>
-              <h3 class="index-title">Surfaces drawn to a system</h3>
+              <span class="index-no">06</span>
+              <h3 class="index-title">Signed releases</h3>
               <p class="index-text">
-                The new-tab page and the blocking popup use one token set, bundled IBM Plex and a single vermilion
-                signal. Every colour that carries information clears WCAG AA in both themes, and the animation ticker
-                sleeps when nothing moves.
+                Every release's checksums are signed with minisign. The installer carries the public key and refuses a
+                download whose signature or checksum does not match, using <code>minisign</code> or plain OpenSSL.
+              </p>
+              <span class="index-src"><a href="/docs/releasing/#signing">RELEASING § Signing</a></span>
+            </li>
+            <li data-reveal>
+              <span class="index-no">07</span>
+              <h3 class="index-title">The engine, watched</h3>
+              <p class="index-text">
+                A daily job compares Tobari's Chromium with Chrome stable and opens an issue listing any security fix
+                Tobari lacks. The commitment is a release within three days of a CEF build that carries it.
+              </p>
+              <span class="index-src"><a href="#engine-title">Engine currency, below</a></span>
+            </li>
+            <li data-reveal>
+              <span class="index-no">08</span>
+              <h3 class="index-title">Drawn to a system</h3>
+              <p class="index-text">
+                The new-tab page and the toolbar popup share one token set, bundled IBM Plex and a single vermilion
+                signal. Every colour that carries information clears WCAG AA, and nothing animates when nothing moves.
               </p>
               <span class="index-src"><a href="/docs/design/#measured-contrast">DESIGN § Contrast</a></span>
             </li>
@@ -205,19 +279,63 @@
             <footer class="caps"><a href="/security/#what-is-not-protected">SECURITY § What is not protected</a></footer>
           </blockquote>
           <ul class="claims-list" aria-labelledby="claims-title" data-reveal>
-            <li><span class="caps" id="claims-title">What it does not claim</span></li>
+            <li><span class="caps" id="claims-title">What it gives up</span></li>
             <li><strong>Not anonymous.</strong> Your IP address is visible, and sites can fingerprint the browser; Tobari spoofs nothing. <a href="/security/#what-is-not-protected">Security</a></li>
-            <li><strong>Not all of the 29.5% is efficiency.</strong> Part of the gap is features Tobari does not have: Safe Browsing, sync, Google account integration. <a href="/benchmarks/#what-this-does-and-does-not-show">Benchmarks</a></li>
-            <li><strong>No phishing warnings.</strong> Safe Browsing is off. Tobari will not warn you before you open a known phishing or malware site. <a href="/security/#first-run-defaults">Security</a></li>
-            <li><strong>Not always current.</strong> A Chrome security fix reaches Tobari only after CEF ships it. The current gap is below. <a href="#engine-title">Engine currency</a></li>
+            <li><strong>No phishing warnings.</strong> Safe Browsing is off. Tobari will not warn you before a known phishing or malware site. <a href="/security/#first-run-defaults">Security</a></li>
+            <li><strong>Heavy JavaScript is slower.</strong> With the optimizer off, a JavaScript benchmark ran 2.1× slower. One switch per site gives it back. <a href="/security/#first-run-defaults">Security</a></li>
+            <li><strong>Not always current.</strong> A Chrome security fix reaches Tobari only after CEF ships it. <a href="#engine-title">Engine currency</a></li>
           </ul>
+        </div>
+      </section>
+
+      <section class="section" id="install" aria-labelledby="install-title">
+        <div class="wrap grid">
+          <header class="section-head" data-reveal>
+            <p class="section-no caps">04 · Install</p>
+            <h2 class="section-title" id="install-title">Three ways in</h2>
+            <p class="section-sub">All three install for your user only and keep Chromium's sandbox on. Updating is running the same thing again.</p>
+          </header>
+          <div class="section-body ways" data-reveal>
+            <div class="tabs" data-tabs>
+              <div class="tab-list" role="tablist" aria-label="Install method">
+                <button role="tab" id="tab-script" aria-controls="way-script" aria-selected="true" type="button">Installer</button>
+                <button role="tab" id="tab-flatpak" aria-controls="way-flatpak" aria-selected="false" type="button">Flatpak by hand</button>
+                <button role="tab" id="tab-source" aria-controls="way-source" aria-selected="false" type="button">From source</button>
+              </div>
+              <div class="tab-panel" role="tabpanel" id="way-script" aria-labelledby="tab-script">
+<pre class="block" tabindex="0"><code>curl -fsSL {{install_url}} | bash
+
+# options
+curl -fsSL {{install_url}} | bash -s -- --tarball --set-default
+curl -fsSL {{install_url}} | bash -s -- --uninstall</code></pre>
+                <p>Downloads release {{version}} from GitHub, checks <code>SHA256SUMS.minisig</code> against the pinned key and the artifact against <code>SHA256SUMS</code>, then installs. Prefer to read first? <a href="/install.sh">The script</a> is short.</p>
+              </div>
+              <div class="tab-panel" role="tabpanel" id="way-flatpak" aria-labelledby="tab-flatpak">
+<pre class="block" tabindex="0"><code>V={{version}}; U={{release_dl}}
+curl -fLO $U/tobari-$V.flatpak -O $U/SHA256SUMS -O $U/SHA256SUMS.minisig
+minisign -Vm SHA256SUMS -P {{pubkey}}
+sha256sum -c --ignore-missing SHA256SUMS
+flatpak install --user tobari-$V.flatpak</code></pre>
+                <p>The runtime comes from Flathub. The app is <code>dev.tobari.Browser</code>; its profile lives in <code>~/.var/app/dev.tobari.Browser/</code>.</p>
+              </div>
+              <div class="tab-panel" role="tabpanel" id="way-source" aria-labelledby="tab-source">
+<pre class="block" tabindex="0"><code>git clone {{gh}}
+cd tobari
+CEF_ROOT=$(shell/provision-cef.sh | tail -1)
+cmake -S shell -B build -G Ninja -DCEF_ROOT="$CEF_ROOT" -DCMAKE_BUILD_TYPE=Release
+cmake --build build
+packaging/install.sh build</code></pre>
+                <p>Needs CMake, Ninja, a C++20 compiler and Rust. On immutable systems, build inside a distrobox container. <a href="/docs/dev-linux/">Developing on Linux</a></p>
+              </div>
+            </div>
+          </div>
         </div>
       </section>
 
       <section class="section" aria-labelledby="engine-title">
         <div class="wrap grid">
           <header class="section-head" data-reveal>
-            <p class="section-no caps">02 · Engine</p>
+            <p class="section-no caps">05 · Engine</p>
             <h2 class="section-title" id="engine-title">Engine currency</h2>
             <p class="section-sub">
               When Chrome ships a security fix, Tobari is exposed until a CEF build carries it and Tobari ships that
@@ -240,36 +358,50 @@
         </div>
       </section>
 
-      <section class="section" aria-labelledby="platforms-title">
+      <section class="section" aria-labelledby="faq-title">
         <div class="wrap grid">
           <header class="section-head" data-reveal>
-            <p class="section-no caps">03 · Platforms</p>
-            <h2 class="section-title" id="platforms-title">Where it runs</h2>
+            <p class="section-no caps">06 · Questions</p>
+            <h2 class="section-title" id="faq-title">Asked first</h2>
           </header>
-          <dl class="platforms section-body" data-reveal>
-            <div>
-              <dt>Linux</dt>
-              <dd class="state">Phase 1, built and packaged</dd>
-              <dd class="why">Built and measured on Bazzite under Wayland. The Flatpak builds and runs with Chromium's sandbox working; a per-user installer writes only under your home directory. No published release yet: build from source. <a href="/docs/packaging/">Packaging</a></dd>
-            </div>
-            <div>
-              <dt>macOS</dt>
-              <dd class="state">Not a Phase 1 target</dd>
-              <dd class="why">There is no Mac to test on and no paid Apple Developer account, so a <code>.dmg</code> could not be notarized and Gatekeeper would block it. Nothing is tested on a Mac. <a href="/docs/dev-macos/">Why</a></dd>
-            </div>
-            <div>
-              <dt>Windows</dt>
-              <dd class="state">Not supported</dd>
-              <dd class="why">Permanently out of scope.</dd>
-            </div>
-          </dl>
+          <div class="section-body faq" data-reveal>
+            <details>
+              <summary>Is this a fork of Chromium?</summary>
+              <p>No. Tobari embeds Chromium through CEF, the framework Spotify and Steam use, and drives Chromium's own browser window. It changes behaviour from outside the engine: request handling, preferences and launch switches. That keeps it small enough to follow Chromium releases closely, at the cost of waiting for CEF to ship each one. <a href="/docs/design/">Design</a></p>
+            </details>
+            <details>
+              <summary>Will my Chrome extensions work?</summary>
+              <p>Extensions from the Chrome Web Store install with Chromium's permission prompt and update normally. Bitwarden and uBlock Origin Lite were installed and used in testing. Extensions that need a Google account sign-in to the browser itself, such as Chrome sync, do not apply: Tobari has no browser account.</p>
+            </details>
+            <details>
+              <summary>Why is a site slow? Why does a site break?</summary>
+              <p>Heavy web apps and games can be slower because V8's optimizing compilers are off by default. Open the Tobari toolbar popup and turn on <strong>Fast JavaScript</strong> for that site. If a site breaks, turn <strong>Blocking</strong> off for it in the same popup; both choices are remembered per site. <a href="/security/#first-run-defaults">Why the optimizer is off</a></p>
+            </details>
+            <details>
+              <summary>Does it update itself?</summary>
+              <p>Not yet. Tobari makes no update checks of its own, because it contacts nobody but the filter-list hosts. Run the installer again to update, and watch <a href="{{gh}}/releases" rel="noreferrer">GitHub Releases</a> for new versions. Filter lists and Web Store extensions do update themselves.</p>
+            </details>
+            <details>
+              <summary>Where is my data, and can I bring my Chrome profile?</summary>
+              <p>Everything stays on your machine: <code>~/.local/share/tobari</code> for the per-user build, <code>~/.var/app/dev.tobari.Browser/</code> for the Flatpak. Bookmarks and passwords can be moved with Chromium's own import (Settings → Import bookmarks and settings) or an HTML or CSV export.</p>
+            </details>
+            <details>
+              <summary>macOS or Windows?</summary>
+              <p>Linux only. macOS is not a Phase 1 target, because there is no Mac to test on and no way to notarize a build. Windows is out of scope. <a href="/docs/dev-macos/">Why</a></p>
+            </details>
+            <details>
+              <summary>How do I remove it?</summary>
+              <p><code>curl -fsSL {{install_url}} | bash -s -- --uninstall</code> removes either install and leaves your profile in place, so you can delete that yourself.</p>
+            </details>
+          </div>
         </div>
       </section>
 
+      <!--if:forms-->
       <section class="section waitlist" aria-labelledby="waitlist-title">
         <div class="wrap grid">
           <header class="section-head" data-reveal>
-            <p class="section-no caps">04 · Later</p>
+            <p class="section-no caps">07 · Later</p>
             <h2 class="section-title" id="waitlist-title">One email, when it ships</h2>
             <p class="section-sub">A fully local AI assistant is planned for Phase 3. It is not in this build.</p>
           </header>
@@ -294,3 +426,22 @@
           </div>
         </div>
       </section>
+      <!--/if:forms-->
+      <!--if:noforms-->
+      <section class="section" aria-labelledby="later-title">
+        <div class="wrap grid">
+          <header class="section-head" data-reveal>
+            <p class="section-no caps">07 · Later</p>
+            <h2 class="section-title" id="later-title">What comes next</h2>
+            <p class="section-sub">A fully local AI assistant is planned for Phase 3, running on your machine with no cloud path. It is not in this build.</p>
+          </header>
+          <div class="section-body later" data-reveal>
+            <p>To hear about releases without giving anyone an email address, watch the repository on GitHub with <strong>Watch → Custom → Releases</strong>, or follow its <a href="{{gh}}/releases.atom" rel="noreferrer">release feed</a>.</p>
+            <div class="hero-actions">
+              <a class="btn" href="/roadmap/">Roadmap <span class="arrow" aria-hidden="true">→</span></a>
+              <a class="btn" href="{{gh}}" rel="noreferrer">Source on GitHub</a>
+            </div>
+          </div>
+        </div>
+      </section>
+      <!--/if:noforms-->

@@ -23,6 +23,17 @@ const REPO = path.resolve(SITE, "..");
 const DIST = path.join(SITE, "dist");
 const GH = "https://github.com/kaorii-ako/tobari";
 
+// Where the site is served. GitHub Pages serves this repository's site under
+// /tobari/; Netlify (netlify.toml) serves it at the root. Pages are written with
+// root-relative links and rewritten to the base when they are written out, so
+// every check below works on one canonical form.
+const BASE = (process.env.SITE_BASE || "/").replace(/\/?$/, "/");
+const HOST = process.env.SITE_HOST || "netlify"; // netlify | pages
+// The Netlify form only works on Netlify; elsewhere the waitlist is replaced
+// by a pointer to GitHub's release notifications.
+const HAS_FORMS = HOST === "netlify";
+const SITE_URL = process.env.SITE_URL || "https://kaorii-ako.github.io/tobari";
+
 /* ------------------------------------------------------------------ helpers */
 
 const esc = (s) =>
@@ -217,7 +228,27 @@ async function engineFacts() {
     `Tobari pins Chromium ${esc(chromium[1])}. Latest Chrome stable ${inline(latest[cChrome])}: ` +
     `security fixes ${inline(latest[cFixes])}; first CEF build ${inline(latest[cCef])}; gap ${inline(latest[cGap])}.`;
 
+  const metainfo = await readFile(path.join(REPO, "packaging", "dev.tobari.Browser.metainfo.xml"), "utf8");
+  const release = metainfo.match(/<release version="([^"]+)" date="([^"]+)"/);
+  if (!release) throw new Error("metainfo: no <release> entry");
+  const installer = await readFile(path.join(REPO, "packaging", "get-tobari.sh"), "utf8");
+  if (!installer.includes(`VERSION="\${TOBARI_VERSION:-${release[1]}}"`)) {
+    throw new Error(`packaging/get-tobari.sh does not pin ${release[1]}, the newest release in the metainfo`);
+  }
+  const installUrl = `${SITE_URL}/install.sh`;
+
+  const pubkey = (await readFile(path.join(REPO, "tobari.pub"), "utf8")).split("\n")[1].trim();
+
   return {
+    gh: GH,
+    pubkey: esc(pubkey),
+    release_dl: `${GH}/releases/download/v${esc(release[1])}`,
+    version: esc(release[1]),
+    release_date: esc(release[2]),
+    release_url: `${GH}/releases/tag/v${esc(release[1])}`,
+    install_url: esc(installUrl),
+    install_cmd: esc(`curl -fsSL ${installUrl} | bash`),
+    chromium_version: esc(chromium[1]),
     cef_version: esc(cefVersion),
     cef_major: esc(cefVersion.split(".")[0]),
     engine_status: status,
@@ -227,6 +258,10 @@ async function engineFacts() {
 }
 
 function fill(html, facts, name) {
+  // <!--if:forms--> ... <!--/if:forms--> blocks render only on a host with
+  // form handling; <!--if:noforms--> blocks render everywhere else.
+  html = html.replace(/<!--if:(forms|noforms)-->([\s\S]*?)<!--\/if:\1-->/g, (m, which, inner) =>
+    (which === "forms") === HAS_FORMS ? inner : "");
   return html.replace(/\{\{(\w+)\}\}/g, (m, key) => {
     if (!(key in facts)) throw new Error(`${name}: unknown placeholder ${m}`);
     return facts[key];
@@ -236,7 +271,7 @@ function fill(html, facts, name) {
 /* ------------------------------------------------------------------ layout */
 
 const NAV = [
-  { href: "/download/", label: "Download" },
+  { href: "/install/", label: "Install" },
   { href: "/docs/", label: "Docs" },
   { href: "/security/", label: "Security" },
   { href: "/benchmarks/", label: "Benchmarks" },
@@ -253,9 +288,12 @@ function nav(current) {
   return items.join("");
 }
 
-function layout({ title, description, url, body, page = "doc", scripts = [] }) {
+function layout({ title, description, url, body, page = "doc", scripts = [], modules = [] }) {
   const fullTitle = title ? `${title} · Tobari` : "Tobari (帳) — a privacy-first Chromium browser for Linux";
-  const extra = scripts.map((s) => `<script src="${s}" defer></script>`).join("\n    ");
+  const extra = [
+    ...scripts.map((s) => `<script src="${s}" defer></script>`),
+    ...modules.map((s) => `<script type="module" src="${s}"></script>`),
+  ].join("\n    ");
   return `<!doctype html>
 <html lang="en">
   <head>
@@ -265,6 +303,12 @@ function layout({ title, description, url, body, page = "doc", scripts = [] }) {
     <meta name="description" content="${esc(description)}">
     <meta name="color-scheme" content="dark light">
     <meta name="referrer" content="no-referrer">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; font-src 'self'; img-src 'self' data:; connect-src 'self'; form-action 'self'; base-uri 'self'; object-src 'none'">
+    <meta property="og:title" content="${esc(fullTitle)}">
+    <meta property="og:description" content="${esc(description)}">
+    <meta property="og:type" content="website">
+    <meta property="og:image" content="${SITE_URL}/assets/shots/og.jpg">
+    <meta name="twitter:card" content="summary_large_image">
     <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
     <link rel="preload" href="/assets/fonts/plex-sans-400.woff2" as="font" type="font/woff2" crossorigin>
     <link rel="preload" href="/assets/fonts/plex-sans-600.woff2" as="font" type="font/woff2" crossorigin>
@@ -280,7 +324,7 @@ function layout({ title, description, url, body, page = "doc", scripts = [] }) {
     <header class="site-header">
       <div class="wrap header-row">
         <a class="brand" href="/"${url === "/" ? ' aria-current="page"' : ""}><span class="brand-glyph" lang="ja" aria-hidden="true">帳</span><span>Tobari</span></a>
-        <span class="brand-status mono">pre-release · phase 1</span>
+        <span class="brand-status mono">${esc(FACTS.version || "")} · pre-release</span>
         <nav class="site-nav" aria-label="Primary"><ul>${nav(url)}</ul></nav>
       </div>
     </header>
@@ -343,10 +387,20 @@ function sourceMeta(file) {
 const outputs = new Map(); // url -> html
 
 async function emit(url, html) {
-  const file = url.endsWith("/") ? path.join(DIST, url, "index.html") : path.join(DIST, url);
-  await mkdir(path.dirname(file), { recursive: true });
-  await writeFile(file, html);
   outputs.set(url, html);
+}
+
+function withBase(html) {
+  if (BASE === "/") return html;
+  return html.replace(/(\s(?:href|src|action|content)=")\/(?!\/)/g, `$1${BASE}`);
+}
+
+async function writeOutputs() {
+  for (const [url, html] of outputs) {
+    const file = url.endsWith("/") ? path.join(DIST, url, "index.html") : path.join(DIST, url);
+    await mkdir(path.dirname(file), { recursive: true });
+    await writeFile(file, withBase(html));
+  }
 }
 
 let FACTS = {};
@@ -383,6 +437,13 @@ async function build() {
   // the repo can never disagree about it.
   await cp(path.join(REPO, "tobari.pub"), path.join(DIST, "tobari.pub"));
   await writeFile(path.join(DIST, "assets", "tokens.css"), await tokensWithSystemTheme());
+  // The bang demo runs the same resolver and table the new-tab page ships.
+  await mkdir(path.join(DIST, "assets", "bang"), { recursive: true });
+  for (const f of ["bangs.js", "bangs.json"]) {
+    await cp(path.join(REPO, "shell", "ui", f), path.join(DIST, "assets", "bang", f));
+  }
+  // The installer is served from the site, byte for byte the repository copy.
+  await cp(path.join(REPO, "packaging", "get-tobari.sh"), path.join(DIST, "install.sh"));
 
   // Landing
   await emit(
@@ -394,18 +455,21 @@ async function build() {
         "Tobari is a privacy-first Chromium browser for Linux, built on CEF with network-layer blocking. Measured, with the caveats stated.",
       body: await fragment("home.html"),
       scripts: ["/assets/vendor/lenis.min.js"],
+      modules: ["/assets/js/bang-demo.js"],
     }),
   );
 
   // Hand-written pages
   const plain = [
-    { url: "/download/", file: "download.html", title: "Download", description: "There is no Tobari release yet. How releases will be verified, and how to build and install from source today." },
+    { url: "/install/", file: "install.html", title: "Install", description: "Install Tobari on Linux with one signed, per-user command, verify a release by hand, or build from source." },
+    { url: "/download/", file: "download.html", title: "Download", description: "Downloads moved to the Install page." },
     { url: "/roadmap/", file: "roadmap.html", title: "Roadmap", description: "What Tobari is working on now, and what is planned later." },
     { url: "/waitlist/thanks/", file: "waitlist-thanks.html", title: "Added", description: "Your address was added to the waitlist." },
     { url: "/waitlist/remove/", file: "waitlist-remove.html", title: "Remove an address", description: "Remove your address from the Tobari waitlist." },
     { url: "/waitlist/removed/", file: "waitlist-removed.html", title: "Removal requested", description: "Your removal request was received." },
   ];
   for (const p of plain) {
+    if (p.url.startsWith("/waitlist/") && !HAS_FORMS) continue;
     await emit(p.url, layout({ url: p.url, title: p.title, description: p.description, body: await fragment(p.file) }));
   }
 
@@ -523,6 +587,7 @@ async function build() {
   await emit("/404.html", layout({ url: "/404", title: "Not found", description: "Page not found.", body: await fragment("404.html") }));
 
   await verify();
+  await writeOutputs();
 }
 
 /* ------------------------------------------------------------------ checks */
@@ -582,7 +647,7 @@ async function verify() {
       if (/^[a-z]+:/i.test(href)) continue;
       const [p, frag] = href.split("#");
       const targetUrl = p === "" ? url : p;
-      if (targetUrl.startsWith("/assets/") || targetUrl === "/tobari.pub") continue;
+      if (targetUrl.startsWith("/assets/") || targetUrl === "/tobari.pub" || targetUrl === "/install.sh") continue;
       const target = outputs.get(targetUrl);
       if (!target) {
         problems.push(`${url}: link to missing page ${href}`);
@@ -593,7 +658,7 @@ async function verify() {
   }
 
   // Any http(s) URL in shipped CSS/JS that is not a comment or licence banner.
-  for (const rel of ["assets/site.css", "assets/tokens.css", "assets/js/site.js", "assets/js/motion.js"]) {
+  for (const rel of ["assets/site.css", "assets/tokens.css", "assets/js/site.js", "assets/js/motion.js", "assets/js/bang-demo.js"]) {
     const text = await readFile(path.join(DIST, rel), "utf8");
     if (/url\(\s*["']?(https?:)?\/\//i.test(text)) problems.push(`${rel}: remote url()`);
     if (/@import/i.test(text)) problems.push(`${rel}: @import`);

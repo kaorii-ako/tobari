@@ -1,0 +1,206 @@
+      <div class="wrap">
+        <header class="grid page-head">
+          <p class="crumb caps">Install</p>
+          <h1 class="page-title">Install Tobari {{version}}</h1>
+          <p class="status-line"><span class="status-dot" aria-hidden="true"></span>Release {{version}} · {{release_date}} · Chromium {{chromium_version}} · Linux x86_64 · signed</p>
+          <p class="page-meta">
+            One command, for your user only, with the release signature checked before anything is installed.
+            Releases are on <a href="{{release_url}}" rel="noreferrer">GitHub Releases</a>, never on this site.
+          </p>
+          <div class="hero-install install-hero">
+            <div class="cmd" role="group" aria-label="Install command">
+              <span class="cmd-prompt" aria-hidden="true">$</span>
+              <code class="cmd-text" id="install-cmd">{{install_cmd}}</code>
+              <button class="cmd-copy" type="button" data-copy="#install-cmd" hidden><span data-copy-label>Copy</span></button>
+            </div>
+          </div>
+          <div class="notice" role="note">
+            <span class="caps">Engine</span>
+            <p>{{engine_status}} <a href="/security/#engine-currency-read-this-first">SECURITY § Engine currency</a></p>
+          </div>
+        </header>
+
+        <section class="section" id="installer" aria-labelledby="installer-title">
+          <div class="grid">
+            <header class="section-head" data-reveal>
+              <p class="section-no caps">01 · Installer</p>
+              <h2 class="section-title" id="installer-title">What the command does</h2>
+              <p class="section-sub">It is a short bash script. <a href="/install.sh">Read it</a> before you pipe it into a shell; that is what it is there for.</p>
+            </header>
+            <ol class="steps section-body">
+              <li data-reveal>
+                <div>
+                  <h3>Checks the machine</h3>
+                  <p>Linux on x86_64, run as your own user and not root. With Flatpak present it installs the Flatpak; otherwise the per-user build, after checking that unprivileged user namespaces work, because Chromium's sandbox needs them and Tobari will not run without its sandbox.</p>
+                </div>
+              </li>
+              <li data-reveal>
+                <div>
+                  <h3>Downloads release {{version}} from GitHub</h3>
+                  <p><code>SHA256SUMS</code>, its signature <code>SHA256SUMS.minisig</code>, and the one artifact it needs, over HTTPS only.</p>
+                </div>
+              </li>
+              <li data-reveal>
+                <div>
+                  <h3>Checks the signature, then the checksum</h3>
+                  <p>The release key is written into the script. It verifies the signature with <code>minisign</code> if you have it, or with OpenSSL 3, which can check minisign's Ed25519 signatures directly. Then it checks the artifact's SHA-256 against the signed list. Either failure stops it before anything is installed.</p>
+                </div>
+              </li>
+              <li data-reveal>
+                <div>
+                  <h3>Installs for you only</h3>
+                  <p>The Flatpak goes into your user installation (<code>flatpak install --user</code>), with the runtime from Flathub. The per-user build goes into <code>~/.local/lib/tobari</code> with a launcher in <code>~/.local/bin</code> and a menu entry. Nothing outside your home directory changes, so it works on immutable systems like Silverblue and Bazzite.</p>
+                </div>
+              </li>
+            </ol>
+          </div>
+        </section>
+
+        <section class="section" id="options" aria-labelledby="options-title">
+          <div class="grid">
+            <header class="section-head" data-reveal>
+              <p class="section-no caps">02 · Options</p>
+              <h2 class="section-title" id="options-title">Choices</h2>
+            </header>
+            <div class="section-body" data-reveal>
+              <div class="table-wrap" role="region" aria-label="Installer options" tabindex="0">
+                <table class="data">
+                  <thead><tr><th scope="col">option</th><th scope="col">does</th></tr></thead>
+                  <tbody>
+                    <tr><td><code>--flatpak</code></td><td>Install the Flatpak bundle. The default when <code>flatpak</code> is installed.</td></tr>
+                    <tr><td><code>--tarball</code></td><td>Install the per-user build into <code>~/.local</code>, no Flatpak needed.</td></tr>
+                    <tr><td><code>--set-default</code></td><td>Make Tobari the default web browser. Never done unless asked.</td></tr>
+                    <tr><td><code>--version X.Y.Z</code></td><td>Install a specific release.</td></tr>
+                    <tr><td><code>--uninstall</code></td><td>Remove either install. Your profile is kept.</td></tr>
+                  </tbody>
+                </table>
+              </div>
+<pre class="block" tabindex="0"><code>curl -fsSL {{install_url}} | bash -s -- --tarball --set-default</code></pre>
+              <p class="install-note">To update, run the installer again. Tobari does not check for updates itself, because it contacts nobody but the filter-list hosts; watch <a href="{{gh}}/releases" rel="noreferrer">Releases</a> for new versions.</p>
+            </div>
+          </div>
+        </section>
+
+        <section class="section" id="verify" aria-labelledby="verify-title">
+          <div class="grid">
+            <header class="section-head" data-reveal>
+              <p class="section-no caps">03 · By hand</p>
+              <h2 class="section-title" id="verify-title">Verify and install without the script</h2>
+              <p class="section-sub">The same steps the installer takes, one at a time.</p>
+            </header>
+            <ol class="steps section-body">
+              <li data-reveal>
+                <div>
+                  <h3>Get the public key from two places</h3>
+                  <p>It is committed to the repository and served by this site, so one copy can be checked against the other.</p>
+                  <dl class="keybox">
+                    <dt>Key id</dt><dd>0F0DC333B8A4E968</dd>
+                    <dt>Public key</dt><dd>{{pubkey}}</dd>
+                    <dt>Repository</dt><dd><a href="{{gh}}/blob/browser/tobari.pub" rel="noreferrer">tobari.pub</a></dd>
+                    <dt>This site</dt><dd><a href="/tobari.pub">/tobari.pub</a></dd>
+                  </dl>
+                </div>
+              </li>
+              <li data-reveal>
+                <div>
+                  <h3>Download</h3>
+<pre class="block" tabindex="0"><code>V={{version}}; U={{release_dl}}
+curl -fLO $U/SHA256SUMS -O $U/SHA256SUMS.minisig \
+     -O $U/tobari-$V.flatpak -O $U/tobari-$V-linux-x86_64.tar.gz</code></pre>
+                </div>
+              </li>
+              <li data-reveal>
+                <div>
+                  <h3>Check the signature, then the checksums</h3>
+<pre class="block" tabindex="0"><code>minisign -Vm SHA256SUMS -P {{pubkey}}
+sha256sum -c --ignore-missing SHA256SUMS</code></pre>
+                  <p>If <code>minisign</code> does not report the signature as verified, the download is not Tobari. Stop, and <a href="{{gh}}/issues" rel="noreferrer">open an issue</a>.</p>
+                </div>
+              </li>
+              <li data-reveal>
+                <div>
+                  <h3>Install one of them</h3>
+<pre class="block" tabindex="0"><code># Flatpak
+flatpak install --user tobari-$V.flatpak
+
+# or the per-user build
+tar xzf tobari-$V-linux-x86_64.tar.gz
+tobari-$V/install.sh tobari-$V/app</code></pre>
+                </div>
+              </li>
+            </ol>
+          </div>
+        </section>
+
+        <section class="section" id="build" aria-labelledby="build-title">
+          <div class="grid">
+            <header class="section-head" data-reveal>
+              <p class="section-no caps">04 · Source</p>
+              <h2 class="section-title" id="build-title">Build from source</h2>
+              <p class="section-sub">
+                Every build tool lives in a distrobox container; nothing is layered onto the host. The steps follow
+                <a href="/docs/dev-linux/">DEV-LINUX</a>.
+              </p>
+            </header>
+            <ol class="steps section-body">
+              <li data-reveal>
+                <div>
+                  <h3>Create the container and install the toolchain</h3>
+<pre class="block" tabindex="0"><code>distrobox create --name tobari --image registry.fedoraproject.org/fedora:41
+distrobox enter tobari
+sudo dnf install -y git cmake ninja-build gcc-c++ python3 python3-pillow openssl \
+  gtk3-devel libX11-devel libXi-devel nss-devel alsa-lib-devel \
+  at-spi2-atk-devel cups-devel libdrm-devel mesa-libgbm-devel
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y</code></pre>
+                  <p>Rust is needed because the blocking engine is a Rust library that CMake builds with Cargo.</p>
+                </div>
+              </li>
+              <li data-reveal>
+                <div>
+                  <h3>Clone, provision CEF, build</h3>
+<pre class="block" tabindex="0"><code>git clone {{gh}} &amp;&amp; cd tobari
+CEF_ROOT=$(shell/provision-cef.sh | tail -1)
+cmake -S shell -B build -G Ninja -DCEF_ROOT="$CEF_ROOT" -DCMAKE_BUILD_TYPE=Release
+cmake --build build</code></pre>
+                  <p>
+                    <code>shell/provision-cef.sh</code> downloads the pinned CEF build (<code>{{cef_version}}</code>),
+                    checks it against the hash pinned in the script and caches it in <code>~/.cache/tobari-dev/</code>.
+                    One build produces the blocking engine, the <code>tobari</code> binary, both bundled extensions and
+                    the filter lists.
+                  </p>
+                </div>
+              </li>
+              <li data-reveal>
+                <div>
+                  <h3>Run or install it</h3>
+<pre class="block" tabindex="0"><code>build/tobari                                     # run in place
+packaging/install.sh build [--set-default]       # per-user install
+packaging/flatpak/build.sh build --install       # local Flatpak</code></pre>
+                  <p><code>XDG_DATA_HOME=/tmp/p</code> gives a throwaway profile; <code>TOBARI_NO_BLOCKING=1</code> starts it without the blocking engine.</p>
+                </div>
+              </li>
+            </ol>
+          </div>
+        </section>
+
+        <section class="section" aria-labelledby="other-title">
+          <div class="grid">
+            <header class="section-head" data-reveal>
+              <p class="section-no caps">05 · Elsewhere</p>
+              <h2 class="section-title" id="other-title">Other platforms</h2>
+            </header>
+            <dl class="platforms section-body" data-reveal>
+              <div>
+                <dt>macOS</dt>
+                <dd class="state">Not a Phase 1 target</dd>
+                <dd class="why">Nothing in the current build is tested on a Mac, and no macOS artifact is produced. A <code>.dmg</code> people can open needs notarization, which needs a paid Apple Developer account. <a href="/docs/dev-macos/">DEV-MACOS</a></dd>
+              </div>
+              <div>
+                <dt>Windows</dt>
+                <dd class="state">Not supported</dd>
+                <dd class="why">Out of scope. There will be no Windows build.</dd>
+              </div>
+            </dl>
+          </div>
+        </section>
+      </div>

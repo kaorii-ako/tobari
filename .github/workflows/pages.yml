@@ -1,0 +1,54 @@
+name: pages
+
+# Builds site/ and publishes it to GitHub Pages at
+# https://kaorii-ako.github.io/tobari/. The build's own checks (no inline
+# script, no third-party requests, every link and quoted figure resolving)
+# gate the deploy.
+
+on:
+  push:
+    branches: [browser, main]
+    paths: ["site/**", "*.md", "docs/**", "packaging/get-tobari.sh", "packaging/*.metainfo.xml", "shell/provision-cef.sh", "shell/ui/bangs.*", "tobari.pub", ".github/workflows/pages.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0 # the changelog notice counts commits since its newest entry
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22
+      - uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d # v6.0.0
+      - name: Build site
+        working-directory: site
+        env:
+          SITE_HOST: pages
+          SITE_BASE: /tobari/
+          SITE_URL: https://kaorii-ako.github.io/tobari
+        run: npm ci && node scripts/build.mjs
+      - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
+        with:
+          path: site/dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-24.04
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - id: deploy
+        uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5.0.1
