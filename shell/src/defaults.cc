@@ -11,7 +11,10 @@
 namespace tobari {
 namespace {
 
-constexpr int kDefaultsVersion = 4;
+constexpr int kDefaultsVersion = 5;
+
+// ContentSetting values as Chromium stores them.
+constexpr int kBlock = 2;
 
 constexpr char kShieldExtensionId[] = "lgfgpfedeaaahediodajihnoneonicaf";
 
@@ -46,15 +49,52 @@ int AppliedVersion() {
   return std::atoi(text.c_str());
 }
 
+// Set when any default fails to apply, so the version marker is not written
+// and the next launch tries again (for example after an engine update renames
+// a preference, which is then reported on every start rather than once).
+bool g_failed = false;
+
 void Set(CefRefPtr<CefRequestContext> ctx, const char* name, CefRefPtr<CefValue> value) {
   CefString error;
   if (!ctx->CanSetPreference(name)) {
     fprintf(stderr, "tobari: preference %s is not settable\n", name);
+    g_failed = true;
     return;
   }
   if (!ctx->SetPreference(name, value, error)) {
     fprintf(stderr, "tobari: preference %s rejected: %s\n", name, error.ToString().c_str());
+    g_failed = true;
   }
+}
+
+// True when the user (or anything else) has already given |name| a value of
+// its own. Migrations for existing profiles leave such preferences alone.
+bool UserSet(CefRefPtr<CefDictionaryValue> user_prefs, const std::string& name) {
+  CefRefPtr<CefDictionaryValue> d = user_prefs;
+  size_t start = 0;
+  while (d) {
+    const size_t dot = name.find('.', start);
+    const std::string key = name.substr(start, dot == std::string::npos ? std::string::npos : dot - start);
+    if (!d->HasKey(key)) return false;
+    if (dot == std::string::npos) return true;
+    d = d->GetDictionary(key);
+    start = dot + 1;
+  }
+  return false;
+}
+
+void Migrate(CefRefPtr<CefRequestContext> ctx, CefRefPtr<CefDictionaryValue> user_prefs,
+             bool existing, const std::string& name, CefRefPtr<CefValue> value) {
+  if (existing && UserSet(user_prefs, name)) return;
+  Set(ctx, name.c_str(), value);
+}
+
+void WriteMarker() {
+  if (g_failed) {
+    fprintf(stderr, "tobari: some defaults did not apply; will retry next launch\n");
+    return;
+  }
+  WriteFileAtomic(MarkerPath(), std::to_string(kDefaultsVersion) + "\n");
 }
 
 CefRefPtr<CefValue> Int(int v) { auto x = CefValue::Create(); x->SetInt(v); return x; }
@@ -105,6 +145,23 @@ bool ApplyFirstRunDefaults() {
   if (applied >= kDefaultsVersion) return false;
   CefRefPtr<CefRequestContext> ctx = CefRequestContext::GetGlobalContext();
 
+  if (applied < 5) {
+    // The V8 optimizing compilers are where most exploited V8 bugs live (type
+    // confusions in TurboFan/Maglev). Chromium's per-site setting turns them
+    // off; this makes that the default, with "allow" one click away per site
+    // in the Tobari toolbar popup.
+    // Profiles made before v5 keep any choice already made for these.
+    CefRefPtr<CefDictionaryValue> user_prefs = ctx->GetAllPreferences(false);
+    const bool existing = applied >= 1;
+    Migrate(ctx, user_prefs, existing, "profile.default_content_setting_values.javascript_optimizer",
+            Int(kBlock));
+    Migrate(ctx, user_prefs, existing, "https_only_mode_enabled", Bool(true));
+    for (const char* name : {"usb_guard", "serial_guard", "hid_guard", "bluetooth_guard",
+                             "sensors", "local_fonts", "idle_detection"}) {
+      Migrate(ctx, user_prefs, existing,
+              std::string("profile.default_content_setting_values.") + name, Int(kBlock));
+    }
+  }
   if (applied < 4) {
     CefRefPtr<CefListValue> pinned = CefListValue::Create();
     pinned->SetString(0, kShieldExtensionId);
@@ -123,7 +180,7 @@ bool ApplyFirstRunDefaults() {
     Set(ctx, "ntp_footer.settings.extension_attribution", Bool(false));
   }
   if (applied >= 1) {
-    WriteFileAtomic(MarkerPath(), std::to_string(kDefaultsVersion) + "\n");
+    WriteMarker();
     return true;
   }
 
@@ -147,7 +204,7 @@ bool ApplyFirstRunDefaults() {
   Set(ctx, "url_keyed_anonymized_data_collection.enabled", Bool(false));
   Set(ctx, "signin.allowed", Bool(false));
 
-  WriteFileAtomic(MarkerPath(), std::to_string(kDefaultsVersion) + "\n");
+  WriteMarker();
   return true;
 }
 
