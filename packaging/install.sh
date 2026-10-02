@@ -35,7 +35,9 @@ BUILD="${1:?usage: install.sh <build-dir> [--set-default]}"
 # is unavailable, which it always is for a per-user install. Without them
 # Chromium refuses to start renderers rather than running unsandboxed; say so
 # up front instead of failing on first launch.
-if [ "$(cat /proc/sys/kernel/unprivileged_userns_clone 2>/dev/null || echo 1)" = "0" ]; then
+# Probe by trying, which covers the Debian sysctl, Ubuntu's AppArmor
+# restriction and user.max_user_namespaces=0 alike.
+if command -v unshare >/dev/null 2>&1 && ! unshare -Ur true 2>/dev/null; then
   echo "Unprivileged user namespaces are disabled on this system; Tobari's sandbox needs them." >&2
   echo "Refusing to install a browser that could only run without its sandbox." >&2
   exit 1

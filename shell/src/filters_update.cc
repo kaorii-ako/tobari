@@ -31,6 +31,9 @@ constexpr long long kWeek = 7LL * 24 * 3600;
 constexpr int64_t kDayMs = 24LL * 3600 * 1000;
 constexpr size_t kMinBytes = 20 * 1024;
 constexpr size_t kMinRules = 1000;
+// About 4x the largest list today. A host that streams more than this is
+// broken or hostile; either way the download is abandoned.
+constexpr size_t kMaxBytes = 16 * 1024 * 1024;
 
 std::string StampPath() { return DataDir() + "/state/filters-updated"; }
 
@@ -62,12 +65,23 @@ class ListClient : public CefURLRequestClient {
 
   void OnRequestComplete(CefRefPtr<CefURLRequest> request) override {
     CefRefPtr<CefResponse> response = request->GetResponse();
-    const int status = request->GetRequestStatus() == UR_SUCCESS && response ? response->GetStatus() : 0;
+    // Redirects are not followed (UR_FLAG_STOP_ON_REDIRECT), so anything but
+    // a direct 200 from the pinned URL counts as a failure.
+    const int status = !overflow_ && request->GetRequestStatus() == UR_SUCCESS && response
+                           ? response->GetStatus()
+                           : 0;
     FilterUpdater::Get().OnListDone(name_, status, body_);
   }
   void OnUploadProgress(CefRefPtr<CefURLRequest>, int64_t, int64_t) override {}
   void OnDownloadProgress(CefRefPtr<CefURLRequest>, int64_t, int64_t) override {}
-  void OnDownloadData(CefRefPtr<CefURLRequest>, const void* data, size_t len) override {
+  void OnDownloadData(CefRefPtr<CefURLRequest> request, const void* data, size_t len) override {
+    if (overflow_) return;
+    if (body_.size() + len > kMaxBytes) {
+      overflow_ = true;
+      body_.clear();
+      request->Cancel();
+      return;
+    }
     body_.append(static_cast<const char*>(data), len);
   }
   bool GetAuthCredentials(bool, const CefString&, int, const CefString&, const CefString&,
@@ -78,6 +92,7 @@ class ListClient : public CefURLRequestClient {
  private:
   std::string name_;
   std::string body_;
+  bool overflow_ = false;
 
   IMPLEMENT_REFCOUNTING(ListClient);
 };
@@ -124,7 +139,7 @@ void FilterUpdater::Start(bool force) {
     CefRefPtr<CefRequest> request = CefRequest::Create();
     request->SetURL(s.url);
     request->SetMethod("GET");
-    request->SetFlags(UR_FLAG_DISABLE_CACHE);
+    request->SetFlags(UR_FLAG_DISABLE_CACHE | UR_FLAG_STOP_ON_REDIRECT);
     CefURLRequest::Create(request, new ListClient(s.name), IsolatedContext());
   }
 }
@@ -134,7 +149,9 @@ void FilterUpdater::OnListDone(const std::string& name, int status, const std::s
   if (status == 200 && body.size() >= kMinBytes) {
     const size_t fresh = Rules(body);
     const size_t current = CurrentRules(name);
-    accept = fresh >= kMinRules && fresh * 2 >= current;
+    // Lists change by a few percent a week. Halving or tripling overnight
+    // means the host is serving something else.
+    accept = fresh >= kMinRules && fresh * 2 >= current && (current == 0 || fresh <= current * 3);
   }
   if (accept) {
     EnsureDir(FiltersDir());

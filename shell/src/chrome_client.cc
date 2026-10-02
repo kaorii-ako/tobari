@@ -1,5 +1,6 @@
 #include "chrome_client.h"
 
+#include <chrono>
 #include <cstdio>
 
 #include "bangs.h"
@@ -7,6 +8,8 @@
 #include "include/cef_app.h"
 #include "include/cef_browser.h"
 #include "include/cef_command_ids.h"
+#include "include/cef_request_context.h"
+#include "shield.h"
 
 namespace tobari {
 namespace {
@@ -76,6 +79,32 @@ CefRefPtr<ChromeClient> ChromeClient::Get() {
   return instance;
 }
 
+// Requests made by service and shared workers have no browser, so CEF never
+// asks a client about them; it asks a request context handler instead. This
+// context shares the global profile's storage and exists only to route those
+// requests through the same blocker as everything else.
+class WorkerRequests : public CefRequestContextHandler {
+ public:
+  CefRefPtr<CefResourceRequestHandler> GetResourceRequestHandler(
+      CefRefPtr<CefBrowser> browser,
+      CefRefPtr<CefFrame> frame,
+      CefRefPtr<CefRequest> request,
+      bool is_navigation,
+      bool is_download,
+      const CefString& request_initiator,
+      bool& disable_default_handling) override {
+    return ChromeClient::Get();
+  }
+
+ private:
+  IMPLEMENT_REFCOUNTING(WorkerRequests);
+};
+
+void ChromeClient::CoverWorkerRequests() {
+  static CefRefPtr<CefRequestContext> context = CefRequestContext::CreateContext(
+      CefRequestContext::GetGlobalContext(), new WorkerRequests());
+}
+
 void ChromeClient::OpenWindow(const std::string& url) {
   CefWindowInfo info;
   info.runtime_style = CEF_RUNTIME_STYLE_CHROME;
@@ -89,7 +118,14 @@ void ChromeClient::OnAfterCreated(CefRefPtr<CefBrowser> browser) {
     std::lock_guard<std::mutex> lock(mutex_);
     ++open_browsers_;
     if (!last_focused_) last_focused_ = browser;
-    pending.swap(pending_tab_url_);
+    // Only the tab IDC_NEW_TAB just made may take a queued launch URL: never a
+    // page-opened popup, and never anything after the request has gone stale.
+    const bool fresh = std::chrono::steady_clock::now() - pending_since_ < std::chrono::seconds(5);
+    if (fresh && !browser->IsPopup()) {
+      pending.swap(pending_tab_url_);
+    } else if (!fresh) {
+      pending_tab_url_.clear();
+    }
   }
   if (!pending.empty()) browser->GetMainFrame()->LoadURL(pending);
 }
@@ -112,6 +148,7 @@ void ChromeClient::OpenInLastWindow(const std::string& url) {
   {
     std::lock_guard<std::mutex> lock(mutex_);
     pending_tab_url_ = url;
+    pending_since_ = std::chrono::steady_clock::now();
   }
   target->GetHost()->ExecuteChromeCommand(IDC_NEW_TAB, CEF_WOD_NEW_FOREGROUND_TAB);
 }
@@ -149,6 +186,13 @@ CefResourceRequestHandler::ReturnValue ChromeClient::OnBeforeResourceLoad(
     return RV_CONTINUE;
   }
 
+  // The bridge answers only the toolbar extension. Anyone else gets the same
+  // network error an unknown host would, so pages cannot use it to tell
+  // Tobari apart from other Chromium browsers.
+  if (url.rfind("https://tobari.internal/", 0) == 0) {
+    return FromShieldExtension(frame, request) ? RV_CONTINUE : RV_CANCEL;
+  }
+
   if (Exempt(url)) return RV_CONTINUE;
 
   Blocking& blocking = Blocking::Get();
@@ -157,7 +201,13 @@ CefResourceRequestHandler::ReturnValue ChromeClient::OnBeforeResourceLoad(
   std::string document;
   if (browser && browser->GetMainFrame()) {
     document = browser->GetMainFrame()->GetURL().ToString();
+  } else {
+    // A worker request: the site it runs for is its first party.
+    document = request->GetFirstPartyForCookies().ToString();
   }
+  // Requests extensions make for themselves are theirs to make, as in Chrome
+  // where one extension cannot filter another's traffic.
+  if (document.rfind("chrome-extension:", 0) == 0) return RV_CONTINUE;
   const std::string host = HostOf(document);
   if (!host.empty() && blocking.HostDisabled(host)) return RV_CONTINUE;
 

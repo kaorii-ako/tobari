@@ -1,5 +1,6 @@
 #pragma once
 
+#include <chrono>
 #include <map>
 #include <mutex>
 #include <string>
@@ -21,6 +22,10 @@ class ChromeClient : public CefClient,
   static CefRefPtr<ChromeClient> Get();
 
   void OpenWindow(const std::string& url);
+
+  // Routes worker requests (which have no browser) through this client's
+  // resource handler. Call once on the UI thread after context init.
+  static void CoverWorkerRequests();
 
   // Opens |url| as a foreground tab in the most recently focused window, or in
   // a new window if none is open.
@@ -76,6 +81,7 @@ class ChromeClient : public CefClient,
   int open_browsers_ = 0;
   CefRefPtr<CefBrowser> last_focused_;
   std::string pending_tab_url_;
+  std::chrono::steady_clock::time_point pending_since_;
 
   IMPLEMENT_REFCOUNTING(ChromeClient);
 };

@@ -85,3 +85,25 @@ pub extern "C" fn tobari_blocker_should_block(
         0
     }
 }
+
+/// Writes the registrable domain (eTLD+1) of |host| into |out| as a
+/// NUL-terminated string and returns its length, or 0 when the host has none
+/// (an IP literal, a bare public suffix, or a single label like localhost).
+#[no_mangle]
+pub extern "C" fn tobari_registrable_domain(host: *const c_char, out: *mut c_char, cap: usize) -> usize {
+    let Some(host) = cstr(host) else { return 0 };
+    if out.is_null() || cap == 0 {
+        return 0;
+    }
+    let host = host.trim_end_matches('.').to_ascii_lowercase();
+    let Some(domain) = psl::domain_str(&host) else { return 0 };
+    let bytes = domain.as_bytes();
+    if bytes.len() + 1 > cap {
+        return 0;
+    }
+    unsafe {
+        ptr::copy_nonoverlapping(bytes.as_ptr(), out as *mut u8, bytes.len());
+        *out.add(bytes.len()) = 0;
+    }
+    bytes.len()
+}

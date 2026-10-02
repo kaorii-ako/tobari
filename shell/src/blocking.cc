@@ -76,6 +76,10 @@ std::string HostOf(const std::string& url) {
   std::string host = url.substr(start, end == std::string::npos ? std::string::npos : end - start);
   const size_t at = host.find('@');
   if (at != std::string::npos) host = host.substr(at + 1);
+  if (!host.empty() && host[0] == '[') {
+    const size_t close = host.find(']');
+    return close == std::string::npos ? std::string() : host.substr(0, close + 1);
+  }
   const size_t colon = host.find(':');
   if (colon != std::string::npos) host = host.substr(0, colon);
   return host;
@@ -117,7 +121,22 @@ void Blocking::Load() {
   std::vector<const char*> raw;
   for (const ListInfo& l : lists) raw.push_back(l.path.c_str());
   void* fresh = tobari_blocker_new(raw.data(), raw.size());
-  if (!fresh) return;
+  if (!fresh) {
+    // A downloaded list the engine cannot use must not leave the browser
+    // unprotected: fall back to the lists shipped with this build.
+    fprintf(stderr, "tobari: filter lists failed to load; using the bundled copies\n");
+    lists.clear();
+    for (const char* name : kLists) {
+      const std::string bundled_path = ExecutableDir() + "/filters/" + name;
+      if (Readable(bundled_path)) {
+        lists.push_back({name, bundled_path, CountRules(bundled_path), PublishedAt(bundled_path, false)});
+      }
+    }
+    raw.clear();
+    for (const ListInfo& l : lists) raw.push_back(l.path.c_str());
+    fresh = lists.empty() ? nullptr : tobari_blocker_new(raw.data(), raw.size());
+    if (!fresh) return;
+  }
 
   void* old = nullptr;
   {
@@ -148,7 +167,9 @@ bool Blocking::ShouldBlock(const std::string& url,
                            const std::string& source_url,
                            const std::string& resource_type,
                            const std::string& method) {
-  std::shared_lock<std::shared_mutex> lock(engine_mutex_);
+  // adblock-rust is built single-threaded (RefCell/Rc inside the engine), so
+  // checks are serialized even though today only the IO thread makes them.
+  std::unique_lock<std::shared_mutex> lock(engine_mutex_);
   if (!handle_) return false;
   return tobari_blocker_should_block(handle_, url.c_str(), source_url.c_str(),
                                      resource_type.c_str(), method.c_str()) != 0;

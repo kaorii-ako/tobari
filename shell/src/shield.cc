@@ -1,17 +1,24 @@
 #include "shield.h"
 
+#include <algorithm>
 #include <cstdio>
 #include <cstring>
+#include <functional>
+#include <mutex>
 #include <string>
 
 #include "blocking.h"
 #include "bangs.h"
 #include "chrome_client.h"
 #include "filters_update.h"
+#include "include/base/cef_callback.h"
 #include "include/cef_parser.h"
+#include "include/cef_request_context.h"
 #include "include/cef_scheme.h"
-#include "include/wrapper/cef_stream_resource_handler.h"
+#include "include/cef_task.h"
+#include "include/wrapper/cef_closure_task.h"
 #include "paths.h"
+#include "tobari_blocker.h"
 
 namespace tobari {
 namespace {
@@ -46,47 +53,117 @@ std::string Serialize(CefRefPtr<CefDictionaryValue> d) {
   return CefWriteJSON(v, JSON_WRITER_DEFAULT).ToString();
 }
 
-// A read handler that owns its bytes; CefStreamReader::CreateForData would
-// only borrow them, and the response outlives this function.
-class OwnedStringReader : public CefReadHandler {
+// Answers one bridge request. Content settings may only be read or written on
+// the browser UI thread, while scheme handlers run on the IO thread, so the
+// response is computed on UI and the handler completes once it arrives.
+class BridgeHandler : public CefResourceHandler {
  public:
-  explicit OwnedStringReader(std::string data) : data_(std::move(data)) {}
+  using Compute = std::function<std::string()>;
 
-  size_t Read(void* ptr, size_t size, size_t n) override {
-    const size_t want = size * n;
-    const size_t left = data_.size() - offset_;
-    const size_t take = want < left ? want : left;
-    memcpy(ptr, data_.data() + offset_, take);
+  BridgeHandler(int status, std::string origin, Compute compute)
+      : status_(status), origin_(std::move(origin)), compute_(std::move(compute)) {}
+
+  bool Open(CefRefPtr<CefRequest> request, bool& handle_request,
+            CefRefPtr<CefCallback> callback) override {
+    handle_request = false;
+    if (!compute_) {
+      handle_request = true;
+      return true;
+    }
+    CefRefPtr<BridgeHandler> self(this);
+    CefPostTask(TID_UI, base::BindOnce(
+        [](CefRefPtr<BridgeHandler> h, CefRefPtr<CefCallback> cb) {
+          std::string body = h->compute_();
+          {
+            std::lock_guard<std::mutex> lock(h->mutex_);
+            h->body_ = std::move(body);
+          }
+          cb->Continue();
+        },
+        self, callback));
+    return true;
+  }
+
+  void GetResponseHeaders(CefRefPtr<CefResponse> response, int64_t& response_length,
+                          CefString& redirect_url) override {
+    response->SetStatus(status_);
+    response->SetStatusText(status_ == 200 ? "OK" : "Forbidden");
+    response->SetMimeType("application/json");
+    CefResponse::HeaderMap headers;
+    headers.insert({"Cache-Control", "no-store"});
+    headers.insert({"X-Content-Type-Options", "nosniff"});
+    if (status_ == 200 && !origin_.empty()) headers.insert({"Access-Control-Allow-Origin", origin_});
+    response->SetHeaderMap(headers);
+    std::lock_guard<std::mutex> lock(mutex_);
+    if (!compute_) body_ = "{\"error\":\"forbidden\"}";
+    response_length = static_cast<int64_t>(body_.size());
+  }
+
+  bool Read(void* data_out, int bytes_to_read, int& bytes_read,
+            CefRefPtr<CefResourceReadCallback> callback) override {
+    std::lock_guard<std::mutex> lock(mutex_);
+    const size_t left = body_.size() - offset_;
+    if (left == 0) {
+      bytes_read = 0;
+      return false;
+    }
+    const size_t take = std::min(left, static_cast<size_t>(bytes_to_read));
+    memcpy(data_out, body_.data() + offset_, take);
     offset_ += take;
-    return size ? take / size : 0;
+    bytes_read = static_cast<int>(take);
+    return true;
   }
-  int Seek(int64_t offset, int whence) override {
-    int64_t base = whence == SEEK_SET ? 0 : whence == SEEK_CUR ? static_cast<int64_t>(offset_)
-                                                                : static_cast<int64_t>(data_.size());
-    const int64_t target = base + offset;
-    if (target < 0 || target > static_cast<int64_t>(data_.size())) return -1;
-    offset_ = static_cast<size_t>(target);
-    return 0;
-  }
-  int64_t Tell() override { return static_cast<int64_t>(offset_); }
-  int Eof() override { return offset_ >= data_.size(); }
-  bool MayBlock() override { return false; }
+
+  void Cancel() override {}
 
  private:
-  std::string data_;
+  const int status_;
+  const std::string origin_;
+  const Compute compute_;
+  std::mutex mutex_;
+  std::string body_;
   size_t offset_ = 0;
 
-  IMPLEMENT_REFCOUNTING(OwnedStringReader);
-  DISALLOW_COPY_AND_ASSIGN(OwnedStringReader);
+  IMPLEMENT_REFCOUNTING(BridgeHandler);
+  DISALLOW_COPY_AND_ASSIGN(BridgeHandler);
 };
 
-CefRefPtr<CefResourceHandler> Respond(int status, const std::string& origin, const std::string& body) {
-  CefResponse::HeaderMap headers;
-  headers.insert({"Cache-Control", "no-store"});
-  if (!origin.empty()) headers.insert({"Access-Control-Allow-Origin", origin});
-  CefRefPtr<CefStreamReader> stream = CefStreamReader::CreateForHandler(new OwnedStringReader(body));
-  return new CefStreamResourceHandler(status, status == 200 ? "OK" : "Forbidden",
-                                      "application/json", headers, stream);
+CefRefPtr<CefResourceHandler> Forbidden() {
+  return new BridgeHandler(403, std::string(), nullptr);
+}
+
+bool IsWebUrl(const std::string& url) {
+  return url.rfind("http://", 0) == 0 || url.rfind("https://", 0) == 0;
+}
+
+// Chromium decides whether a renderer gets the V8 optimizer from its *site*:
+// scheme plus registrable domain, with no port. An exception keyed on the
+// page's full origin would never match, so settings are read and written for
+// the site URL, which also makes one switch cover every subdomain.
+std::string SiteUrlOf(const std::string& url) {
+  CefURLParts parts;
+  if (!CefParseURL(url, parts)) return std::string();
+  const std::string scheme = CefString(&parts.scheme).ToString();
+  const std::string host = CefString(&parts.host).ToString();
+  if ((scheme != "http" && scheme != "https") || host.empty()) return std::string();
+  char domain[256];
+  const size_t n = tobari_registrable_domain(host.c_str(), domain, sizeof(domain));
+  return scheme + "://" + (n ? std::string(domain, n) : host) + "/";
+}
+
+// The V8 optimizer is off by default (defaults.cc); a site the user trusts can
+// be given it back. Must run on the UI thread.
+bool FastJsAllowed(const std::string& url) {
+  const std::string site_url = SiteUrlOf(url);
+  if (site_url.empty()) return false;
+  CefRefPtr<CefRequestContext> ctx = CefRequestContext::GetGlobalContext();
+  const cef_content_setting_values_t site =
+      ctx->GetContentSetting(site_url, site_url, CEF_CONTENT_SETTING_TYPE_JAVASCRIPT_OPTIMIZER);
+  const cef_content_setting_values_t effective =
+      site != CEF_CONTENT_SETTING_VALUE_DEFAULT
+          ? site
+          : ctx->GetContentSetting("", "", CEF_CONTENT_SETTING_TYPE_JAVASCRIPT_OPTIMIZER);
+  return effective == CEF_CONTENT_SETTING_VALUE_ALLOW;
 }
 
 CefRefPtr<CefDictionaryValue> PageState(const std::string& url) {
@@ -99,6 +176,7 @@ CefRefPtr<CefDictionaryValue> PageState(const std::string& url) {
   d->SetInt("blocked", ChromeClient::Get()->BlockedForUrl(url));
   d->SetInt("total", ChromeClient::Get()->BlockedTotal());
   d->SetInt("rules", static_cast<int>(blocking.RuleCount()));
+  d->SetBool("fastJs", FastJsAllowed(url));
   return d;
 }
 
@@ -141,12 +219,8 @@ class ShieldFactory : public CefSchemeHandlerFactory {
     //
     // Not usable: CEF reports Origin as "null" for every caller, and Chromium
     // strips Referer on extension-to-web requests.
-    const std::string expected = std::string(kShieldOrigin) + "/";
-    const std::string frame_url = frame ? frame->GetURL().ToString() : std::string();
-    const std::string site = request->GetFirstPartyForCookies().ToString();
-    const bool from_extension = frame_url.rfind(expected, 0) == 0 || site.rfind(expected, 0) == 0;
-    if (!from_extension || request->GetMethod().ToString() != "POST") {
-      return Respond(403, "", "{\"error\":\"forbidden\"}");
+    if (!FromShieldExtension(frame, request) || request->GetMethod().ToString() != "POST") {
+      return Forbidden();
     }
     const std::string origin = kShieldOrigin;
 
@@ -154,26 +228,41 @@ class ShieldFactory : public CefSchemeHandlerFactory {
     CefParseURL(request->GetURL(), parts);
     const std::string path = CefString(&parts.path).ToString();
     CefRefPtr<CefDictionaryValue> in = ParseObject(Body(request));
+    const std::string url = in->GetString("url").ToString();
 
+    BridgeHandler::Compute compute;
     if (path == "/state") {
-      return Respond(200, origin, Serialize(PageState(in->GetString("url").ToString())));
+      compute = [url] { return Serialize(PageState(url)); };
+    } else if (path == "/toggle") {
+      compute = [url] {
+        const std::string host = HostOf(url);
+        if (IsWebUrl(url) && !host.empty()) {
+          Blocking::Get().SetHostDisabled(host, !Blocking::Get().HostDisabled(host));
+        }
+        return Serialize(PageState(url));
+      };
+    } else if (path == "/fastjs") {
+      compute = [url] {
+        const std::string site_url = SiteUrlOf(url);
+        if (!site_url.empty()) {
+          CefRequestContext::GetGlobalContext()->SetContentSetting(
+              site_url, site_url, CEF_CONTENT_SETTING_TYPE_JAVASCRIPT_OPTIMIZER,
+              FastJsAllowed(url) ? CEF_CONTENT_SETTING_VALUE_DEFAULT
+                                 : CEF_CONTENT_SETTING_VALUE_ALLOW);
+        }
+        return Serialize(PageState(url));
+      };
+    } else if (path == "/stats") {
+      compute = [] { return Serialize(Stats()); };
+    } else if (path == "/update") {
+      compute = [] {
+        FilterUpdater::Get().Start(true);
+        return Serialize(Stats());
+      };
+    } else {
+      return Forbidden();
     }
-    if (path == "/toggle") {
-      const std::string url = in->GetString("url").ToString();
-      const std::string host = HostOf(url);
-      if (!host.empty()) {
-        Blocking::Get().SetHostDisabled(host, !Blocking::Get().HostDisabled(host));
-      }
-      return Respond(200, origin, Serialize(PageState(url)));
-    }
-    if (path == "/stats") {
-      return Respond(200, origin, Serialize(Stats()));
-    }
-    if (path == "/update") {
-      FilterUpdater::Get().Start(true);
-      return Respond(200, origin, Serialize(Stats()));
-    }
-    return Respond(403, "", "{\"error\":\"unknown\"}");
+    return new BridgeHandler(200, origin, std::move(compute));
   }
 
  private:
@@ -182,6 +271,13 @@ class ShieldFactory : public CefSchemeHandlerFactory {
 };
 
 }  // namespace
+
+bool FromShieldExtension(CefRefPtr<CefFrame> frame, CefRefPtr<CefRequest> request) {
+  const std::string expected = std::string(kShieldOrigin) + "/";
+  const std::string frame_url = frame ? frame->GetURL().ToString() : std::string();
+  const std::string site = request->GetFirstPartyForCookies().ToString();
+  return frame_url.rfind(expected, 0) == 0 || site.rfind(expected, 0) == 0;
+}
 
 void RegisterShieldBridge() {
   CefRegisterSchemeHandlerFactory("https", kHost, new ShieldFactory());

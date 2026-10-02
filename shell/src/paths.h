@@ -8,7 +8,6 @@ std::string ExecutableDir();
 std::string ExecutablePath();
 std::string DataDir();
 std::string ProfileDir();
-std::string ExtensionsDir();
 std::string FiltersDir();
 std::string DownloadsDir();
 void EnsureDir(const std::string& path);

@@ -2,7 +2,6 @@ name: build
 
 on:
   push:
-    branches: [main]
   pull_request:
 
 permissions:
@@ -12,7 +11,7 @@ jobs:
   shell:
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: System packages
         run: |
@@ -21,16 +20,21 @@ jobs:
             libgtk-3-dev libx11-dev libxi-dev libnss3-dev libasound2-dev libatk-bridge2.0-dev \
             libcups2-dev libdrm-dev libgbm-dev desktop-file-utils appstream
 
-      - uses: dtolnay/rust-toolchain@stable
+      - uses: dtolnay/rust-toolchain@89b12181fb390509a0842a86cc55eeb8eb928c1d # stable
 
-      - name: Cache CEF
-        uses: actions/cache@v4
+      # Only the archive is cached, never the unpacked tree: provision-cef.sh
+      # re-checks the pinned hash on every run, so a poisoned cache entry
+      # fails the build instead of flowing into it.
+      - name: Cache CEF archive
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
-          path: ~/.cache/tobari-dev
-          key: cef-${{ hashFiles('shell/provision-cef.sh') }}
+          path: ~/.cache/tobari-cef-archive
+          key: cef-archive-${{ hashFiles('shell/provision-cef.sh') }}
 
       - name: Provision CEF
-        run: echo "CEF_ROOT=$(shell/provision-cef.sh | tail -1)" >> "$GITHUB_ENV"
+        run: |
+          export TOBARI_CEF_ARCHIVE_DIR="$HOME/.cache/tobari-cef-archive" TOBARI_CEF_ALWAYS_VERIFY=1
+          echo "CEF_ROOT=$(shell/provision-cef.sh | tail -1)" >> "$GITHUB_ENV"
 
       - name: Build
         run: |
@@ -49,8 +53,8 @@ jobs:
   site:
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: 22
       - name: Build site

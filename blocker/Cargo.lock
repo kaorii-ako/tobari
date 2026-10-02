@@ -467,6 +467,7 @@ name = "tobari-blocker"
 version = "0.1.0"
 dependencies = [
  "adblock",
+ "psl",
 ]
 
 [[package]]

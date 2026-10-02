@@ -18,7 +18,7 @@ jobs:
   watch:
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Ensure label
         env:
           GH_TOKEN: ${{ github.token }}
@@ -32,4 +32,6 @@ jobs:
           status=$?
           set -e
           echo "status=$status"
+          # 0 current, 1 behind (issue filed), 2 behind with no CEF build yet.
+          # Anything else means the check itself broke, which must not pass.
           [ "$status" -le 2 ]

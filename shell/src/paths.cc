@@ -1,8 +1,10 @@
 #include "paths.h"
 
+#include <fcntl.h>
 #include <sys/stat.h>
 #include <unistd.h>
 
+#include <cerrno>
 #include <cstdio>
 #include <cstdlib>
 #include <fstream>
@@ -40,7 +42,6 @@ std::string ExecutableDir() {
 
 std::string DataDir() { return Xdg("XDG_DATA_HOME", ".local/share") + "/tobari"; }
 std::string ProfileDir() { return DataDir() + "/profiles/default"; }
-std::string ExtensionsDir() { return DataDir() + "/extensions"; }
 std::string FiltersDir() { return DataDir() + "/filters"; }
 
 std::string DownloadsDir() {
@@ -90,11 +91,25 @@ bool WriteFileAtomic(const std::string& path, const std::string& data) {
   const size_t slash = path.find_last_of('/');
   if (slash != std::string::npos) EnsureDir(path.substr(0, slash));
   const std::string tmp = path + ".tmp";
-  {
-    std::ofstream file(tmp, std::ios::binary | std::ios::trunc);
-    if (!file) return false;
-    file << data;
-    if (!file.good()) return false;
+  const int fd = open(tmp.c_str(), O_WRONLY | O_CREAT | O_TRUNC | O_CLOEXEC, 0600);
+  if (fd < 0) return false;
+  const char* p = data.data();
+  size_t left = data.size();
+  bool ok = true;
+  while (ok && left > 0) {
+    const ssize_t n = write(fd, p, left);
+    if (n < 0 && errno == EINTR) continue;
+    ok = n > 0;
+    if (ok) {
+      p += n;
+      left -= static_cast<size_t>(n);
+    }
+  }
+  ok = ok && fsync(fd) == 0;
+  ok = close(fd) == 0 && ok;
+  if (!ok) {
+    unlink(tmp.c_str());
+    return false;
   }
   return rename(tmp.c_str(), path.c_str()) == 0;
 }

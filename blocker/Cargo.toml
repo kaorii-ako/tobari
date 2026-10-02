@@ -10,6 +10,7 @@ crate-type = ["staticlib"]
 
 [dependencies]
 adblock = { version = "0.13", features = ["full-regex-handling"] }
+psl = "2"
 
 [profile.release]
 lto = true

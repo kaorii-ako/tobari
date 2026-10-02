@@ -30,6 +30,13 @@ function paint(state, stats) {
       el("count").textContent = nf.format(state.blocked);
       el("caption").textContent = state.blocked === 1 ? "request blocked on this page" : "requests blocked on this page";
     }
+    el("jit").disabled = !state.applicable;
+    el("jit").setAttribute("aria-checked", String(state.applicable && state.fastJs));
+    el("jitHint").textContent = !state.applicable
+      ? "Only applies to websites."
+      : state.fastJs
+        ? "On for this site: faster, more attack surface."
+        : "Off: the V8 optimizer stays disabled here.";
     el("total").textContent = nf.format(state.total);
     el("rules").textContent = nf.format(state.rules);
   }
@@ -58,6 +65,13 @@ el("toggle").addEventListener("click", async () => {
   paint(state, null);
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
   if (tab) chrome.tabs.reload(tab.id, { bypassCache: true });
+});
+
+el("jit").addEventListener("click", async () => {
+  const state = await api("/fastjs", { url: tabUrl });
+  paint(state, null);
+  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+  if (tab) chrome.tabs.reload(tab.id);
 });
 
 el("update").addEventListener("click", async () => {

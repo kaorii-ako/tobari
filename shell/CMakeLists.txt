@@ -39,9 +39,9 @@ endif()
 add_custom_command(
   OUTPUT "${BLOCKER_LIB}"
   COMMAND ${CMAKE_COMMAND} -E env "CARGO_HOME=${TOBARI_CARGO_HOME}"
-          ${CARGO_EXECUTABLE} build --release
+          ${CARGO_EXECUTABLE} build --release --locked
   WORKING_DIRECTORY "${BLOCKER_DIR}"
-  DEPENDS "${BLOCKER_DIR}/src/lib.rs" "${BLOCKER_DIR}/Cargo.toml"
+  DEPENDS "${BLOCKER_DIR}/src/lib.rs" "${BLOCKER_DIR}/Cargo.toml" "${BLOCKER_DIR}/Cargo.lock"
   COMMENT "Building tobari-blocker (adblock-rust)"
   VERBATIM)
 

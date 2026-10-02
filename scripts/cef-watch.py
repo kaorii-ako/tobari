@@ -132,9 +132,21 @@ def main():
     if args.issue and status:
         newest = max(ahead, key=lambda r: vtuple(r["version"]))
         title = f"Engine behind Chrome stable: {chromium_pin} vs {newest['version']}"
-        upsert_issue(title, "Automated engine-currency check.\n\n```\n" + text + "\n```\n")
+        # The report quotes CVE summaries from a remote feed; a fence longer
+        # than any backtick run inside it cannot be closed early.
+        fence = "`" * (max([3] + [len(m) + 1 for m in re.findall(r"`+", text)]))
+        upsert_issue(title, f"Automated engine-currency check.\n\n{fence}\n{text}\n{fence}\n")
     return status
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    # Exit codes 0-2 are verdicts. A crash (feed format change, network
+    # failure) exits 3 so the scheduled workflow fails loudly instead of
+    # reading as "behind, no build yet".
+    try:
+        sys.exit(main())
+    except SystemExit:
+        raise
+    except BaseException as exc:  # noqa: BLE001
+        print(f"cef-watch failed: {exc!r}", file=sys.stderr)
+        sys.exit(3)

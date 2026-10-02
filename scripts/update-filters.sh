@@ -17,7 +17,7 @@ declare -A LISTS=(
 for name in "${!LISTS[@]}"; do
   url="${LISTS[$name]}"
   tmp="$(mktemp)"
-  curl -sSL --fail --max-time 120 -H 'Accept: text/plain' -o "$tmp" "$url"
+  curl -sSL --proto =https --proto-redir =https --fail --max-time 120 -H 'Accept: text/plain' -o "$tmp" "$url"
   if [ ! -s "$tmp" ]; then
     echo "refusing to install empty list: $name" >&2
     rm -f "$tmp"

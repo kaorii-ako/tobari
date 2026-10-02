@@ -11,9 +11,15 @@ CACHE="${XDG_CACHE_HOME:-$HOME/.cache}/tobari-dev"
 NAME="cef_binary_${CEF_VERSION}_${PLATFORM}_${FLAVOR}"
 ROOT="$CACHE/$NAME"
 
-mkdir -p "$CACHE"
+# CI sets TOBARI_CEF_ALWAYS_VERIFY=1 and keeps the archive in a separate cache
+# directory, so every run re-hashes what it is about to unpack. Locally the
+# unpacked tree is trusted once verified (it lives in the user's own cache).
+ALWAYS_VERIFY="${TOBARI_CEF_ALWAYS_VERIFY:-0}"
+ARCHIVE_DIR="${TOBARI_CEF_ARCHIVE_DIR:-$CACHE}"
 
-if [ -f "$ROOT/.verified" ]; then
+mkdir -p "$CACHE" "$ARCHIVE_DIR"
+
+if [ "$ALWAYS_VERIFY" != "1" ] && [ -f "$ROOT/.verified" ]; then
   echo "$ROOT"
   exit 0
 fi
@@ -22,11 +28,14 @@ fi
 # CEF_VERSION and this hash together; see docs/RELEASING.md.
 SHA1="${CEF_SHA1:-9794ecf85ccd4dfcca42bfaac7a7666004f051e8}"
 
-ARCHIVE="$CACHE/$NAME.tar.bz2"
+ARCHIVE="$ARCHIVE_DIR/$NAME.tar.bz2"
 ENC=$(python3 -c 'import sys, urllib.parse; print(urllib.parse.quote(sys.argv[1]))' "$NAME.tar.bz2")
 
 for attempt in 1 2 3 4 5; do
-  if curl -sS --fail -C - --max-time 3600 -o "$ARCHIVE" "https://cef-builds.spotifycdn.com/$ENC"; then
+  if [ -f "$ARCHIVE" ] && [ "$(sha1sum "$ARCHIVE" | cut -d' ' -f1)" = "$SHA1" ]; then
+    break
+  fi
+  if curl --proto =https -sS --fail -C - --max-time 3600 -o "$ARCHIVE" "https://cef-builds.spotifycdn.com/$ENC"; then
     break
   fi
   echo "download interrupted, resuming ($attempt)" >&2
@@ -40,7 +49,8 @@ if [ "$ACTUAL" != "$SHA1" ]; then
   exit 1
 fi
 
+rm -rf "$ROOT"
 tar xjf "$ARCHIVE" -C "$CACHE"
-rm -f "$ARCHIVE"
+[ "$ARCHIVE_DIR" = "$CACHE" ] && rm -f "$ARCHIVE"
 echo "$SHA1" > "$ROOT/.verified"
 echo "$ROOT"

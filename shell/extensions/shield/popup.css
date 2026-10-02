@@ -83,6 +83,19 @@ button:focus-visible { outline: 2px solid var(--signal); outline-offset: 2px; }
   color: var(--fg-1);
 }
 
+.option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-4);
+  margin-top: var(--sp-5);
+  padding-top: var(--sp-4);
+  border-top: var(--bw) solid var(--line-hair);
+}
+.option__text { display: flex; flex-direction: column; gap: var(--sp-1); }
+.option__label { color: var(--fg-1); font-size: var(--fs-200); }
+.option__hint { color: var(--fg-3); font-size: var(--fs-100); }
+
 .foot {
   display: flex;
   align-items: center;

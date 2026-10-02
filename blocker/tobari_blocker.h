@@ -15,6 +15,7 @@ int tobari_blocker_should_block(const void* handle,
                                 const char* source_url,
                                 const char* request_type,
                                 const char* method);
+size_t tobari_registrable_domain(const char* host, char* out, size_t cap);
 
 #ifdef __cplusplus
 }

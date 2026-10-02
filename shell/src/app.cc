@@ -1,6 +1,10 @@
 #include "app.h"
 
 #include <dirent.h>
+#include <unistd.h>
+
+#include <cctype>
+#include <cstring>
 
 #include <string>
 #include <vector>
@@ -81,8 +85,10 @@ void App::OnBeforeCommandLineProcessing(const CefString& process_type,
   }
   command_line->AppendSwitchWithValue("disable-features", disabled);
 
+  // Only the extensions shipped next to the binary load unpacked. A directory
+  // under the user's data dir would let any same-user process plant an
+  // extension that runs on every launch without an install prompt.
   std::vector<std::string> dirs = ExtensionDirs(ExecutableDir() + "/extensions");
-  for (const std::string& d : ExtensionDirs(ExtensionsDir())) dirs.push_back(d);
   if (command_line->HasSwitch("load-extension")) {
     dirs.push_back(command_line->GetSwitchValue("load-extension").ToString());
   }
@@ -112,20 +118,51 @@ bool App::GetLocalizedString(int string_id, CefString& string) {
 
 namespace {
 
+std::string CurrentDir() {
+  char buf[4096];
+  return getcwd(buf, sizeof(buf)) ? std::string(buf) : std::string("/");
+}
+
+std::string FileUrl(const std::string& path) {
+  static const char kHex[] = "0123456789ABCDEF";
+  std::string out = "file://";
+  for (unsigned char ch : path) {
+    if (isalnum(ch) || strchr("/-._~", ch)) {
+      out += static_cast<char>(ch);
+    } else {
+      out += '%';
+      out += kHex[ch >> 4];
+      out += kHex[ch & 15];
+    }
+  }
+  return out;
+}
+
 // The first argument that is not a switch is a URL or path handed to us by the
 // desktop (default-browser handler, `tobari https://...`, or a file manager).
+// Only web and file URLs are honored: anything else (chrome://, javascript:,
+// data:) is something a link handler should never be able to open.
 std::string UrlFromCommandLine(CefRefPtr<CefCommandLine> cl, const std::string& cwd) {
   std::vector<CefString> args;
   cl->GetArguments(args);
   for (const CefString& a : args) {
     std::string v = a.ToString();
     if (v.empty()) continue;
-    if (v[0] == '/') return "file://" + v;
-    if (v.find("://") == std::string::npos && v.rfind("about:", 0) != 0 &&
-        v.rfind("data:", 0) != 0 && Readable((cwd.empty() ? std::string(".") : cwd) + "/" + v)) {
-      return "file://" + (cwd.empty() ? std::string(".") : cwd) + "/" + v;
+    if (v[0] == '/') return FileUrl(v);
+    const size_t colon = v.find(':');
+    if (colon != std::string::npos && v.find("://") == colon) {
+      std::string scheme = v.substr(0, colon);
+      for (char& ch : scheme) ch = static_cast<char>(tolower(static_cast<unsigned char>(ch)));
+      if (scheme == "http" || scheme == "https" || scheme == "file") return v;
+      return std::string();
     }
-    return v;
+    const std::string local = (cwd.empty() ? std::string(".") : cwd) + "/" + v;
+    if (Readable(local)) return FileUrl(local[0] == '/' ? local : CurrentDir() + "/" + v);
+    if (v.find(' ') == std::string::npos && v.find('.') != std::string::npos &&
+        colon == std::string::npos) {
+      return "https://" + v;
+    }
+    return std::string();
   }
   return std::string();
 }
@@ -136,6 +173,7 @@ void App::OnContextInitialized() {
   LoadBangs();
   Blocking::Get().Load();
   RegisterShieldBridge();
+  ChromeClient::CoverWorkerRequests();
   ApplyFirstRunDefaults();
   CefPostDelayedTask(TID_UI, base::BindOnce([] { FilterUpdater::Get().Start(false); }), 60 * 1000);
   FilterUpdater::Get().ScheduleBackgroundChecks();
