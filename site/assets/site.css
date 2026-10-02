@@ -754,6 +754,23 @@ pre .c { color: var(--fg-2); }
 
 .prose blockquote { border-left: 2px solid var(--line-firm); padding-left: var(--sp-6); }
 
+/* ------------------------------------------------------------ engine currency */
+/* generated from SECURITY.md at build time; the dot is the signal only while a gap is open */
+
+.engine { min-width: 0; }
+.engine > * + * { margin-top: calc(var(--u) * 2.5); }
+.engine .status-line {
+  align-items: baseline;
+  font-size: var(--fs-300);
+  line-height: calc(var(--u) * 2.5);
+}
+.engine .status-line .status-dot { transform: translateY(-0.05em); }
+.engine .status-line strong { color: var(--fg-0); font-weight: var(--w-medium); }
+.status-line[data-gap="closed"] .status-dot { background: var(--fg-2); }
+.engine table.data { font-size: var(--fs-300); }
+.engine table.data td:first-child { font-family: var(--font-mono); color: var(--fg-0); white-space: nowrap; }
+.engine-note { color: var(--fg-1); max-width: var(--measure); font-size: var(--fs-300); }
+
 /* ------------------------------------------------------------ download */
 
 .status-line {

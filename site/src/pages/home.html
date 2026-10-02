@@ -2,7 +2,7 @@
         <div class="fog" data-fog aria-hidden="true"></div>
         <span class="hero-glyph" lang="ja" aria-hidden="true">帳</span>
         <div class="wrap grid hero-inner">
-          <p class="hero-kicker caps" data-reveal>Chromium browser for Linux · CEF 154 · pre-release</p>
+          <p class="hero-kicker caps" data-reveal>Chromium browser for Linux · CEF {{cef_major}} · pre-release</p>
           <div class="hero-tools">
             <button class="fog-toggle" type="button" data-fog-toggle aria-pressed="false" hidden>
               <span class="pip" aria-hidden="true"></span>Fog background: <span data-fog-state>off</span>
@@ -14,10 +14,10 @@
             <span class="line muted">the window.</span>
           </h1>
           <p class="hero-lede" data-reveal>
-            Tobari is a privacy-first browser built on Chromium through CEF.
-            <strong>It blocks ads and trackers before they load, sends nothing home,
-            and publishes what it measured</strong>, including where the savings come
-            from and what they cost.
+            Tobari is a privacy-first browser built on Chromium through CEF, in Chromium's own window, with Chrome
+            extensions from the Web Store.
+            <strong>It blocks ads and trackers before they load, sends nothing home, and publishes what it
+            measured</strong>, including where the savings come from and what they cost.
           </p>
           <dl class="hero-def" data-reveal>
             <dt><span lang="ja">帳</span> <span class="mono">tobari, n.</span></dt>
@@ -35,56 +35,56 @@
       <section class="readout" aria-labelledby="readout-title">
         <div class="wrap">
           <div class="readout-head">
-            <h2 class="caps" id="readout-title">Readout · measured 2026-09-30 · Ryzen 5 9600X, Bazzite, Wayland</h2>
+            <h2 class="caps" id="readout-title">Readout · measured 2026-10-01 · Ryzen 5 9600X, Bazzite, Wayland</h2>
             <span class="caps">Each figure links to its source</span>
           </div>
           <ul class="readout-list" data-reveal>
             <li>
-              <a class="cell" href="/benchmarks/#result">
+              <a class="cell" href="/benchmarks/#result" data-figures="905.9 MB|1,285.4 MB|29.5% lower">
                 <span class="cell-label caps"><span class="tick" aria-hidden="true"></span>PSS vs Chrome</span>
-                <span class="cell-value">−11.9<span class="unit">%</span></span>
-                <span class="cell-note">821.8 MB against 933.2 MB at 10 identical tabs</span>
+                <span class="cell-value">−29.5<span class="unit">%</span></span>
+                <span class="cell-note">905.9 MB against 1,285.4 MB at 10 identical tabs, medians of three runs</span>
                 <span class="cell-src">BENCHMARKS § Result</span>
               </a>
             </li>
             <li>
-              <a class="cell" href="/benchmarks/#result">
+              <a class="cell" href="/benchmarks/#result" data-figures="20 processes against 66">
                 <span class="cell-label caps">Processes</span>
-                <span class="cell-value">20<span class="unit">/ 45</span></span>
+                <span class="cell-value">20<span class="unit">/ 66</span></span>
                 <span class="cell-note">Tobari against stock Chrome, same ten pages</span>
                 <span class="cell-src">BENCHMARKS § Result</span>
               </a>
             </li>
             <li>
-              <a class="cell" href="/benchmarks/#result">
+              <a class="cell" href="/benchmarks/#result" data-figures="200.5 MB less PSS|18.1% lower|14 fewer processes">
                 <span class="cell-label caps">From blocking</span>
-                <span class="cell-value">−7.7<span class="unit">%</span></span>
-                <span class="cell-note">68.6 MB PSS, blocking on against off</span>
+                <span class="cell-value">−18.1<span class="unit">%</span></span>
+                <span class="cell-note">200.5 MB PSS and 14 fewer processes, blocking on against off</span>
                 <span class="cell-src">BENCHMARKS § Result</span>
               </a>
             </li>
             <li>
-              <a class="cell" href="/docs/design/#blocking">
+              <a class="cell" href="/benchmarks/#result" data-figures="917.5 MB|1,017.2 MB|9.8% below">
+                <span class="cell-label caps">Worst vs best</span>
+                <span class="cell-value">−9.8<span class="unit">%</span></span>
+                <span class="cell-note">Tobari's worst run, 917.5 MB, against Chrome's best, 1,017.2 MB</span>
+                <span class="cell-src">BENCHMARKS § Result</span>
+              </a>
+            </li>
+            <li>
+              <a class="cell" href="/security/#contacts-tobari-makes-on-its-own" data-figures="the only requests that leave the machine are the four filter-list downloads|150 seconds">
+                <span class="cell-label caps">Idle requests out</span>
+                <span class="cell-value">4<span class="unit">lists</span></span>
+                <span class="cell-note">fresh profile, idle 150 s: only the four filter-list downloads leave the machine</span>
+                <span class="cell-src">SECURITY § Contacts</span>
+              </a>
+            </li>
+            <li>
+              <a class="cell" href="/security/#network-layer-blocking" data-figures="~142,000 rules">
                 <span class="cell-label caps">Filter rules</span>
-                <span class="cell-value">141,987</span>
+                <span class="cell-value">~142k</span>
                 <span class="cell-note">EasyList, EasyPrivacy, uBO filters and privacy</span>
-                <span class="cell-src">DESIGN § Blocking</span>
-              </a>
-            </li>
-            <li>
-              <a class="cell" href="/docs/design/#blocking">
-                <span class="cell-label caps">Engine cost</span>
-                <span class="cell-value">+5<span class="unit">MB</span></span>
-                <span class="cell-note">PSS for the resident blocking engine</span>
-                <span class="cell-src">DESIGN § Blocking</span>
-              </a>
-            </li>
-            <li>
-              <a class="cell" href="/docs/design/#measured-cost">
-                <span class="cell-label caps">Idle CPU</span>
-                <span class="cell-value">0.30<span class="unit">%</span></span>
-                <span class="cell-note">of one core, defaults, engine resident</span>
-                <span class="cell-src">DESIGN § Measured cost</span>
+                <span class="cell-src">SECURITY § Blocking</span>
               </a>
             </li>
           </ul>
@@ -93,9 +93,10 @@
           <div class="wrap grid">
             <span class="caps">Caveats</span>
             <p>
-              This is a single run against live sites, so treat it as one observation, not a distribution.
-              The gap against Chrome is not all efficiency: Tobari has no extension system, sync, Safe Browsing,
-              translate or prefetch yet, and some of the difference is those missing features.
+              Three interleaved runs against live sites, on one machine; the headline figures are medians.
+              The gap against Chrome is not all efficiency: with blocking off Tobari is still 13.9% below Chrome, and
+              part of that is services Tobari does not run — Safe Browsing, sync, the Google account integration,
+              optimisation hints and on-device model services. That is a difference in features, not engineering.
               <a href="/benchmarks/#what-this-does-and-does-not-show">What the measurement does and does not show</a>.
             </p>
           </div>
@@ -107,76 +108,91 @@
           <header class="section-head" data-reveal>
             <p class="section-no caps">01 · Index</p>
             <h2 class="section-title" id="index-title">What is in the build</h2>
-            <p class="section-sub">Phase 1 is a browser shell on CEF. These are the parts that exist today, each with the document that backs it.</p>
+            <p class="section-sub">Phase 1 is a browser on CEF, built and packaged. These are the parts that exist today, each with the document that backs it.</p>
           </header>
           <ol class="index section-body">
             <li data-reveal>
               <span class="index-no">01</span>
-              <h3 class="index-title">Blocking before load</h3>
+              <h3 class="index-title">Chromium's own window</h3>
               <p class="index-text">
-                <code>adblock-rust</code>, the engine Brave ships, is linked into the browser and cancels ad and tracker
-                requests before they load. Lists: <a href="https://easylist.to/" rel="noreferrer">EasyList and EasyPrivacy</a>,
-                and <a href="https://github.com/uBlockOrigin/uAssets" rel="noreferrer">uBlock Origin's</a> filters and privacy lists.
-                Pages you navigate to directly are never blocked.
+                Tobari uses CEF's Chrome-style window: Chromium's tab strip in the title bar, its omnibox and its
+                extension toolbar, themed dark and grayscale on first run. An earlier build drew its own interface in
+                HTML; CEF cannot give that interface real tabs and Chrome extensions at the same time, so it was
+                replaced.
               </p>
-              <span class="index-src"><a href="/docs/design/#blocking">DESIGN § Blocking</a></span>
+              <span class="index-src"><a href="/docs/design/#where-the-design-lives">DESIGN § Where the design lives</a></span>
             </li>
             <li data-reveal>
               <span class="index-no">02</span>
-              <h3 class="index-title">Nothing sent home</h3>
+              <h3 class="index-title">Blocking before load</h3>
               <p class="index-text">
-                Filter list updates are plain requests with no cookies, no query string and no identifier, and
-                <code>SHA256SUMS</code> records what was installed. Blocking can be turned off per site from the
-                omnibox shield.
+                <code>adblock-rust</code>, the engine Brave ships, is linked into the browser and cancels ad and tracker
+                requests before they load, in every tab. Lists: <a href="https://easylist.to/" rel="noreferrer">EasyList and EasyPrivacy</a>,
+                and <a href="https://github.com/uBlockOrigin/uAssets" rel="noreferrer">uBlock Origin's</a> filters and privacy lists.
+                Pages you navigate to directly are never blocked. Blocking is network-level only: no cosmetic filtering.
               </p>
-              <span class="index-src"><a href="/security/#network-layer-blocking-phase-1">SECURITY § Blocking</a></span>
+              <span class="index-src"><a href="/security/#network-layer-blocking">SECURITY § Blocking</a></span>
             </li>
             <li data-reveal>
               <span class="index-no">03</span>
-              <h3 class="index-title">Site isolation kept</h3>
+              <h3 class="index-title">A switch in the toolbar</h3>
               <p class="index-text">
-                The Chromium sandbox stays on. The one memory lever left, <code>--process-per-site</code>, weakens
-                site isolation, so it is not used.
+                Blocking is controlled by a bundled extension pinned to the toolbar. Its badge shows how many requests
+                were blocked on the current page; its popup switches blocking off for a site, and that choice persists.
+                It talks to the browser over a bridge that answers only that extension and refuses web pages.
               </p>
-              <span class="index-src"><a href="/benchmarks/#decision-on-phase-2">BENCHMARKS § Phase 2</a></span>
+              <span class="index-src"><a href="/security/#the-toolbar-extension-and-its-bridge">SECURITY § Toolbar extension</a></span>
             </li>
             <li data-reveal>
               <span class="index-no">04</span>
-              <h3 class="index-title">The tab strip is the title bar</h3>
+              <h3 class="index-title">Chrome extensions</h3>
               <p class="index-text">
-                A frameless window whose whole chrome is 72px tall, with no OS title bar above it. Counting the title bar
-                it replaces, about 40px of page height comes back. Scheme, bang and block count sit inline in the omnibox so it never needs a second row.
+                The Chrome Web Store works. Bitwarden and uBlock Origin Lite were installed from the store in testing.
+                Extensions you install are kept current by Chromium's extension updater, which tells Google which
+                extensions you have; if you install none, it does not run.
               </p>
-              <span class="index-src"><a href="/docs/design/#density">DESIGN § Density</a></span>
+              <span class="index-src"><a href="/security/#extensions-you-install">SECURITY § Extensions</a></span>
             </li>
             <li data-reveal>
               <span class="index-no">05</span>
-              <h3 class="index-title">Idle means idle</h3>
+              <h3 class="index-title">Nothing sent home</h3>
               <p class="index-text">
-                The animation ticker sleeps when nothing moves. Measured, that took idle CPU from 8.00% to 0.50% of
-                one core. Smooth scrolling and the animated new-tab background are off by default because both cost
-                idle CPU.
+                On an idle fresh profile, the only requests that leave the machine are the four weekly filter-list
+                downloads, sent with no cookies, credentials or query string. Chromium's own calls to Google — the
+                component updater, network time, an account check — were found in a network log and redirected to a
+                closed local port or disabled.
               </p>
-              <span class="index-src"><a href="/docs/design/#enforced-performance-rules">DESIGN § Performance</a></span>
+              <span class="index-src"><a href="/security/#contacts-tobari-makes-on-its-own">SECURITY § Contacts</a></span>
             </li>
             <li data-reveal>
               <span class="index-no">06</span>
-              <h3 class="index-title">Contrast is measured</h3>
+              <h3 class="index-title">Local bangs, quiet defaults</h3>
               <p class="index-text">
-                Every colour that carries information clears WCAG AA against every surface it can sit on, in both
-                themes. Every control has a visible keyboard focus state.
+                DuckDuckGo-style <code>!bangs</code> are resolved on your machine, so the search engine never sees a
+                bang query. First run sets DuckDuckGo, no search suggestions, no network prediction, third-party
+                cookies blocked and Translate off; anything you change afterwards stays changed.
               </p>
-              <span class="index-src"><a href="/docs/design/#measured-contrast">DESIGN § Contrast</a></span>
+              <span class="index-src"><a href="/security/#first-run-defaults">SECURITY § Defaults</a></span>
             </li>
             <li data-reveal>
               <span class="index-no">07</span>
-              <h3 class="index-title">Local by default</h3>
+              <h3 class="index-title">Sandbox always on</h3>
               <p class="index-text">
-                Bookmarks, history and the reading list are JSON files under
-                <code>$XDG_DATA_HOME/tobari/</code>. DuckDuckGo-style <code>!bangs</code> resolve in the browser.
-                The interface fonts are bundled, so drawing the chrome makes no network request.
+                Chromium's sandbox is on in every build and package; Tobari never passes <code>--no-sandbox</code>.
+                The Flatpak sandboxes renderers through <code>zypak</code>. The per-user installer refuses to install
+                where unprivileged user namespaces are disabled.
               </p>
-              <span class="index-src"><a href="/changelog/#2026-09-30-persistence-and-the-first-ram-benchmark-0737baa">CHANGELOG</a></span>
+              <span class="index-src"><a href="/security/#sandbox">SECURITY § Sandbox</a></span>
+            </li>
+            <li data-reveal>
+              <span class="index-no">08</span>
+              <h3 class="index-title">Surfaces drawn to a system</h3>
+              <p class="index-text">
+                The new-tab page and the blocking popup use one token set, bundled IBM Plex and a single vermilion
+                signal. Every colour that carries information clears WCAG AA in both themes, and the animation ticker
+                sleeps when nothing moves.
+              </p>
+              <span class="index-src"><a href="/docs/design/#measured-contrast">DESIGN § Contrast</a></span>
             </li>
           </ol>
         </div>
@@ -186,33 +202,60 @@
         <div class="wrap grid">
           <blockquote class="claims-quote" data-reveal>
             <p>Blocking is not an anonymity feature. <span class="muted">It reduces what third parties receive; it does not make you unidentifiable to the sites you visit.</span></p>
-            <footer class="caps"><a href="/security/#network-layer-blocking-phase-1">SECURITY § Network-layer blocking</a></footer>
+            <footer class="caps"><a href="/security/#what-is-not-protected">SECURITY § What is not protected</a></footer>
           </blockquote>
           <ul class="claims-list" aria-labelledby="claims-title" data-reveal>
             <li><span class="caps" id="claims-title">What it does not claim</span></li>
-            <li><strong>Not all of the 11.9% is efficiency.</strong> Some of it is features Tobari does not have yet. <a href="/benchmarks/#what-this-does-and-does-not-show">Benchmarks</a></li>
-            <li><strong>Blocking removed one process, not several.</strong> Most of the saving was resources never fetched, not renderers never created. <a href="/benchmarks/#what-this-does-and-does-not-show">Benchmarks</a></li>
-            <li><strong>No Chrome extensions in this configuration.</strong> A CEF window that hosts real multi-tab cannot host Chrome-style views. That is the open question for Phase 1. <a href="https://github.com/kaorii-ako/tobari#status" rel="noreferrer">README</a></li>
+            <li><strong>Not anonymous.</strong> Your IP address is visible, and sites can fingerprint the browser; Tobari spoofs nothing. <a href="/security/#what-is-not-protected">Security</a></li>
+            <li><strong>Not all of the 29.5% is efficiency.</strong> Part of the gap is features Tobari does not have: Safe Browsing, sync, Google account integration. <a href="/benchmarks/#what-this-does-and-does-not-show">Benchmarks</a></li>
+            <li><strong>No phishing warnings.</strong> Safe Browsing is off. Tobari will not warn you before you open a known phishing or malware site. <a href="/security/#first-run-defaults">Security</a></li>
+            <li><strong>Not always current.</strong> A Chrome security fix reaches Tobari only after CEF ships it. The current gap is below. <a href="#engine-title">Engine currency</a></li>
           </ul>
+        </div>
+      </section>
+
+      <section class="section" aria-labelledby="engine-title">
+        <div class="wrap grid">
+          <header class="section-head" data-reveal>
+            <p class="section-no caps">02 · Engine</p>
+            <h2 class="section-title" id="engine-title">Engine currency</h2>
+            <p class="section-sub">
+              When Chrome ships a security fix, Tobari is exposed until a CEF build carries it and Tobari ships that
+              build. The target is a release within 3 days of the CEF build.
+            </p>
+          </header>
+          <div class="section-body engine" data-reveal>
+            <p class="status-line" data-gap="{{engine_gap_state}}"><span class="status-dot" aria-hidden="true"></span><span>{{engine_status}}</span></p>
+            <dl class="keybox">
+              <dt>Pinned CEF</dt><dd>{{cef_version}}</dd>
+              <dt>Pinned in</dt><dd>shell/provision-cef.sh</dd>
+            </dl>
+            {{engine_table}}
+            <p class="engine-note">
+              Generated from the table in <a href="/security/#engine-currency-read-this-first">SECURITY § Engine currency</a>
+              when this site was built. If the gap is open and that exposure is unacceptable for what you do, use an
+              up-to-date Chrome or Chromium for it.
+            </p>
+          </div>
         </div>
       </section>
 
       <section class="section" aria-labelledby="platforms-title">
         <div class="wrap grid">
           <header class="section-head" data-reveal>
-            <p class="section-no caps">02 · Platforms</p>
+            <p class="section-no caps">03 · Platforms</p>
             <h2 class="section-title" id="platforms-title">Where it runs</h2>
           </header>
           <dl class="platforms section-body" data-reveal>
             <div>
               <dt>Linux</dt>
-              <dd class="state">Phase 1, in progress</dd>
-              <dd class="why">Built and measured on Bazzite under Wayland. No release yet; build from source today. Flatpak is the planned format.</dd>
+              <dd class="state">Phase 1, built and packaged</dd>
+              <dd class="why">Built and measured on Bazzite under Wayland. The Flatpak builds and runs with Chromium's sandbox working; a per-user installer writes only under your home directory. No published release yet: build from source. <a href="/docs/packaging/">Packaging</a></dd>
             </div>
             <div>
               <dt>macOS</dt>
-              <dd class="state">Build from source only</dd>
-              <dd class="why">There is no Mac to test on and no paid Apple Developer account, so a <code>.dmg</code> could not be notarized and Gatekeeper would block it. <a href="/docs/dev-macos/">Why</a></dd>
+              <dd class="state">Not a Phase 1 target</dd>
+              <dd class="why">There is no Mac to test on and no paid Apple Developer account, so a <code>.dmg</code> could not be notarized and Gatekeeper would block it. Nothing is tested on a Mac. <a href="/docs/dev-macos/">Why</a></dd>
             </div>
             <div>
               <dt>Windows</dt>
@@ -226,9 +269,9 @@
       <section class="section waitlist" aria-labelledby="waitlist-title">
         <div class="wrap grid">
           <header class="section-head" data-reveal>
-            <p class="section-no caps">03 · Later</p>
+            <p class="section-no caps">04 · Later</p>
             <h2 class="section-title" id="waitlist-title">One email, when it ships</h2>
-            <p class="section-sub">A fully local AI assistant is planned for a later release.</p>
+            <p class="section-sub">A fully local AI assistant is planned for Phase 3. It is not in this build.</p>
           </header>
           <div class="section-body" data-reveal>
             <form class="form" name="waitlist" method="POST" action="/waitlist/thanks/" data-netlify="true" netlify-honeypot="bot-field">

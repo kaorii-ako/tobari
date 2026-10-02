@@ -11,29 +11,50 @@
               <li data-reveal>
                 <span class="caps">Now</span>
                 <div>
-                  <h2>The browser shell</h2>
+                  <h2>Phase 1: the browser</h2>
                   <p>
-                    A browser on CEF with built-in network-layer blocking. It runs and has been measured. Still to do
-                    before this step is finished: a week of daily use under Wayland, a Flatpak, and an answer to the
-                    extension question.
+                    Works end to end and is packaged: Chromium's own window on CEF, Chrome extensions from the Web Store,
+                    network-layer blocking with a toolbar switch, a Flatpak and a per-user install. Still to do before this
+                    step is finished: a week of daily-driver use on Wayland, the from-source Flatpak manifest Flathub
+                    requires, and a published release with a signing key.
+                  </p>
+                  <p>
+                    Phase 1 was built under a waiver: <a href="/docs/validation/">VALIDATION</a> still records no
+                    go, pivot or stop decision, and the waiver does not extend to Phase 2.
+                  </p>
+                </div>
+              </li>
+              <li data-reveal>
+                <span class="caps">Always</span>
+                <div>
+                  <h2>Engine currency</h2>
+                  <p>
+                    Ship each CEF build that carries a Chromium security fix within 3 days of it appearing, and record
+                    every gap. <a href="/docs/releasing/#security-cadence-the-cef-bump">RELEASING § The CEF bump</a>
                   </p>
                 </div>
               </li>
               <li data-reveal>
                 <span class="caps">Only if needed</span>
                 <div>
-                  <h2>A Chromium patch set</h2>
+                  <h2>Phase 2: a Chromium patch set</h2>
                   <p>
-                    Starts only if a measurement shows a specific limit CEF cannot get past. The current measurement
-                    does not. <a href="/benchmarks/#decision-on-phase-2">BENCHMARKS § Decision on Phase 2</a>
+                    Starts only if a measurement shows a specific, named limit CEF cannot get past. Memory does not show
+                    one. The engine-currency gap is the stronger argument for owning a Chromium build, at the cost of a
+                    4–8 hour build and a rebase every four weeks, indefinitely; it is recorded as the open question, not
+                    decided. <a href="/benchmarks/#decision-on-phase-2">BENCHMARKS § Decision on Phase 2</a>
                   </p>
                 </div>
               </li>
               <li data-reveal>
                 <span class="caps">Later</span>
                 <div>
-                  <h2>A local assistant</h2>
-                  <p>A fully local AI assistant is planned for a later release.</p>
+                  <h2>Phase 3: a local assistant</h2>
+                  <p>
+                    An assistant that runs only on your machine through llama.cpp, with no cloud path of any kind. Its
+                    threat model will be documented before it ships. It is not in this build.
+                    <a href="/security/#planned-local-ai-phase-3">SECURITY § Planned</a>
+                  </p>
                 </div>
               </li>
             </ol>
