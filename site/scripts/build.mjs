@@ -3,7 +3,11 @@
 //
 // - Markdown from the repository (SECURITY.md, BENCHMARKS.md, CHANGELOG.md,
 //   docs/*.md) is rendered with `marked` at build time into a shared layout.
-// - Hand-written pages live in site/src/pages/ as HTML fragments.
+// - Hand-written pages live in site/src/pages/ as HTML fragments. Facts that
+//   change with the engine ({{cef_version}}, {{engine_status}}, ...) are filled
+//   in from shell/provision-cef.sh and SECURITY.md rather than written by hand.
+// - Readout figures carry data-figures="a|b"; each must appear verbatim in the
+//   page the figure links to, so a stale number fails the build.
 // - The output contains no inline script or style, and no third-party
 //   origin is loaded. The build checks both and fails if either slips in,
 //   and also fails on any internal link or #fragment that does not resolve.
@@ -70,22 +74,14 @@ const DOCS = [
   { file: "docs/VALIDATION.md", slug: "validation", name: "Validation" },
 ];
 
-const STALE =
-  'The README flags this document as written for an earlier phase order, when the project shipped an AppImage carrying a model sidecar. Flatpak is now the planned primary format and the payload is a browser. It is rendered here unchanged; treat packaging and platform details as historical until it is rewritten. Current build steps are on <a href="/download/#build">the download page</a>.';
-
 const DOC_META = {
   design: {
-    summary: "The normative visual system: type, colour, measured contrast, motion rules, density, blocking and measured costs.",
+    summary: "The visual system, and why the browser chrome is Chromium's: type, colour, measured contrast, motion rules.",
   },
-  "dev-linux": {
-    summary: "The distrobox container and toolchain. Later steps describe the earlier prototype.",
-    flag: "partly historical",
-    notice:
-      'Steps 1 and 2 (the distrobox container and toolchain) apply to the browser. The later steps build the earlier prototype, which is no longer on <code>main</code>. To build the browser shell, follow <a href="/download/#build">the build steps on the download page</a>.',
-  },
-  "dev-macos": { summary: "Why macOS is a build-from-source target and what would change that.", flag: "flagged for rewrite", notice: STALE },
-  packaging: { summary: "Packaging constraints recorded for the earlier phase order.", flag: "flagged for rewrite", notice: STALE },
-  releasing: { summary: "How a release is signed with minisign, checksummed and published.", flag: "flagged for rewrite", notice: STALE },
+  "dev-linux": { summary: "Building Tobari in a distrobox container: toolchain, CEF, build, run, verify." },
+  "dev-macos": { summary: "Why macOS is not a Phase 1 target, and what would change that." },
+  packaging: { summary: "Flatpak, the per-user install, and how each format keeps Chromium's sandbox on." },
+  releasing: { summary: "The CEF security bump, filter lists, signing with minisign and distribution. No release key exists yet." },
   validation: { summary: "Stage 0 market validation. The gate was waived for Phase 1; the research is unfilled.", flag: "unfilled" },
 };
 
@@ -172,6 +168,69 @@ function renderMarkdown(source, sourceFile) {
 
   const html = marked.parse(source);
   return { html, toc, title };
+}
+
+/* ------------------------------------------------------------------ engine */
+
+// The pinned CEF build and the engine-currency record change with every
+// security bump. Both are read from their sources at build time so the site
+// cannot drift from them.
+
+const plainInline = new Marked({ gfm: true });
+
+async function engineFacts() {
+  const script = await readFile(path.join(REPO, "shell", "provision-cef.sh"), "utf8");
+  const pin = script.match(/CEF_VERSION="\$\{CEF_VERSION:-([^}"]+)\}"/);
+  if (!pin) throw new Error("shell/provision-cef.sh: CEF_VERSION default not found");
+  const cefVersion = pin[1];
+  const chromium = cefVersion.match(/chromium-([\d.]+)/);
+  if (!chromium) throw new Error(`shell/provision-cef.sh: no Chromium version in ${cefVersion}`);
+
+  const security = await readFile(path.join(REPO, "SECURITY.md"), "utf8");
+  if (!security.includes(chromium[1])) {
+    throw new Error(`SECURITY.md never mentions Chromium ${chromium[1]}, which shell/provision-cef.sh pins; update the engine-currency record`);
+  }
+  const section = security.match(/^## Engine currency[^\n]*\n([\s\S]*?)(?=^## )/m);
+  if (!section) throw new Error("SECURITY.md: '## Engine currency' section not found");
+  const lines = section[1].split("\n").filter((l) => /^\|.*\|\s*$/.test(l));
+  if (lines.length < 3) throw new Error("SECURITY.md: engine-currency table not found");
+  const cells = (l) => l.trim().slice(1, -1).split("|").map((c) => c.trim());
+  const head = cells(lines[0]);
+  const rows = lines.slice(2).map(cells);
+  const col = (name) => {
+    const i = head.findIndex((h) => h.toLowerCase() === name);
+    if (i < 0) throw new Error(`SECURITY.md: engine-currency table has no '${name}' column`);
+    return i;
+  };
+  const [cChrome, cFixes, cCef, cGap] = ["chrome stable", "security fixes", "first cef build", "gap"].map(col);
+  const latest = rows[0];
+  const inline = (md) => plainInline.parseInline(md);
+  const gapText = stripTags(inline(latest[cGap])).trim();
+  const open = /open/i.test(gapText);
+
+  const table = `<div class="table-wrap" role="region" aria-label="Engine-currency record" tabindex="0"><table class="data">
+              <thead><tr>${head.map((h) => `<th scope="col">${inline(h)}</th>`).join("")}</tr></thead>
+              <tbody>${rows.map((r) => `<tr>${r.map((c) => `<td>${inline(c)}</td>`).join("")}</tr>`).join("")}</tbody>
+            </table></div>`;
+
+  const status =
+    `Tobari pins Chromium ${esc(chromium[1])}. Latest Chrome stable ${inline(latest[cChrome])}: ` +
+    `security fixes ${inline(latest[cFixes])}; first CEF build ${inline(latest[cCef])}; gap ${inline(latest[cGap])}.`;
+
+  return {
+    cef_version: esc(cefVersion),
+    cef_major: esc(cefVersion.split(".")[0]),
+    engine_status: status,
+    engine_gap_state: open ? "open" : "closed",
+    engine_table: table,
+  };
+}
+
+function fill(html, facts, name) {
+  return html.replace(/\{\{(\w+)\}\}/g, (m, key) => {
+    if (!(key in facts)) throw new Error(`${name}: unknown placeholder ${m}`);
+    return facts[key];
+  });
 }
 
 /* ------------------------------------------------------------------ layout */
@@ -290,8 +349,10 @@ async function emit(url, html) {
   outputs.set(url, html);
 }
 
+let FACTS = {};
+
 async function fragment(name) {
-  return readFile(path.join(SITE, "src", "pages", name), "utf8");
+  return fill(await readFile(path.join(SITE, "src", "pages", name), "utf8"), FACTS, name);
 }
 
 async function tokensWithSystemTheme() {
@@ -313,6 +374,7 @@ async function tokensWithSystemTheme() {
 /* ------------------------------------------------------------------ pages */
 
 async function build() {
+  FACTS = await engineFacts();
   await rm(DIST, { recursive: true, force: true });
   await mkdir(DIST, { recursive: true });
 
@@ -334,7 +396,7 @@ async function build() {
 
   // Hand-written pages
   const plain = [
-    { url: "/download/", file: "download.html", title: "Download", description: "There is no Tobari release yet. How releases will be verified, and how to build from source today." },
+    { url: "/download/", file: "download.html", title: "Download", description: "There is no Tobari release yet. How releases will be verified, and how to build and install from source today." },
     { url: "/roadmap/", file: "roadmap.html", title: "Roadmap", description: "What Tobari is working on now, and what is planned later." },
     { url: "/waitlist/thanks/", file: "waitlist-thanks.html", title: "Added", description: "Your address was added to the waitlist." },
     { url: "/waitlist/remove/", file: "waitlist-remove.html", title: "Remove an address", description: "Remove your address from the Tobari waitlist." },
@@ -344,6 +406,22 @@ async function build() {
     await emit(p.url, layout({ url: p.url, title: p.title, description: p.description, body: await fragment(p.file) }));
   }
 
+  // The changelog is written by hand and can lag main. Say so when it does.
+  const changelogSrc = await readFile(path.join(REPO, "CHANGELOG.md"), "utf8");
+  const newest = changelogSrc.match(/^## .*\(`([0-9a-f]{7,40})`\)/m);
+  let changelogNotice =
+    "Entries describe the build as it was when they were written. Earlier entries describe a custom HTML interface that has since been replaced by Chromium's own window; current figures are on the <a href=\"/benchmarks/\">Benchmarks</a> and <a href=\"/security/\">Security</a> pages.";
+  if (newest && REV) {
+    try {
+      const behind = execFileSync("git", ["rev-list", "--count", `${newest[1]}..HEAD`], { cwd: REPO, encoding: "utf8" }).trim();
+      if (behind !== "0") {
+        changelogNotice += ` The newest entry is for <code>${esc(newest[1])}</code>; later commits are in the <a href="${GH}/commits/main" rel="noreferrer">git log</a> until this file catches up.`;
+      }
+    } catch {
+      /* commit not in this checkout's history: say nothing rather than guess */
+    }
+  }
+
   // Rendered markdown: security, benchmarks, changelog
   const top = [
     {
@@ -351,9 +429,7 @@ async function build() {
       url: "/security/",
       title: "Threat model",
       crumb: "Security",
-      description: "Tobari's threat model and every security tradeoff, stated plainly.",
-      notice:
-        "Most of this document describes the model sidecar from the earlier prototype, which now lives off <code>main</code> and is not part of the current browser. The README flags it for rewrite. The section that applies to today's browser is <a href=\"#network-layer-blocking-phase-1\">Network-layer blocking</a>.",
+      description: "Tobari's threat model, every security tradeoff, and the engine-currency record, stated plainly.",
     },
     {
       file: "BENCHMARKS.md",
@@ -362,7 +438,7 @@ async function build() {
       crumb: "Benchmarks",
       description: "Memory at 10 identical tabs: Tobari against stock Chrome, with method and caveats.",
       notice:
-        'A single run against live sites, on one machine. Part of the gap against Chrome is features Tobari does not have yet. Both are explained under <a href="#what-this-does-and-does-not-show">What this does and does not show</a>.',
+        'Three interleaved runs against live sites, on one machine; headline figures are medians. Part of the gap against Chrome is features Tobari does not have. Both are explained under <a href="#what-this-does-and-does-not-show">What this does and does not show</a>.',
     },
     {
       file: "CHANGELOG.md",
@@ -370,6 +446,7 @@ async function build() {
       title: "Changelog",
       crumb: "Changelog",
       description: "What changed in Tobari, commit by commit.",
+      notice: changelogNotice,
     },
   ];
   for (const t of top) {
@@ -427,7 +504,7 @@ async function build() {
         <header class="grid page-head">
           <p class="crumb caps">Docs</p>
           <h1 class="page-title">Documentation</h1>
-          <p class="page-meta mono">Each file in <a href="${GH}/tree/main/docs" rel="noreferrer">docs/</a>, rendered${REV ? ` at ${REV}` : ""}. Three of them are flagged in the README as written for an earlier phase order; each says so at the top.</p>
+          <p class="page-meta mono">Each file in <a href="${GH}/tree/main/docs" rel="noreferrer">docs/</a>, rendered${REV ? ` at ${REV}` : ""}. A document that is unfinished says so at the top.</p>
         </header>
         <div class="grid doc-body">
           <div class="toc" aria-hidden="true"></div>
@@ -480,6 +557,21 @@ async function verify() {
     for (const m of html.matchAll(/<a\b[^>]*\shref="(https?:[^"]+)"/gi)) {
       if (!ALLOWED_ORIGINS.some((o) => m[1].startsWith(o))) problems.push(`${url}: outbound link to ${m[1]}`);
     }
+    // Readout figures must appear in the page they cite.
+    for (const m of html.matchAll(/<a\b[^>]*>/g)) {
+      const tag = m[0];
+      const figs = tag.match(/\sdata-figures="([^"]+)"/);
+      if (!figs) continue;
+      const href = decode(tag.match(/\shref="([^"]+)"/)?.[1] || "");
+      const target = outputs.get(href.split("#")[0]);
+      if (!target) continue; // reported below as a missing page
+      const text = decode(stripTags(target)).replace(/\s+/g, " ");
+      for (const fig of decode(figs[1]).split("|")) {
+        if (!text.includes(fig)) problems.push(`${url}: figure "${fig}" not found on ${href}`);
+      }
+    }
+    if (/\{\{\w+\}\}/.test(html)) problems.push(`${url}: unfilled placeholder`);
+
     // Internal links and fragments must resolve.
     for (const m of html.matchAll(/\shref="([^"]+)"/g)) {
       const href = decode(m[1]);
