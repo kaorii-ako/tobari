@@ -38,42 +38,40 @@ then again — because live pages change between loads. A single run is not
 enough: across two days the same Chrome configuration measured 933 MB and
 1,292 MB.
 
-Machine: Ryzen 5 9600X, 32 GB, Bazzite, Wayland. 2026-10-01. Tobari on CEF
-154.0.32 (Chromium 154.0.8037.58); Chrome 154.0.8037.92 from Flathub.
-
-These figures predate CEF 154.0.33 and the v5/v6 defaults (V8 optimizing
-compilers blocked, device APIs blocked) and have not been re-measured since.
+Machine: Ryzen 5 9600X, 32 GB, Bazzite, Wayland. 2026-10-02. Tobari 0.1.0 on
+CEF 154.0.33 (Chromium 154.0.8037.94) with its v6 defaults, including the V8
+optimizing compilers blocked; Chrome 154.0.8037.92 from Flathub.
 
 ### Result
 
 | configuration | PSS run 1 / 2 / 3 | **median PSS** | processes | median RSS |
 |---|---|---:|---|---:|
-| Tobari, blocking on | 866.1 / 917.5 / 905.9 MB | **905.9 MB** | 20 / 20 / 20 | 2,823.6 MB |
-| Tobari, blocking off | 1,106.4 / 1,069.4 / 1,113.1 MB | 1,106.4 MB | 34 / 33 / 34 | 4,427.4 MB |
-| Google Chrome, stock | 1,291.6 / 1,017.2 / 1,285.4 MB | 1,285.4 MB | 69 / 66 / 66 | 7,971.5 MB |
+| Tobari, blocking on | 861.1 / 876.9 / 856.9 MB | **861.1 MB** | 20 / 20 / 20 | 2,738.6 MB |
+| Tobari, blocking off | 1,046.0 / 1,003.8 / 1,012.0 MB | 1,012.0 MB | 33 / 33 / 33 | 4,167.3 MB |
+| Google Chrome, stock | 1,200.2 / 1,219.6 / 1,430.1 MB | 1,219.6 MB | 70 / 67 / 69 | 8,235.2 MB |
 
 Tobari, blocking on, against stock Chrome (medians):
 
-- **379.5 MB less PSS — 29.5% lower**
-- **20 processes against 66**
+- **358.5 MB less PSS — 29.4% lower**
+- **20 processes against 69**
 
-A bound that does not depend on medians: Tobari's **worst** run (917.5 MB) is
-still 9.8% below Chrome's **best** (1,017.2 MB).
+A bound that does not depend on medians: Tobari's **worst** run (876.9 MB) is
+still 26.9% below Chrome's **best** (1,200.2 MB).
 
 The blocker's own contribution, on against off (medians):
 
-- **200.5 MB less PSS — 18.1% lower**
-- **14 fewer processes** (34 → 20)
+- **150.9 MB less PSS — 14.9% lower**
+- **13 fewer processes** (33 → 20)
 
 ### What this does and does not show
 
 **Blocking is where the processes go.** A third-party subframe cancelled before
-it loads is a renderer that is never created; here that removed 14 of them.
+it loads is a renderer that is never created; here that removed 13 of them.
 An earlier single-run measurement found only one, on a different day's ad
 inventory — the effect is real but varies a great deal with what the pages
 happen to be serving, which is why three runs are reported.
 
-**Not all of the gap is efficiency.** Even with blocking off, Tobari is 13.9%
+**Not all of the gap is efficiency.** Even with blocking off, Tobari is 17.0%
 below Chrome and runs about half the processes. Part of that is Tobari's
 defaults doing their job — no network prediction means no speculative
 renderers for pages you did not open — and part is that Chrome runs services
@@ -91,6 +89,13 @@ Tobari carries two small bundled extensions (the new-tab page and the blocking
 control); their cost is included in every Tobari figure above.
 
 ### History
+
+On 2026-10-01, on CEF 154.0.32 (Chromium 154.0.8037.58) and before the v5/v6
+defaults, the same method measured Tobari at 905.9 MB median PSS (866.1 /
+917.5 / 905.9) against Chrome's 1,285.4 MB (1,291.6 / 1,017.2 / 1,285.4): 29.5%
+lower, 20 processes against 66, with blocking worth 200.5 MB and 14 processes.
+The new engine and defaults did not change the picture; Chrome's spread between
+runs is wider than any difference between the two Tobari builds.
 
 An earlier version of Tobari drew its own interface in HTML on CEF's Alloy
 runtime. It measured 821.8 MB PSS in a single run against Chrome's 933.2 MB on
@@ -111,7 +116,7 @@ SETTLE=90 scripts/benchmark-ram.sh chrome   # longer settle
 
 Phase 2 — a Chromium patch set — starts only if a measurement shows a
 **specific, named limit CEF cannot get past**. Memory does not show one: Tobari
-already runs under a third of Chrome's processes and 29.5% less PSS on CEF
+already runs under a third of Chrome's processes and 29.4% less PSS on CEF
 unpatched.
 
 The engine-currency gap in SECURITY.md is the stronger argument for owning a
