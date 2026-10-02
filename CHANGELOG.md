@@ -7,6 +7,23 @@ names the commit it describes so it can be checked against `git log`.
 Numbers quoted here are the ones recorded at the time; the current figures and
 their caveats live in `BENCHMARKS.md`, `SECURITY.md` and `docs/DESIGN.md`.
 
+## 2026-10-02 — Installer, website, re-measured (`0047328`, `20deb5a`, `9e72461`, `1924ab1`)
+
+- **One-line installer.** `curl -fsSL https://kaorii-ako.github.io/tobari/install.sh | bash`
+  installs the Flatpak or a per-user build for the current user, after
+  checking the release's minisign signature (with minisign or plain OpenSSL 3)
+  and the artifact's checksum. Tested against tampered artifacts, a tampered
+  checksum list and a foreign key: all refused. `packaging/release.sh` builds
+  and signs a release.
+- **Website on GitHub Pages**, rebuilt around the product: real screenshots, a
+  live bang demo running the new-tab page's own resolver, an install page, a
+  FAQ. The installer and the release key are served from the repository's own
+  copies.
+- **Memory re-measured** on CEF 154.0.33 with the hardened defaults: 861.1 MB
+  median PSS against Chrome's 1,219.6 MB (29.4% lower), 20 processes against
+  69.
+- Fixed: the toolbar popup's list age wrapped onto two lines.
+
 ## 2026-10-02 — Extensions keep updating (`131e40d`)
 
 - Web Store extensions were never updated: the usual
