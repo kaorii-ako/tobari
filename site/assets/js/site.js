@@ -327,8 +327,44 @@ function setupTabs() {
   }
 }
 
+/* -------------------------------------------------------------- nav */
+// The island gains a shadow once content scrolls beneath it. On narrow
+// screens the links live in a sheet; Escape and link clicks close it and
+// focus returns to the toggle.
+
+function setupNav() {
+  const header = document.querySelector("[data-nav]");
+  const toggle = document.querySelector("[data-nav-toggle]");
+  const sheet = document.querySelector("[data-nav-sheet]");
+  if (!header) return;
+
+  let scrolled = null;
+  const sync = () => {
+    const now = window.scrollY > 8;
+    if (now !== scrolled) header.dataset.scrolled = String((scrolled = now));
+  };
+  sync();
+  window.addEventListener("scroll", sync, { passive: true });
+
+  if (!toggle || !sheet) return;
+  const setOpen = (open, restoreFocus) => {
+    toggle.setAttribute("aria-expanded", String(open));
+    sheet.dataset.open = String(open);
+    document.documentElement.style.overflow = open ? "hidden" : "";
+    if (open) sheet.querySelector("a")?.focus({ preventScroll: true });
+    else if (restoreFocus) toggle.focus();
+  };
+  toggle.addEventListener("click", () => setOpen(toggle.getAttribute("aria-expanded") !== "true", true));
+  sheet.addEventListener("click", (e) => { if (e.target.closest("a")) setOpen(false, false); });
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && sheet.dataset.open === "true") setOpen(false, true);
+  });
+  window.matchMedia("(min-width: 961px)").addEventListener("change", (m) => { if (m.matches) setOpen(false, false); });
+}
+
 /* -------------------------------------------------------------- boot */
 
+setupNav();
 setupReveals();
 setupCopy();
 setupTabs();

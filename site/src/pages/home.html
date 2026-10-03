@@ -1,51 +1,52 @@
       <section class="hero" aria-labelledby="hero-title">
         <div class="fog" data-fog aria-hidden="true"></div>
+        <div class="hero-aura" aria-hidden="true"></div>
         <span class="hero-glyph" lang="ja" aria-hidden="true">帳</span>
-        <div class="wrap grid hero-inner">
-          <p class="hero-kicker caps" data-reveal>Chromium browser for Linux · {{version}} · Chromium {{chromium_version}}</p>
-          <div class="hero-tools">
+        <div class="wrap hero-inner">
+          <div class="hero-top" data-hero-item>
+            <span class="eyebrow"><span class="eyebrow-dot" aria-hidden="true"></span>{{version}} · Chromium {{chromium_version}} · Linux</span>
             <button class="fog-toggle" type="button" data-fog-toggle aria-pressed="false" hidden>
-              <span class="pip" aria-hidden="true"></span>Fog background: <span data-fog-state>off</span>
+              <span class="pip" aria-hidden="true"></span>Fog: <span data-fog-state>off</span>
             </button>
           </div>
-          <h1 class="hero-title" id="hero-title" data-reveal>
-            <span class="line">A browser that</span>
-            <span class="line">closes over</span>
-            <span class="line muted">the window.</span>
-          </h1>
-          <p class="hero-lede" data-reveal>
-            Tobari is Chromium, with its own tabs and the Chrome Web Store,
-            <strong>made to block ads and trackers before they load, send nothing home, and switch off the riskiest
-            parts of the engine by default.</strong> Every claim it makes is measured and linked.
-          </p>
-          <dl class="hero-def" data-reveal>
-            <dt><span lang="ja">帳</span> <span class="mono">tobari, n.</span></dt>
-            <dd>The curtain drawn at nightfall.</dd>
-            <dd>Tobari does not claim to make you invisible. It gives you something you close deliberately.</dd>
-          </dl>
-          <div class="hero-install" data-reveal>
-            <p class="caps install-label" id="install-label">Install · signed · no root</p>
-            <div class="cmd" role="group" aria-labelledby="install-label">
+          <h1 class="hero-title" id="hero-title"><span class="w"><span>A</span></span> <span class="w"><span>browser</span></span> <span class="w"><span>that</span></span> <span class="w"><span>closes</span></span> <span class="muted"><span class="w"><span>over</span></span> <span class="w"><span>the</span></span> <span class="w"><span>window.</span></span></span></h1>
+          <div class="hero-grid">
+            <div class="hero-copy" data-hero-item>
+              <p class="hero-lede">
+                Tobari is Chromium, with its own tabs and the Chrome Web Store, made to
+                <strong>block ads and trackers before they load, send nothing home, and switch off the riskiest parts of
+                the engine by default.</strong> Every claim it makes is measured and linked.
+              </p>
+              <div class="cta-row">
+                <a class="pill pill-primary" href="#install"><span>Install Tobari</span><span class="pill-icon" aria-hidden="true"><svg viewBox="0 0 16 16" width="12" height="12"><path d="M8 3v9M4 8.5 8 12.5l4-4" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span></a>
+                <a class="pill pill-ghost" href="/security/"><span>Read the threat model</span><span class="pill-icon" aria-hidden="true"><svg viewBox="0 0 16 16" width="12" height="12"><path d="M5 11 11 5M6 5h5v5" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span></a>
+              </div>
+            </div>
+            <dl class="hero-def" data-hero-item>
+              <dt><span lang="ja">帳</span> <span class="mono">tobari, n.</span></dt>
+              <dd>The curtain drawn at nightfall.</dd>
+              <dd>Tobari does not claim to make you invisible. It gives you something you close deliberately.</dd>
+            </dl>
+          </div>
+          <div class="bezel cmd-shell" data-hero-item>
+            <div class="bezel-core cmd" role="group" aria-labelledby="install-label">
+              <span class="visually-hidden" id="install-label">Install command</span>
               <span class="cmd-prompt" aria-hidden="true">$</span>
               <code class="cmd-text" id="install-cmd">{{install_cmd}}</code>
               <button class="cmd-copy" type="button" data-copy="#install-cmd" hidden><span data-copy-label>Copy</span></button>
             </div>
-            <p class="install-note">
-              Installs the Flatpak if you have Flatpak, otherwise a per-user build in <code>~/.local</code>. The script
-              checks the release signature before installing anything.
-              <a href="/install/">Other ways to install</a> · <a href="/install.sh">read the script</a>
-            </p>
           </div>
-          <div class="hero-actions" data-reveal>
-            <a class="btn btn-primary" href="/install/">Install guide <span class="arrow" aria-hidden="true">→</span></a>
-            <a class="btn" href="{{release_url}}" rel="noreferrer">Release {{version}}</a>
-            <a class="btn" href="/security/">Threat model</a>
-          </div>
+          <p class="install-note" data-hero-item>
+            Flatpak if you have it, otherwise a per-user build in <code>~/.local</code>. The signature is checked before
+            anything installs. <a href="/install/">Other ways to install</a> · <a href="/install.sh">read the script</a>
+          </p>
         </div>
-        <div class="wrap shot-wrap" data-reveal>
-          <figure class="shot shot-hero">
-            <img src="/assets/shots/window.webp" width="1568" height="958" alt="Tobari's window: Chromium's tab strip in a dark grayscale theme, MDN's CSS reference open, and the Tobari toolbar popup showing one request blocked on the page, the blocking switch on and Fast JavaScript off." decoding="async" fetchpriority="high">
-            <figcaption class="mono">Tobari {{version}} on Linux. The toolbar popup counts what was blocked on this page; the switches are per site.</figcaption>
+        <div class="wrap stage">
+          <figure class="bezel bezel-lg shot-hero" data-curtain>
+            <div class="bezel-core">
+              <img src="/assets/shots/window.webp" width="1568" height="958" alt="Tobari's window: Chromium's tab strip in a dark grayscale theme, MDN's CSS reference open, and the Tobari toolbar popup showing one request blocked on the page, the blocking switch on and Fast JavaScript off." decoding="async" fetchpriority="high">
+            </div>
+            <figcaption class="mono">Tobari {{version}} on Linux. The toolbar popup counts what was blocked on this page; both switches are per site.</figcaption>
           </figure>
         </div>
       </section>
@@ -53,14 +54,14 @@
       <section class="readout" aria-labelledby="readout-title">
         <div class="wrap">
           <div class="readout-head">
-            <h2 class="caps" id="readout-title">Readout · measured 2026-10-02 · Tobari 0.1.0 · Ryzen 5 9600X, Bazzite, Wayland</h2>
+            <h2 class="caps" id="readout-title">Measured 2026-10-02 · Tobari 0.1.0 · Ryzen 5 9600X, Bazzite, Wayland</h2>
             <span class="caps">Each figure links to its source</span>
           </div>
-          <ul class="readout-list" data-reveal>
+          <ul class="readout-list" data-stagger>
             <li>
               <a class="cell" href="/benchmarks/#result" data-figures="861.1 MB|1,219.6 MB|29.4% lower">
                 <span class="cell-label caps"><span class="tick" aria-hidden="true"></span>PSS vs Chrome</span>
-                <span class="cell-value">−29.4<span class="unit">%</span></span>
+                <span class="cell-value"><span data-count="-29.4" data-decimals="1">−29.4</span><span class="unit">%</span></span>
                 <span class="cell-note">861.1 MB against 1,219.6 MB at 10 identical tabs, medians of three runs</span>
                 <span class="cell-src">BENCHMARKS § Result</span>
               </a>
@@ -68,7 +69,7 @@
             <li>
               <a class="cell" href="/benchmarks/#result" data-figures="20 processes against 69">
                 <span class="cell-label caps">Processes</span>
-                <span class="cell-value">20<span class="unit">/ 69</span></span>
+                <span class="cell-value"><span data-count="20">20</span><span class="unit">/ 69</span></span>
                 <span class="cell-note">Tobari against stock Chrome, same ten pages</span>
                 <span class="cell-src">BENCHMARKS § Result</span>
               </a>
@@ -76,7 +77,7 @@
             <li>
               <a class="cell" href="/benchmarks/#result" data-figures="150.9 MB less PSS|14.9% lower|13 fewer processes">
                 <span class="cell-label caps">From blocking</span>
-                <span class="cell-value">−14.9<span class="unit">%</span></span>
+                <span class="cell-value"><span data-count="-14.9" data-decimals="1">−14.9</span><span class="unit">%</span></span>
                 <span class="cell-note">150.9 MB PSS and 13 fewer processes, blocking on against off</span>
                 <span class="cell-src">BENCHMARKS § Result</span>
               </a>
@@ -84,7 +85,7 @@
             <li>
               <a class="cell" href="/benchmarks/#result" data-figures="876.9 MB|1,200.2 MB|26.9% below">
                 <span class="cell-label caps">Worst vs best</span>
-                <span class="cell-value">−26.9<span class="unit">%</span></span>
+                <span class="cell-value"><span data-count="-26.9" data-decimals="1">−26.9</span><span class="unit">%</span></span>
                 <span class="cell-note">Tobari's worst run, 876.9 MB, against Chrome's best, 1,200.2 MB</span>
                 <span class="cell-src">BENCHMARKS § Result</span>
               </a>
@@ -92,7 +93,7 @@
             <li>
               <a class="cell" href="/security/#contacts-tobari-makes-on-its-own" data-figures="the only requests that leave the machine are the four filter-list downloads|idle for 10 minutes">
                 <span class="cell-label caps">Idle requests out</span>
-                <span class="cell-value">4<span class="unit">lists</span></span>
+                <span class="cell-value"><span data-count="4">4</span><span class="unit">lists</span></span>
                 <span class="cell-note">fresh profile, idle 10 min: only the four filter-list downloads leave the machine</span>
                 <span class="cell-src">SECURITY § Contacts</span>
               </a>
@@ -100,7 +101,7 @@
             <li>
               <a class="cell" href="/security/#network-layer-blocking" data-figures="~142,000 rules">
                 <span class="cell-label caps">Filter rules</span>
-                <span class="cell-value">~142k</span>
+                <span class="cell-value">~<span data-count="142">142</span>k</span>
                 <span class="cell-note">EasyList, EasyPrivacy, uBO filters and privacy</span>
                 <span class="cell-src">SECURITY § Blocking</span>
               </a>
@@ -115,30 +116,32 @@
         </div>
       </section>
 
-      <section class="section" aria-labelledby="tour-title">
-        <div class="wrap grid">
-          <header class="section-head" data-reveal>
-            <p class="section-no caps">01 · Tour</p>
-            <h2 class="section-title" id="tour-title">It is Chromium, quieter</h2>
-            <p class="section-sub">Chromium's own window, tabs and settings, so nothing has to be relearned. What Tobari adds sits underneath, plus two small pieces of its own.</p>
+      <section class="chapter tour-chapter" aria-labelledby="tour-title">
+        <div class="wrap tour-layout">
+          <header class="tour-head">
+            <div class="tour-sticky">
+              <span class="eyebrow">Tour</span>
+              <h2 class="chapter-title" id="tour-title">It is Chromium, quieter.</h2>
+              <p class="chapter-sub">Chromium's own window, tabs and settings, so nothing has to be relearned. What Tobari adds sits underneath, plus two small pieces of its own.</p>
+            </div>
           </header>
-          <div class="section-body tour">
-            <figure class="tour-item" data-reveal>
-              <div class="shot"><img src="/assets/shots/newtab.webp" width="1200" height="733" alt="Tobari's new-tab page: the search field holds '!gh tokio runtime' and marks it as a GitHub bang; below, a readout of 35 bangs, the Chromium engine and no telemetry." loading="lazy" decoding="async"></div>
+          <div class="tour-list">
+            <figure class="tour-item" data-tour>
+              <div class="bezel bezel-lg"><div class="bezel-core"><img src="/assets/shots/newtab.webp" width="1200" height="733" alt="Tobari's new-tab page: the search field holds '!gh tokio runtime' and marks it as a GitHub bang; below, a readout of 35 bangs, the Chromium engine and no telemetry." loading="lazy" decoding="async"></div></div>
               <figcaption>
                 <h3>A new tab that answers bangs</h3>
                 <p>Type <code>!gh</code>, <code>!w</code> or <code>!mdn</code> and a query. The bang is resolved on your machine, so the search engine never sees it. From the address bar too.</p>
               </figcaption>
             </figure>
-            <figure class="tour-item" data-reveal>
-              <div class="shot shot-narrow"><img src="/assets/shots/popup.webp" width="592" height="620" alt="The Tobari toolbar popup on a news site: requests blocked on this page, a blocking switch for the site, a Fast JavaScript switch, session total, rule count and filter-list age." loading="lazy" decoding="async"></div>
+            <figure class="tour-item tour-item-narrow" data-tour>
+              <div class="bezel bezel-lg"><div class="bezel-core"><img src="/assets/shots/popup.webp" width="592" height="620" alt="The Tobari toolbar popup on MDN: one request blocked on this page, the blocking switch on, Fast JavaScript off, session total, rule count and filter-list age." loading="lazy" decoding="async"></div></div>
               <figcaption>
                 <h3>One popup, two switches</h3>
                 <p>The badge counts what was blocked on the page. Turn blocking off for a site that breaks, or give a site you trust the JavaScript optimizer back. Both choices persist.</p>
               </figcaption>
             </figure>
-            <figure class="tour-item" data-reveal>
-              <div class="shot"><img src="/assets/shots/store.webp" width="1200" height="459" alt="The Chrome Web Store open in Tobari, offering 'Add to Chrome' for the Bitwarden password manager." loading="lazy" decoding="async"></div>
+            <figure class="tour-item" data-tour>
+              <div class="bezel bezel-lg"><div class="bezel-core"><img src="/assets/shots/store.webp" width="1200" height="459" alt="The Chrome Web Store open in Tobari, offering 'Add to Chrome' for the Bitwarden password manager." loading="lazy" decoding="async"></div></div>
               <figcaption>
                 <h3>Your extensions work</h3>
                 <p>The Chrome Web Store installs extensions with Chromium's own permission prompt, and they keep updating. The store suggests switching to Chrome, because Tobari says it is Chromium; "Add to Chrome" works regardless.</p>
@@ -148,138 +151,138 @@
         </div>
       </section>
 
-      <section class="section" aria-labelledby="bang-title">
-        <div class="wrap grid">
-          <header class="section-head" data-reveal>
-            <p class="section-no caps">02 · Try it</p>
-            <h2 class="section-title" id="bang-title">Bangs, resolved here</h2>
-            <p class="section-sub">This box runs the resolver and table from Tobari's new-tab page, in this page. Nothing you type is sent anywhere.</p>
+      <section class="chapter statement" aria-label="What blocking is and is not">
+        <div class="wrap">
+          <blockquote class="statement-quote">
+            <p data-words>Blocking is not an anonymity feature. It reduces what third parties receive; it does not make you unidentifiable to the sites you visit.</p>
+            <footer class="caps"><a href="/security/#what-is-not-protected">SECURITY § What is not protected</a></footer>
+          </blockquote>
+        </div>
+      </section>
+
+      <section class="chapter" aria-labelledby="bang-title">
+        <div class="marquee" aria-hidden="true">
+          <div class="marquee-track" data-marquee><span>!gh</span><span>!w</span><span>!mdn</span><span>!arch</span><span>!yt</span><span>!r/linux</span><span>!so</span><span>!docsrs</span><span>!npm</span><span>!wb</span><span>!man</span><span>!osm</span><span>!hn</span><span>!ddg</span><span>!sp</span><span>!b</span>
+            <span>!gh</span><span>!w</span><span>!mdn</span><span>!arch</span><span>!yt</span><span>!r/linux</span><span>!so</span><span>!docsrs</span><span>!npm</span><span>!wb</span><span>!man</span><span>!osm</span><span>!hn</span><span>!ddg</span><span>!sp</span><span>!b</span>
+          </div>
+        </div>
+        <div class="wrap bang-layout">
+          <header class="bang-head">
+            <span class="eyebrow">Try it</span>
+            <h2 class="chapter-title" id="bang-title">Bangs, resolved here.</h2>
+            <p class="chapter-sub">This box runs the resolver and table from Tobari's new-tab page, in this page. Nothing you type is sent anywhere.</p>
           </header>
-          <form class="section-body bang-demo" data-bang-demo data-reveal autocomplete="off">
-            <label class="caps" for="bang-input">Query</label>
-            <div class="bang-field">
-              <span class="cmd-prompt" aria-hidden="true">›</span>
-              <input class="bang-input" id="bang-input" data-bang-input type="text" spellcheck="false" value="!gh tokio runtime" aria-describedby="bang-note">
+          <form class="bezel bang-shell" data-bang-demo autocomplete="off">
+            <div class="bezel-core bang-demo">
+              <label class="caps" for="bang-input">Query</label>
+              <div class="bang-field">
+                <span class="cmd-prompt" aria-hidden="true">›</span>
+                <input class="bang-input" id="bang-input" data-bang-input type="text" spellcheck="false" value="!gh tokio runtime" aria-describedby="bang-note">
+              </div>
+              <div class="bang-examples" aria-label="Examples">
+                <button type="button" class="bang-chip" data-bang-example="!w Kyoto">!w Kyoto</button>
+                <button type="button" class="bang-chip" data-bang-example="css grid !mdn">css grid !mdn</button>
+                <button type="button" class="bang-chip" data-bang-example="!r/linux wayland">!r/linux wayland</button>
+                <button type="button" class="bang-chip" data-bang-example="!arch pipewire">!arch pipewire</button>
+              </div>
+              <div class="bang-out" data-bang-out aria-live="polite">
+                <span class="bang-token mono" data-bang-token>—</span>
+                <span class="bang-name" data-bang-name></span>
+                <span class="bang-dest mono" data-bang-dest></span>
+                <a class="bang-open" data-bang-open href="#bang-title" rel="noreferrer" target="_blank" hidden>Open <span aria-hidden="true">↗</span></a>
+              </div>
+              <p class="bang-note" id="bang-note" data-bang-note>Resolved in this page. In Tobari the same rewrite happens before the request leaves, whichever search engine you use.</p>
+              <details class="bang-all">
+                <summary class="caps">All <span data-bang-count>35</span> bangs</summary>
+                <ul class="bang-list" data-bang-list></ul>
+              </details>
             </div>
-            <div class="bang-examples" aria-label="Examples">
-              <button type="button" class="bang-chip" data-bang-example="!w Kyoto">!w Kyoto</button>
-              <button type="button" class="bang-chip" data-bang-example="css grid !mdn">css grid !mdn</button>
-              <button type="button" class="bang-chip" data-bang-example="!r/linux wayland">!r/linux wayland</button>
-              <button type="button" class="bang-chip" data-bang-example="!aw pipewire">!aw pipewire</button>
-            </div>
-            <div class="bang-out" data-bang-out aria-live="polite">
-              <span class="bang-token mono" data-bang-token>—</span>
-              <span class="bang-name" data-bang-name></span>
-              <span class="bang-dest mono" data-bang-dest></span>
-              <a class="bang-open" data-bang-open href="#bang-title" rel="noreferrer" target="_blank" hidden>Open <span aria-hidden="true">↗</span></a>
-            </div>
-            <p class="bang-note" id="bang-note" data-bang-note>Resolved in this page. In Tobari the same rewrite happens before the request leaves, whichever search engine you use.</p>
-            <details class="bang-all">
-              <summary class="caps">All <span data-bang-count>35</span> bangs</summary>
-              <ul class="bang-list" data-bang-list></ul>
-            </details>
           </form>
         </div>
       </section>
 
-      <section class="section" aria-labelledby="index-title">
-        <div class="wrap grid">
-          <header class="section-head" data-reveal>
-            <p class="section-no caps">03 · Index</p>
-            <h2 class="section-title" id="index-title">What is in the build</h2>
-            <p class="section-sub">Each part, with the document that backs it.</p>
+      <section class="chapter" aria-labelledby="index-title">
+        <div class="wrap">
+          <header class="chapter-head">
+            <span class="eyebrow">In the build</span>
+            <h2 class="chapter-title" id="index-title">Eight things, each with its evidence.</h2>
           </header>
-          <ol class="index section-body">
-            <li data-reveal>
-              <span class="index-no">01</span>
-              <h3 class="index-title">Blocking before load</h3>
-              <p class="index-text">
-                <code>adblock-rust</code>, the engine Brave ships, is linked into the browser and cancels ad and tracker
-                requests before they load: in every tab, and in service workers. Lists:
-                <a href="https://easylist.to/" rel="noreferrer">EasyList and EasyPrivacy</a>, and
-                <a href="https://github.com/uBlockOrigin/uAssets" rel="noreferrer">uBlock Origin's</a> filters and privacy lists.
-                Network-level only: no cosmetic filtering.
-              </p>
-              <span class="index-src"><a href="/security/#network-layer-blocking">SECURITY § Blocking</a></span>
+          <ul class="bento" data-stagger>
+            <li class="bento-card span-2">
+              <div class="bezel"><div class="bezel-core">
+                <span class="bento-kicker mono">adblock-rust · ~142,000 rules</span>
+                <h3>Blocking before load</h3>
+                <p><code>adblock-rust</code>, the engine Brave ships, is linked into the browser and cancels ad and tracker requests before they load: in every tab, and in service workers. Lists: <a href="https://easylist.to/" rel="noreferrer">EasyList and EasyPrivacy</a>, and <a href="https://github.com/uBlockOrigin/uAssets" rel="noreferrer">uBlock Origin's</a> filters and privacy lists. Network-level only: no cosmetic filtering.</p>
+                <a class="bento-src" href="/security/#network-layer-blocking">SECURITY § Blocking</a>
+              </div></div>
             </li>
-            <li data-reveal>
-              <span class="index-no">02</span>
-              <h3 class="index-title">Hardened by default</h3>
-              <p class="index-text">
-                V8's optimizing compilers, where most exploited Chrome bugs of recent years live, are off unless you
-                allow them for a site. HTTPS-Only mode is on. USB, serial, HID, Bluetooth, sensors and local-font
-                access are blocked. Extensions that Linux packages push system-wide are not installed.
-              </p>
-              <span class="index-src"><a href="/security/#first-run-defaults">SECURITY § Defaults</a></span>
+            <li class="bento-card">
+              <div class="bezel"><div class="bezel-core">
+                <span class="bento-kicker mono">default off</span>
+                <h3>Hardened by default</h3>
+                <p>V8's optimizing compilers, where most exploited Chrome bugs live, are off unless you allow them for a site. HTTPS-Only is on. Device APIs are blocked.</p>
+                <a class="bento-src" href="/security/#first-run-defaults">SECURITY § Defaults</a>
+              </div></div>
             </li>
-            <li data-reveal>
-              <span class="index-no">03</span>
-              <h3 class="index-title">Nothing sent home</h3>
-              <p class="index-text">
-                On an idle fresh profile, the only requests that leave the machine are the four weekly filter-list
-                downloads, with no cookies or query string. Chromium's own calls to Google — component updater, network
-                time, an account check — were found in a network log and shut off.
-              </p>
-              <span class="index-src"><a href="/security/#contacts-tobari-makes-on-its-own">SECURITY § Contacts</a></span>
+            <li class="bento-card">
+              <div class="bezel"><div class="bezel-core">
+                <span class="bento-kicker mono">4 requests, idle</span>
+                <h3>Nothing sent home</h3>
+                <p>On an idle profile, only the four weekly filter-list downloads leave the machine. Chromium's own calls to Google were found in a network log and shut off.</p>
+                <a class="bento-src" href="/security/#contacts-tobari-makes-on-its-own">SECURITY § Contacts</a>
+              </div></div>
             </li>
-            <li data-reveal>
-              <span class="index-no">04</span>
-              <h3 class="index-title">Quiet defaults</h3>
-              <p class="index-text">
-                DuckDuckGo, no search suggestions, no network prediction, third-party cookies blocked, WebRTC limited to
-                the public interface, Translate off. Anything you change afterwards stays changed.
-              </p>
-              <span class="index-src"><a href="/security/#first-run-defaults">SECURITY § Defaults</a></span>
+            <li class="bento-card">
+              <div class="bezel"><div class="bezel-core">
+                <span class="bento-kicker mono">first run</span>
+                <h3>Quiet defaults</h3>
+                <p>DuckDuckGo, no suggestions, no prediction, third-party cookies blocked, WebRTC limited, Translate off. What you change stays changed.</p>
+                <a class="bento-src" href="/security/#first-run-defaults">SECURITY § Defaults</a>
+              </div></div>
             </li>
-            <li data-reveal>
-              <span class="index-no">05</span>
-              <h3 class="index-title">Sandbox always on</h3>
-              <p class="index-text">
-                Chromium's sandbox runs in every build and package; Tobari never passes <code>--no-sandbox</code>. The
-                Flatpak sandboxes renderers through <code>zypak</code>; the per-user installer refuses systems where
-                user namespaces are disabled.
-              </p>
-              <span class="index-src"><a href="/security/#sandbox">SECURITY § Sandbox</a></span>
+            <li class="bento-card">
+              <div class="bezel"><div class="bezel-core">
+                <span class="bento-kicker mono">never --no-sandbox</span>
+                <h3>Sandbox always on</h3>
+                <p>Chromium's sandbox runs in every build and package. The Flatpak sandboxes renderers through <code>zypak</code>; the installer refuses systems where it cannot work.</p>
+                <a class="bento-src" href="/security/#sandbox">SECURITY § Sandbox</a>
+              </div></div>
             </li>
-            <li data-reveal>
-              <span class="index-no">06</span>
-              <h3 class="index-title">Signed releases</h3>
-              <p class="index-text">
-                Every release's checksums are signed with minisign. The installer carries the public key and refuses a
-                download whose signature or checksum does not match, using <code>minisign</code> or plain OpenSSL.
-              </p>
-              <span class="index-src"><a href="/docs/releasing/#signing">RELEASING § Signing</a></span>
+            <li class="bento-card span-2">
+              <div class="bezel"><div class="bezel-core">
+                <span class="bento-kicker mono">minisign · key 0F0DC333B8A4E968</span>
+                <h3>Signed releases</h3>
+                <p>Every release's checksums are signed. The installer carries the public key and refuses a download whose signature or checksum does not match, using <code>minisign</code> or plain OpenSSL. A truncated file, an edited checksum list and a foreign key were all refused in testing.</p>
+                <a class="bento-src" href="/docs/releasing/#signing">RELEASING § Signing</a>
+              </div></div>
             </li>
-            <li data-reveal>
-              <span class="index-no">07</span>
-              <h3 class="index-title">The engine, watched</h3>
-              <p class="index-text">
-                A daily job compares Tobari's Chromium with Chrome stable and opens an issue listing any security fix
-                Tobari lacks. The commitment is a release within three days of a CEF build that carries it.
-              </p>
-              <span class="index-src"><a href="#engine-title">Engine currency, below</a></span>
+            <li class="bento-card span-2">
+              <div class="bezel"><div class="bezel-core">
+                <span class="bento-kicker mono">checked daily</span>
+                <h3>The engine, watched</h3>
+                <p>A daily job compares Tobari's Chromium with Chrome stable and opens an issue listing any security fix Tobari lacks. The commitment is a release within three days of a CEF build that carries it.</p>
+                <a class="bento-src" href="#engine-title">Engine currency, below</a>
+              </div></div>
             </li>
-            <li data-reveal>
-              <span class="index-no">08</span>
-              <h3 class="index-title">Drawn to a system</h3>
-              <p class="index-text">
-                The new-tab page and the toolbar popup share one token set, bundled IBM Plex and a single vermilion
-                signal. Every colour that carries information clears WCAG AA, and nothing animates when nothing moves.
-              </p>
-              <span class="index-src"><a href="/docs/design/#measured-contrast">DESIGN § Contrast</a></span>
+            <li class="bento-card span-2">
+              <div class="bezel"><div class="bezel-core">
+                <span class="bento-kicker mono">WCAG AA, both themes</span>
+                <h3>Drawn to a system</h3>
+                <p>The new-tab page and the toolbar popup share one token set, bundled IBM Plex and a single vermilion signal. Every colour that carries information clears WCAG AA, and nothing animates when nothing moves.</p>
+                <a class="bento-src" href="/docs/design/#measured-contrast">DESIGN § Contrast</a>
+              </div></div>
             </li>
-          </ol>
+          </ul>
         </div>
       </section>
 
-      <section class="section" aria-labelledby="claims-title">
-        <div class="wrap grid">
-          <blockquote class="claims-quote" data-reveal>
-            <p>Blocking is not an anonymity feature. <span class="muted">It reduces what third parties receive; it does not make you unidentifiable to the sites you visit.</span></p>
-            <footer class="caps"><a href="/security/#what-is-not-protected">SECURITY § What is not protected</a></footer>
-          </blockquote>
-          <ul class="claims-list" aria-labelledby="claims-title" data-reveal>
-            <li><span class="caps" id="claims-title">What it gives up</span></li>
+      <section class="chapter" aria-labelledby="claims-title">
+        <div class="wrap">
+          <header class="chapter-head">
+            <span class="eyebrow">Tradeoffs</span>
+            <h2 class="chapter-title" id="claims-title">What it gives up, stated plainly.</h2>
+          </header>
+          <ul class="claims" data-stagger>
             <li><strong>Not anonymous.</strong> Your IP address is visible, and sites can fingerprint the browser; Tobari spoofs nothing. <a href="/security/#what-is-not-protected">Security</a></li>
             <li><strong>No phishing warnings.</strong> Safe Browsing is off. Tobari will not warn you before a known phishing or malware site. <a href="/security/#first-run-defaults">Security</a></li>
             <li><strong>Heavy JavaScript is slower.</strong> With the optimizer off, a JavaScript benchmark ran 2.1× slower. One switch per site gives it back. <a href="/security/#first-run-defaults">Security</a></li>
@@ -288,15 +291,15 @@
         </div>
       </section>
 
-      <section class="section" id="install" aria-labelledby="install-title">
-        <div class="wrap grid">
-          <header class="section-head" data-reveal>
-            <p class="section-no caps">04 · Install</p>
-            <h2 class="section-title" id="install-title">Three ways in</h2>
-            <p class="section-sub">All three install for your user only and keep Chromium's sandbox on. Updating is running the same thing again.</p>
+      <section class="chapter" id="install" aria-labelledby="install-title">
+        <div class="wrap split">
+          <header class="chapter-head">
+            <span class="eyebrow">Install</span>
+            <h2 class="chapter-title" id="install-title">Three ways in.</h2>
+            <p class="chapter-sub">All three install for your user only and keep Chromium's sandbox on. Updating is running the same thing again.</p>
           </header>
-          <div class="section-body ways" data-reveal>
-            <div class="tabs" data-tabs>
+          <div class="bezel ways">
+            <div class="bezel-core tabs" data-tabs>
               <div class="tab-list" role="tablist" aria-label="Install method">
                 <button role="tab" id="tab-script" aria-controls="way-script" aria-selected="true" type="button">Installer</button>
                 <button role="tab" id="tab-flatpak" aria-controls="way-flatpak" aria-selected="false" type="button">Flatpak by hand</button>
@@ -332,17 +335,14 @@ packaging/install.sh build</code></pre>
         </div>
       </section>
 
-      <section class="section" aria-labelledby="engine-title">
-        <div class="wrap grid">
-          <header class="section-head" data-reveal>
-            <p class="section-no caps">05 · Engine</p>
-            <h2 class="section-title" id="engine-title">Engine currency</h2>
-            <p class="section-sub">
-              When Chrome ships a security fix, Tobari is exposed until a CEF build carries it and Tobari ships that
-              build. The target is a release within 3 days of the CEF build.
-            </p>
+      <section class="chapter" aria-labelledby="engine-title">
+        <div class="wrap split">
+          <header class="chapter-head">
+            <span class="eyebrow">Engine</span>
+            <h2 class="chapter-title" id="engine-title">Engine currency.</h2>
+            <p class="chapter-sub">When Chrome ships a security fix, Tobari is exposed until a CEF build carries it and Tobari ships that build. The target is a release within 3 days of the CEF build.</p>
           </header>
-          <div class="section-body engine" data-reveal>
+          <div class="engine">
             <p class="status-line" data-gap="{{engine_gap_state}}"><span class="status-dot" aria-hidden="true"></span><span>{{engine_status}}</span></p>
             <dl class="keybox">
               <dt>Pinned CEF</dt><dd>{{cef_version}}</dd>
@@ -358,13 +358,13 @@ packaging/install.sh build</code></pre>
         </div>
       </section>
 
-      <section class="section" aria-labelledby="faq-title">
-        <div class="wrap grid">
-          <header class="section-head" data-reveal>
-            <p class="section-no caps">06 · Questions</p>
-            <h2 class="section-title" id="faq-title">Asked first</h2>
+      <section class="chapter" aria-labelledby="faq-title">
+        <div class="wrap split">
+          <header class="chapter-head">
+            <span class="eyebrow">Questions</span>
+            <h2 class="chapter-title" id="faq-title">Asked first.</h2>
           </header>
-          <div class="section-body faq" data-reveal>
+          <div class="faq">
             <details>
               <summary>Is this a fork of Chromium?</summary>
               <p>No. Tobari embeds Chromium through CEF, the framework Spotify and Steam use, and drives Chromium's own browser window. It changes behaviour from outside the engine: request handling, preferences and launch switches. That keeps it small enough to follow Chromium releases closely, at the cost of waiting for CEF to ship each one. <a href="/docs/design/">Design</a></p>
@@ -398,14 +398,14 @@ packaging/install.sh build</code></pre>
       </section>
 
       <!--if:forms-->
-      <section class="section waitlist" aria-labelledby="waitlist-title">
-        <div class="wrap grid">
-          <header class="section-head" data-reveal>
-            <p class="section-no caps">07 · Later</p>
-            <h2 class="section-title" id="waitlist-title">One email, when it ships</h2>
-            <p class="section-sub">A fully local AI assistant is planned for Phase 3. It is not in this build.</p>
+      <section class="chapter waitlist" aria-labelledby="waitlist-title">
+        <div class="wrap split">
+          <header class="chapter-head">
+            <span class="eyebrow">Later</span>
+            <h2 class="chapter-title" id="waitlist-title">One email, when it ships.</h2>
+            <p class="chapter-sub">A fully local AI assistant is planned for Phase 3. It is not in this build.</p>
           </header>
-          <div class="section-body" data-reveal>
+          <div>
             <form class="form" name="waitlist" method="POST" action="/waitlist/thanks/" data-netlify="true" netlify-honeypot="bot-field">
               <input type="hidden" name="form-name" value="waitlist">
               <p class="hp" aria-hidden="true">
@@ -414,7 +414,7 @@ packaging/install.sh build</code></pre>
               <label class="field-label caps" for="waitlist-email">Email address</label>
               <div class="field-row">
                 <input class="input" id="waitlist-email" type="email" name="email" required autocomplete="email" spellcheck="false" placeholder="you@example.org" aria-describedby="waitlist-use">
-                <button class="btn btn-primary" type="submit">Add my address</button>
+                <button class="pill pill-primary" type="submit"><span>Add my address</span></button>
               </div>
             </form>
             <dl class="use" id="waitlist-use">
@@ -427,21 +427,24 @@ packaging/install.sh build</code></pre>
         </div>
       </section>
       <!--/if:forms-->
-      <!--if:noforms-->
-      <section class="section" aria-labelledby="later-title">
-        <div class="wrap grid">
-          <header class="section-head" data-reveal>
-            <p class="section-no caps">07 · Later</p>
-            <h2 class="section-title" id="later-title">What comes next</h2>
-            <p class="section-sub">A fully local AI assistant is planned for Phase 3, running on your machine with no cloud path. It is not in this build.</p>
-          </header>
-          <div class="section-body later" data-reveal>
-            <p>To hear about releases without giving anyone an email address, watch the repository on GitHub with <strong>Watch → Custom → Releases</strong>, or follow its <a href="{{gh}}/releases.atom" rel="noreferrer">release feed</a>.</p>
-            <div class="hero-actions">
-              <a class="btn" href="/roadmap/">Roadmap <span class="arrow" aria-hidden="true">→</span></a>
-              <a class="btn" href="{{gh}}" rel="noreferrer">Source on GitHub</a>
+
+      <section class="finale" aria-labelledby="finale-title">
+        <div class="finale-curtain" aria-hidden="true"></div>
+        <div class="wrap finale-inner">
+          <h2 class="finale-title" id="finale-title" data-finale-title><span class="w"><span>Draw</span></span> <span class="w"><span>the</span></span> <span class="w"><span>curtain.</span></span></h2>
+          <p class="finale-sub">One command. Signed, per-user, sandboxed. {{version}} for Linux on x86_64.</p>
+          <div class="bezel cmd-shell finale-cmd">
+            <div class="bezel-core cmd" role="group" aria-label="Install command">
+              <span class="cmd-prompt" aria-hidden="true">$</span>
+              <code class="cmd-text" id="install-cmd-2">{{install_cmd}}</code>
+              <button class="cmd-copy" type="button" data-copy="#install-cmd-2" hidden><span data-copy-label>Copy</span></button>
             </div>
           </div>
+          <div class="cta-row finale-ctas">
+            <a class="pill pill-primary" href="/install/"><span>Install guide</span><span class="pill-icon" aria-hidden="true"><svg viewBox="0 0 16 16" width="12" height="12"><path d="M3 8h9M8.5 4 12.5 8l-4 4" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span></a>
+            <a class="pill pill-ghost" href="{{release_url}}" rel="noreferrer"><span>Release {{version}}</span><span class="pill-icon" aria-hidden="true"><svg viewBox="0 0 16 16" width="12" height="12"><path d="M5 11 11 5M6 5h5v5" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span></a>
+            <a class="pill pill-ghost" href="{{gh}}" rel="noreferrer"><span>Source</span><span class="pill-icon" aria-hidden="true"><svg viewBox="0 0 16 16" width="12" height="12"><path d="M5 11 11 5M6 5h5v5" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span></a>
+          </div>
+          <p class="finale-note">A fully local AI assistant is planned for Phase 3; it is not in this build. Watch the repository with <strong>Watch → Custom → Releases</strong> to hear about new versions without giving anyone an email address.</p>
         </div>
       </section>
-      <!--/if:noforms-->

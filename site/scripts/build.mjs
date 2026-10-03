@@ -288,7 +288,7 @@ function nav(current) {
   return items.join("");
 }
 
-function layout({ title, description, url, body, page = "doc", scripts = [], modules = [] }) {
+function layout({ title, description, url, body, page = "doc", scripts = [], modules = [], styles = [] }) {
   const fullTitle = title ? `${title} · Tobari` : "Tobari (帳) — a privacy-first Chromium browser for Linux";
   const extra = [
     ...scripts.map((s) => `<script src="${s}" defer></script>`),
@@ -314,20 +314,26 @@ function layout({ title, description, url, body, page = "doc", scripts = [], mod
     <link rel="preload" href="/assets/fonts/plex-sans-600.woff2" as="font" type="font/woff2" crossorigin>
     <link rel="preload" href="/assets/fonts/plex-mono-400.woff2" as="font" type="font/woff2" crossorigin>
     <link rel="stylesheet" href="/assets/tokens.css">
-    <link rel="stylesheet" href="/assets/site.css">
+    <link rel="stylesheet" href="/assets/site.css">${styles.map((s) => `\n    <link rel="stylesheet" href="${s}">`).join("")}
     <script src="/assets/vendor/gsap.min.js" defer></script>
     ${extra}
     <script type="module" src="/assets/js/site.js"></script>
   </head>
   <body data-page="${page}">
     <a class="skip" href="#main">Skip to content</a>
-    <header class="site-header">
-      <div class="wrap header-row">
+    <header class="site-header" data-nav>
+      <div class="nav-pill">
         <a class="brand" href="/"${url === "/" ? ' aria-current="page"' : ""}><span class="brand-glyph" lang="ja" aria-hidden="true">帳</span><span>Tobari</span></a>
-        <span class="brand-status mono">${esc(FACTS.version || "")} · pre-release</span>
+        <span class="brand-status mono">${esc(FACTS.version || "")}</span>
         <nav class="site-nav" aria-label="Primary"><ul>${nav(url)}</ul></nav>
+        <a class="pill pill-primary pill-sm nav-cta" href="/install/">Install</a>
+        <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="nav-sheet" aria-label="Menu" data-nav-toggle><span></span><span></span></button>
       </div>
     </header>
+    <div class="nav-sheet" id="nav-sheet" data-nav-sheet>
+      <nav aria-label="Primary, mobile"><ul>${NAV.map(({ href, label }) => `<li><a href="${href}">${label}</a></li>`).join("")}<li><a href="${GH}" rel="noreferrer">Source</a></li></ul></nav>
+      <p class="sheet-meta">Tobari ${esc(FACTS.version || "")} · Chromium ${esc(FACTS.chromium_version || "")}</p>
+    </div>
     <main id="main" tabindex="-1">
 ${body}
     </main>
@@ -444,6 +450,8 @@ async function build() {
   }
   // The installer is served from the site, byte for byte the repository copy.
   await cp(path.join(REPO, "packaging", "get-tobari.sh"), path.join(DIST, "install.sh"));
+  // Vercel reads its headers (CSP and friends) from the deployed directory.
+  if (HOST === "vercel") await cp(path.join(SITE, "vercel.json"), path.join(DIST, "vercel.json"));
 
   // Landing
   await emit(
@@ -454,8 +462,9 @@ async function build() {
       description:
         "Tobari is a privacy-first Chromium browser for Linux, built on CEF with network-layer blocking. Measured, with the caveats stated.",
       body: await fragment("home.html"),
-      scripts: ["/assets/vendor/lenis.min.js"],
-      modules: ["/assets/js/bang-demo.js"],
+      scripts: ["/assets/vendor/lenis.min.js", "/assets/vendor/ScrollTrigger.min.js"],
+      modules: ["/assets/js/bang-demo.js", "/assets/js/landing.js"],
+      styles: ["/assets/landing.css"],
     }),
   );
 
@@ -658,7 +667,7 @@ async function verify() {
   }
 
   // Any http(s) URL in shipped CSS/JS that is not a comment or licence banner.
-  for (const rel of ["assets/site.css", "assets/tokens.css", "assets/js/site.js", "assets/js/motion.js", "assets/js/bang-demo.js"]) {
+  for (const rel of ["assets/site.css", "assets/tokens.css", "assets/js/site.js", "assets/js/motion.js", "assets/js/bang-demo.js", "assets/js/landing.js", "assets/landing.css"]) {
     const text = await readFile(path.join(DIST, rel), "utf8");
     if (/url\(\s*["']?(https?:)?\/\//i.test(text)) problems.push(`${rel}: remote url()`);
     if (/@import/i.test(text)) problems.push(`${rel}: @import`);
