@@ -203,6 +203,17 @@ if [ "$MODE" = flatpak ]; then
   flatpak remote-add --user --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
   flatpak install --user -y --noninteractive --reinstall "$WORK/$ARTIFACT"
   ok "installed $APP_ID"
+  # A per-user entry with the same id shadows the Flatpak's in the app menu
+  # and the dock. Drop one whose program no longer exists, so the window is
+  # matched to the Flatpak and gets its icon.
+  STALE="${XDG_DATA_HOME:-$HOME/.local/share}/applications/$APP_ID.desktop"
+  if [ -f "$STALE" ]; then
+    EXEC="$(sed -n 's/^Exec=\([^ ]*\).*/\1/p' "$STALE" | head -1)"
+    if [ -n "$EXEC" ] && [ ! -x "$EXEC" ]; then
+      rm -f "$STALE"
+      ok "removed a stale launcher that pointed at $EXEC"
+    fi
+  fi
   LAUNCH="flatpak run $APP_ID"
   DESKTOP="$APP_ID.desktop"
 else
