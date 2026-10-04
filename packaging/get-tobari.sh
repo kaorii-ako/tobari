@@ -4,7 +4,7 @@
 #   curl -fsSL https://kaorii-ako.github.io/tobari/install.sh | bash
 #   curl -fsSL https://kaorii-ako.github.io/tobari/install.sh | bash -s -- --tarball --set-default
 #
-# Downloads a Tobari release from GitHub, checks its minisign signature against
+# Linux x86_64 and Apple-silicon macOS. Downloads a Tobari release from GitHub, checks its minisign signature against
 # the release key pinned below, checks the artifact's SHA-256 against the
 # signed list, and installs it for the current user only. Nothing is written
 # outside $HOME and nothing runs as root.
@@ -12,6 +12,9 @@
 # Options:
 #   --flatpak       install the Flatpak bundle (default when flatpak is present)
 #   --tarball       install the per-user build into ~/.local (no Flatpak needed)
+#   --appimage      put the AppImage in ~/Applications (it adds itself to the menu)
+#
+# On an Apple-silicon Mac it installs Tobari.app into ~/Applications instead.
 #   --set-default   make Tobari the default web browser
 #   --version X.Y.Z install a specific release instead of the one pinned here
 #   --uninstall     remove Tobari (profiles are kept)
@@ -20,7 +23,7 @@
 # Reading this before running it is a good idea. It is short on purpose.
 set -euo pipefail
 
-VERSION="${TOBARI_VERSION:-0.1.0}"
+VERSION="${TOBARI_VERSION:-0.2.0}"
 REPO="kaorii-ako/tobari"
 # The release key (docs/RELEASING.md). Key id 0F0DC333B8A4E968.
 PUBKEY="RWRo6aS4M8MND+s3tkrSD2POK8Donu5pWez8QI5+Pf6KZike67q2L6iB"
@@ -49,6 +52,7 @@ Tobari installer
 
   --flatpak       install the Flatpak bundle (default when flatpak is present)
   --tarball       install the per-user build into ~/.local (no Flatpak needed)
+  --appimage      put the AppImage in ~/Applications
   --set-default   make Tobari the default web browser
   --version X.Y.Z install a specific release
   --uninstall     remove Tobari (profiles are kept)
@@ -59,6 +63,7 @@ while [ $# -gt 0 ]; do
   case "$1" in
     --flatpak) MODE=flatpak ;;
     --tarball) MODE=tarball ;;
+    --appimage) MODE=appimage ;;
     --set-default) SET_DEFAULT=1 ;;
     --uninstall) UNINSTALL=1 ;;
     --version) shift; VERSION="${1:?--version needs a value}" ;;
@@ -88,7 +93,17 @@ if [ "$UNINSTALL" = 1 ]; then
     find "${XDG_DATA_HOME:-$HOME/.local/share}/icons/hicolor" -name "$APP_ID.png" -delete 2>/dev/null || true
     ok "Per-user install removed"
   fi
-  say "Profiles were kept: ${XDG_DATA_HOME:-$HOME/.local/share}/tobari and ~/.var/app/$APP_ID."
+  if [ -f "$HOME/Applications/Tobari.AppImage" ]; then
+    rm -f "$HOME/Applications/Tobari.AppImage"
+    entry="${XDG_DATA_HOME:-$HOME/.local/share}/applications/$APP_ID.desktop"
+    if [ -f "$entry" ] && grep -q "X-Tobari-AppImage=true" "$entry"; then rm -f "$entry"; fi
+    ok "AppImage removed"
+  fi
+  if [ -d "$HOME/Applications/Tobari.app" ]; then
+    rm -rf "$HOME/Applications/Tobari.app"
+    ok "Tobari.app removed"
+  fi
+  say "Profiles were kept: ${XDG_DATA_HOME:-$HOME/.local/share}/tobari, ~/.var/app/$APP_ID or ~/Library/Application Support/Tobari."
   exit 0
 fi
 
@@ -96,18 +111,22 @@ fi
 
 printf '\n  %s帳  Tobari %s%s  %sinstaller%s\n\n' "$B" "$VERSION" "$R" "$D" "$R"
 
-[ "$(uname -s)" = Linux ] || die "Tobari runs on Linux only."
-case "$(uname -m)" in
-  x86_64|amd64) ;;
-  *) die "Tobari is built for x86_64 only; this machine is $(uname -m)." ;;
+OS="$(uname -s)"
+case "$OS/$(uname -m)" in
+  Linux/x86_64|Linux/amd64) ;;
+  Darwin/arm64) MODE=mac ;;
+  Darwin/*) die "Tobari for macOS is built for Apple silicon only; this Mac is $(uname -m)." ;;
+  *) die "Tobari runs on Linux x86_64 and Apple-silicon Macs; this is $OS on $(uname -m)." ;;
 esac
 [ "$(id -u)" != 0 ] || die "Run this as your own user, not root. It installs into your home directory."
 
 if [ -z "$MODE" ]; then
   if command -v flatpak >/dev/null 2>&1; then MODE=flatpak; else MODE=tarball; fi
 fi
-if [ "$MODE" = flatpak ]; then
-  command -v flatpak >/dev/null 2>&1 || die "flatpak is not installed. Use --tarball, or install flatpak first."
+if [ "$MODE" = mac ]; then
+  ARTIFACT="Tobari-$VERSION-macos-arm64.dmg"
+elif [ "$MODE" = flatpak ]; then
+  command -v flatpak >/dev/null 2>&1 || die "flatpak is not installed. Use --tarball or --appimage, or install flatpak first."
   ARTIFACT="tobari-$VERSION.flatpak"
 else
   # The per-user build relies on unprivileged user namespaces for Chromium's
@@ -115,12 +134,20 @@ else
   if command -v unshare >/dev/null 2>&1 && ! unshare -Ur true 2>/dev/null; then
     die "Unprivileged user namespaces are disabled here, which Chromium's sandbox needs. Use --flatpak instead."
   fi
-  ARTIFACT="tobari-$VERSION-linux-x86_64.tar.gz"
+  if [ "$MODE" = appimage ]; then
+    ARTIFACT="Tobari-$VERSION-x86_64.AppImage"
+  else
+    ARTIFACT="tobari-$VERSION-linux-x86_64.tar.gz"
+  fi
 fi
 
-for tool in sha256sum base64 tar; do
+for tool in base64 tar; do
   command -v "$tool" >/dev/null 2>&1 || die "missing required tool: $tool"
 done
+# GNU on Linux, BSD on macOS.
+if command -v sha256sum >/dev/null 2>&1; then sha256_check() { sha256sum -c --status; }
+else sha256_check() { shasum -a 256 -c --status; }; fi
+if printf 'YQ==' | base64 -d >/dev/null 2>&1; then b64d() { base64 -d; }; else b64d() { base64 -D; }; fi
 if command -v curl >/dev/null 2>&1; then
   fetch() { curl -fL --proto '=https,file' --tlsv1.2 --retry 3 --progress-bar -o "$2" "$1"; }
 elif command -v wget >/dev/null 2>&1; then
@@ -133,6 +160,9 @@ if command -v minisign >/dev/null 2>&1; then
 elif command -v openssl >/dev/null 2>&1 && openssl version | grep -q '^OpenSSL 3'; then
   VERIFIER=openssl
 else
+  if [ "$OS" = Darwin ]; then
+    die "need minisign to check the release signature: brew install minisign"
+  fi
   die "need minisign or OpenSSL 3 to check the release signature"
 fi
 
@@ -155,9 +185,9 @@ fetch "$BASE/$ARTIFACT" "$WORK/$ARTIFACT" || die "could not download $ARTIFACT"
 verify_with_openssl() {
   local file="$1" sig="$2" w="$WORK/v"
   mkdir -p "$w"
-  printf '%s' "$PUBKEY" | base64 -d > "$w/pk.bin" 2>/dev/null || return 1
+  printf '%s' "$PUBKEY" | b64d > "$w/pk.bin" 2>/dev/null || return 1
   [ "$(head -c 2 "$w/pk.bin")" = "Ed" ] || return 1
-  sed -n 2p "$sig" | base64 -d > "$w/sig.bin" 2>/dev/null || return 1
+  sed -n 2p "$sig" | b64d > "$w/sig.bin" 2>/dev/null || return 1
   [ "$(head -c 2 "$w/sig.bin")" = "ED" ] || return 1
   # Key ids must match.
   cmp -s <(head -c 10 "$w/pk.bin" | tail -c 8) <(head -c 10 "$w/sig.bin" | tail -c 8) || return 1
@@ -172,7 +202,7 @@ verify_with_openssl() {
   trusted="$(sed -n 3p "$sig")"
   case "$trusted" in "trusted comment: "*) ;; *) return 1 ;; esac
   { cat "$w/s.bin"; printf '%s' "${trusted#trusted comment: }"; } > "$w/g.msg"
-  sed -n 4p "$sig" | base64 -d > "$w/g.sig" 2>/dev/null || return 1
+  sed -n 4p "$sig" | b64d > "$w/g.sig" 2>/dev/null || return 1
   openssl pkeyutl -verify -pubin -inkey "$w/pk.pem" -rawin -in "$w/g.msg" -sigfile "$w/g.sig" >/dev/null 2>&1 || return 1
   printf '%s\n' "${trusted#trusted comment: }"
 }
@@ -190,13 +220,34 @@ ok "signed by the Tobari release key: $TRUSTED"
 
 LINE="$(grep -E "^[0-9a-f]{64}  $ARTIFACT\$" "$WORK/SHA256SUMS" || true)"
 [ -n "$LINE" ] || die "$ARTIFACT is not listed in the signed checksums."
-(cd "$WORK" && printf '%s\n' "$LINE" | sha256sum -c --status) \
+(cd "$WORK" && printf '%s\n' "$LINE" | sha256_check) \
   || die "CHECKSUM MISMATCH for $ARTIFACT. Nothing was installed."
 ok "checksum matches: ${LINE%% *}"
 
 # ------------------------------------------------------------------ install
 
-if [ "$MODE" = flatpak ]; then
+if [ "$MODE" = mac ]; then
+  step "Installing Tobari.app into ~/Applications"
+  # Downloaded with curl, the image carries no quarantine flag, so Gatekeeper
+  # does not stop the first launch; the signature check above is what vouches
+  # for it. The app is ad-hoc signed, not notarized.
+  mkdir -p "$HOME/Applications" "$WORK/mnt"
+  hdiutil attach -nobrowse -readonly -quiet -mountpoint "$WORK/mnt" "$WORK/$ARTIFACT"
+  rm -rf "$HOME/Applications/Tobari.app"
+  ditto "$WORK/mnt/Tobari.app" "$HOME/Applications/Tobari.app"
+  hdiutil detach -quiet "$WORK/mnt"
+  xattr -dr com.apple.quarantine "$HOME/Applications/Tobari.app" 2>/dev/null || true
+  ok "installed ~/Applications/Tobari.app"
+  LAUNCH="open ~/Applications/Tobari.app"
+  DESKTOP=""
+elif [ "$MODE" = appimage ]; then
+  step "Installing the AppImage into ~/Applications"
+  mkdir -p "$HOME/Applications"
+  install -m 755 "$WORK/$ARTIFACT" "$HOME/Applications/Tobari.AppImage"
+  ok "installed ~/Applications/Tobari.AppImage (it adds itself to the app menu on first launch)"
+  LAUNCH="~/Applications/Tobari.AppImage"
+  DESKTOP="$APP_ID.desktop"
+elif [ "$MODE" = flatpak ]; then
   step "Installing the Flatpak (user installation)"
   # The bundle names Flathub as its runtime source; adding it explicitly keeps
   # the runtime download working on systems where it was never configured.
@@ -226,7 +277,9 @@ else
   DESKTOP="$APP_ID.desktop"
 fi
 
-if [ "$SET_DEFAULT" = 1 ]; then
+if [ "$SET_DEFAULT" = 1 ] && [ "$OS" = Darwin ]; then
+  say "  On macOS, choose the default browser in System Settings → Desktop & Dock."
+elif [ "$SET_DEFAULT" = 1 ]; then
   xdg-settings set default-web-browser "$DESKTOP" 2>/dev/null || true
   for t in x-scheme-handler/http x-scheme-handler/https text/html; do
     xdg-mime default "$DESKTOP" "$t" 2>/dev/null || true

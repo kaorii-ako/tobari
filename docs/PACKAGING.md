@@ -6,7 +6,8 @@
 |---|---|---|---|
 | Flatpak | **primary** | Chromium sandbox via `zypak` inside Flatpak's | `packaging/flatpak/` |
 | Per-user install | works | Chromium sandbox via unprivileged user namespaces | `packaging/install.sh` |
-| AppImage | not built | — | see below |
+| AppImage | works | Chromium sandbox via unprivileged user namespaces | `packaging/appimage/` |
+| macOS `.dmg` (Apple silicon) | built and smoke-tested in CI; ad-hoc signed, not notarized | Chromium's macOS sandbox in the helper apps | `.github/workflows/macos.yml`, `docs/DEV-MACOS.md` |
 | `.rpm` / `.deb` | not built | — | optional, not designed around |
 
 Every format keeps Chromium's sandbox on. None ever passes `--no-sandbox`.
@@ -166,13 +167,26 @@ default browser on its own.
 
 ## AppImage
 
-The original plan shipped an AppImage. It is not built for the browser, for the
-reason the spec gave in advance: AppImages mount `nosuid`, so Chromium's SUID
-sandbox helper cannot work, and the result would depend entirely on user
-namespaces — the same as the per-user install, with none of the integration.
-Flatpak gives real sandboxing and correct `x-scheme-handler/http(s)`
-registration. If an AppImage is added, it must check for user namespaces and
-refuse to start without them, exactly as `install.sh` does.
+```sh
+packaging/appimage/build.sh ~/.cache/tobari-dev/build Tobari-x86_64.AppImage
+```
+
+`appimagetool` is downloaded once and checked against a pinned SHA-256. The
+image holds the CMake build under `usr/lib/tobari`, the desktop entry,
+metainfo and icons.
+
+An AppImage is mounted `nosuid`, so Chromium's SUID sandbox helper cannot work
+inside it; the sandbox relies on unprivileged user namespaces, as the per-user
+install does. `AppRun` tests for them (`unshare -Ur true`) and refuses to start
+without them, pointing at the Flatpak instead. Verified: run from its FUSE
+mount, `chrome://sandbox` reports "adequately sandboxed".
+
+On first launch `AppRun` writes `dev.tobari.Browser.desktop` and the icons into
+`~/.local/share`, pointing at the AppImage file, so the window is matched to
+its name and icon instead of a generic one; the entry is rewritten if the file
+moves. It is skipped when the Flatpak is installed (a user entry would shadow
+the Flatpak's) and when an entry from another install method exists, and
+`TOBARI_NO_INTEGRATION=1` turns it off.
 
 ## Desktop integration
 

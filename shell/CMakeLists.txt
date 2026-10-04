@@ -142,15 +142,15 @@ if(OS_MAC)
   set(_iconset "${CMAKE_CURRENT_BINARY_DIR}/Tobari.iconset")
   add_custom_command(TARGET tobari POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E make_directory "${_iconset}"
-    COMMAND sips -z 16 16 "${CMAKE_CURRENT_SOURCE_DIR}/icons/tobari-1024.png" --out "${_iconset}/icon_16x16.png" >/dev/null
-    COMMAND sips -z 32 32 "${CMAKE_CURRENT_SOURCE_DIR}/icons/tobari-1024.png" --out "${_iconset}/icon_16x16@2x.png" >/dev/null
-    COMMAND sips -z 32 32 "${CMAKE_CURRENT_SOURCE_DIR}/icons/tobari-1024.png" --out "${_iconset}/icon_32x32.png" >/dev/null
-    COMMAND sips -z 64 64 "${CMAKE_CURRENT_SOURCE_DIR}/icons/tobari-1024.png" --out "${_iconset}/icon_32x32@2x.png" >/dev/null
-    COMMAND sips -z 128 128 "${CMAKE_CURRENT_SOURCE_DIR}/icons/tobari-1024.png" --out "${_iconset}/icon_128x128.png" >/dev/null
-    COMMAND sips -z 256 256 "${CMAKE_CURRENT_SOURCE_DIR}/icons/tobari-1024.png" --out "${_iconset}/icon_128x128@2x.png" >/dev/null
-    COMMAND sips -z 256 256 "${CMAKE_CURRENT_SOURCE_DIR}/icons/tobari-1024.png" --out "${_iconset}/icon_256x256.png" >/dev/null
-    COMMAND sips -z 512 512 "${CMAKE_CURRENT_SOURCE_DIR}/icons/tobari-1024.png" --out "${_iconset}/icon_256x256@2x.png" >/dev/null
-    COMMAND sips -z 512 512 "${CMAKE_CURRENT_SOURCE_DIR}/icons/tobari-1024.png" --out "${_iconset}/icon_512x512.png" >/dev/null
+    COMMAND sips -z 16 16 "${CMAKE_CURRENT_SOURCE_DIR}/icons/tobari-1024.png" --out "${_iconset}/icon_16x16.png"
+    COMMAND sips -z 32 32 "${CMAKE_CURRENT_SOURCE_DIR}/icons/tobari-1024.png" --out "${_iconset}/icon_16x16@2x.png"
+    COMMAND sips -z 32 32 "${CMAKE_CURRENT_SOURCE_DIR}/icons/tobari-1024.png" --out "${_iconset}/icon_32x32.png"
+    COMMAND sips -z 64 64 "${CMAKE_CURRENT_SOURCE_DIR}/icons/tobari-1024.png" --out "${_iconset}/icon_32x32@2x.png"
+    COMMAND sips -z 128 128 "${CMAKE_CURRENT_SOURCE_DIR}/icons/tobari-1024.png" --out "${_iconset}/icon_128x128.png"
+    COMMAND sips -z 256 256 "${CMAKE_CURRENT_SOURCE_DIR}/icons/tobari-1024.png" --out "${_iconset}/icon_128x128@2x.png"
+    COMMAND sips -z 256 256 "${CMAKE_CURRENT_SOURCE_DIR}/icons/tobari-1024.png" --out "${_iconset}/icon_256x256.png"
+    COMMAND sips -z 512 512 "${CMAKE_CURRENT_SOURCE_DIR}/icons/tobari-1024.png" --out "${_iconset}/icon_256x256@2x.png"
+    COMMAND sips -z 512 512 "${CMAKE_CURRENT_SOURCE_DIR}/icons/tobari-1024.png" --out "${_iconset}/icon_512x512.png"
     COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_CURRENT_SOURCE_DIR}/icons/tobari-1024.png" "${_iconset}/icon_512x512@2x.png"
     COMMAND iconutil -c icns "${_iconset}" -o "${TOBARI_APP}/Contents/Resources/Tobari.icns"
     VERBATIM)

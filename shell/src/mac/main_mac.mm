@@ -6,6 +6,7 @@
 
 #include <string>
 
+#include "include/cef_api_hash.h"
 #include "include/cef_app.h"
 #include "include/cef_application_mac.h"
 #include "include/wrapper/cef_library_loader.h"
@@ -58,6 +59,12 @@ int main(int argc, char* argv[]) {
   if (!library_loader.LoadInMain()) {
     return 1;
   }
+
+  // Declare the API version before any other CEF call. On Linux
+  // CefExecuteProcess does this first; here profile seeding creates CEF
+  // values before CefInitialize, which otherwise aborts with "invalid
+  // version -1".
+  cef_api_hash(CEF_API_VERSION, 0);
 
   CefMainArgs main_args(argc, argv);
 

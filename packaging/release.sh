@@ -5,6 +5,9 @@
 #
 #   tobari-<v>.flatpak                  Flatpak bundle (runtime from Flathub)
 #   tobari-<v>-linux-x86_64.tar.gz      per-user build + its installer
+#   Tobari-<v>-x86_64.AppImage          portable build
+#   Tobari-<v>-macos-arm64.dmg          from the macOS workflow, when
+#                                       TOBARI_MAC_DMG points at it
 #   install.sh                          the online installer (packaging/get-tobari.sh)
 #   SHA256SUMS, SHA256SUMS.minisig      signed with ~/.minisign/tobari.key if present
 #
@@ -39,8 +42,14 @@ tar -C "$STAGE" --owner=0 --group=0 --sort=name -czf "$OUT/tobari-$VERSION-linux
 "$HERE/flatpak/build.sh" "$BUILD" >/dev/null
 cp "$ROOT/tobari.flatpak" "$OUT/tobari-$VERSION.flatpak"
 cp "$HERE/get-tobari.sh" "$OUT/install.sh"
+"$HERE/appimage/build.sh" "$BUILD" "$OUT/Tobari-$VERSION-x86_64.AppImage" >/dev/null
+FILES=("tobari-$VERSION.flatpak" "tobari-$VERSION-linux-x86_64.tar.gz" "Tobari-$VERSION-x86_64.AppImage" install.sh)
+if [ -n "${TOBARI_MAC_DMG:-}" ]; then
+  cp "$TOBARI_MAC_DMG" "$OUT/Tobari-$VERSION-macos-arm64.dmg"
+  FILES+=("Tobari-$VERSION-macos-arm64.dmg")
+fi
 
-(cd "$OUT" && sha256sum "tobari-$VERSION.flatpak" "tobari-$VERSION-linux-x86_64.tar.gz" install.sh > SHA256SUMS)
+(cd "$OUT" && sha256sum "${FILES[@]}" > SHA256SUMS)
 if [ -f "$KEY" ] && command -v minisign >/dev/null 2>&1; then
   minisign -Sm "$OUT/SHA256SUMS" -s "$KEY" -t "tobari $VERSION"
   minisign -Vm "$OUT/SHA256SUMS" -p "$ROOT/tobari.pub"

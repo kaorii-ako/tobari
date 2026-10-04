@@ -86,6 +86,26 @@ engine normally.
 - **Limit:** DuckDuckGo's HTML-only form (`html.duckduckgo.com`) submits by
   POST, so a bang typed there reaches DuckDuckGo, which resolves it itself.
 
+### First-run setup
+
+A new profile opens a welcome sheet before the first tab. It offers a search
+engine (DuckDuckGo, Brave Search, Startpage, Kagi, Ecosia, Google, Bing),
+appearance, and three privacy choices: search suggestions, reopening tabs, and
+the V8 optimizer everywhere. Skipping it keeps the defaults below. Each choice
+is written to Chromium's own preferences, so `chrome://settings` shows and
+changes the same values; setup can be reopened from the toolbar popup or the
+new tab.
+
+- Choosing an engine sends nothing anywhere. Search suggestions stay **off**
+  unless turned on; when on, what you type in the address bar goes to the
+  chosen engine as you type, which the sheet says next to the switch.
+- For the engines Chromium ships (Google, Bing, DuckDuckGo, Brave, Ecosia),
+  Chromium uses its own built-in entry, including the referral parameters it
+  adds to those engines' URLs (for example `source=csChrome` on Brave and
+  `PC=…&FORM=…` on Bing). These identify the browser family, not you.
+- Bangs work with every engine offered, because each one's results URL is one
+  the bang resolver recognises.
+
 ### First-run defaults
 
 Applied on a profile's first run and recorded with a version marker. Defaults

@@ -52,6 +52,12 @@
   </screenshots>
   <content_rating type="oars-1.1"/>
   <releases>
+    <release version="0.2.0" date="2026-10-04" type="development">
+      <url>https://github.com/kaorii-ako/tobari/releases/tag/v0.2.0</url>
+      <description>
+        <p>A first-run welcome flow to choose the search engine, appearance and privacy options; an AppImage; a macOS build for Apple silicon.</p>
+      </description>
+    </release>
     <release version="0.1.0" date="2026-10-02" type="development">
       <url>https://github.com/kaorii-ako/tobari/releases/tag/v0.1.0</url>
       <description>
