@@ -144,8 +144,10 @@ fi
 for tool in base64 tar; do
   command -v "$tool" >/dev/null 2>&1 || die "missing required tool: $tool"
 done
-# GNU on Linux, BSD on macOS.
-if command -v sha256sum >/dev/null 2>&1; then sha256_check() { sha256sum -c --status; }
+# GNU coreutils' sha256sum checks a list with -c. macOS 14+ also has a BSD
+# sha256sum in /sbin whose -c means "compare with this string", so only the
+# GNU one is used, and shasum (on every Mac) otherwise.
+if sha256sum --version 2>/dev/null | grep -q GNU; then sha256_check() { sha256sum -c --status; }
 else sha256_check() { shasum -a 256 -c --status; }; fi
 if printf 'YQ==' | base64 -d >/dev/null 2>&1; then b64d() { base64 -d; }; else b64d() { base64 -D; }; fi
 if command -v curl >/dev/null 2>&1; then
