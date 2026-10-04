@@ -7,6 +7,28 @@ names the commit it describes so it can be checked against `git log`.
 Numbers quoted here are the ones recorded at the time; the current figures and
 their caveats live in `BENCHMARKS.md`, `SECURITY.md` and `docs/DESIGN.md`.
 
+## 2026-10-04 — 0.2.0: welcome flow, AppImage, macOS
+
+- **First-run welcome.** A new profile opens a short setup sheet: search
+  engine (DuckDuckGo, Brave Search, Startpage, Kagi, Ecosia, Google, Bing),
+  appearance (system, light or dark, six accents, previewed live), and privacy
+  choices (suggestions, reopening tabs, fast JavaScript everywhere). Choices
+  are Chromium's own settings, applied as they are made. Setup reopens from the
+  toolbar popup or the new tab.
+- Fixed while building it: choosing an engine Chromium also ships (Brave) left
+  the browser with no default search engine, because the keyword collided with
+  the built-in entry; built-in engines are now referenced by their Chromium ID.
+  The new tab's search box searched DuckDuckGo regardless of the default; it
+  now uses the default engine. Finishing setup by navigating to the new tab was
+  refused by Chromium (cross-extension navigation); a browser-created tab is
+  used instead.
+- **AppImage.** Portable, refuses to start without user namespaces, and adds
+  itself to the app menu on first launch so the dock shows its name and icon.
+  `install.sh --appimage` installs it.
+- **macOS (Apple silicon, preview).** `Tobari.app` built, ad-hoc signed,
+  launched and smoke-tested on GitHub's macOS runners; the installer installs
+  it into `~/Applications`. Not notarized, not yet used day to day on a Mac.
+
 ## 2026-10-02 — Installer, website, re-measured (`0047328`, `20deb5a`, `9e72461`, `1924ab1`)
 
 - **One-line installer.** `curl -fsSL https://kaorii-ako.github.io/tobari/install.sh | bash`

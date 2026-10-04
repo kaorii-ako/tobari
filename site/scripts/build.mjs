@@ -90,8 +90,8 @@ const DOC_META = {
     summary: "The visual system, and why the browser chrome is Chromium's: type, colour, measured contrast, motion rules.",
   },
   "dev-linux": { summary: "Building Tobari in a distrobox container: toolchain, CEF, build, run, verify." },
-  "dev-macos": { summary: "Why macOS is not a Phase 1 target, and what would change that." },
-  packaging: { summary: "Flatpak, the per-user install, and how each format keeps Chromium's sandbox on." },
+  "dev-macos": { summary: "Tobari on Apple-silicon Macs: installing, what differs from Linux, building." },
+  packaging: { summary: "Flatpak, AppImage, the per-user install and the macOS app, and how each keeps Chromium's sandbox on." },
   releasing: { summary: "The CEF security bump, filter lists, signing with minisign and distribution." },
   validation: { summary: "Stage 0 market validation. The gate was waived for Phase 1; the research is unfilled.", flag: "unfilled" },
 };

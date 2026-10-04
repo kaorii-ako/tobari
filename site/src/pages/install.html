@@ -2,7 +2,7 @@
         <header class="grid page-head">
           <p class="crumb caps">Install</p>
           <h1 class="page-title">Install Tobari {{version}}</h1>
-          <p class="status-line"><span class="status-dot" aria-hidden="true"></span>Release {{version}} · {{release_date}} · Chromium {{chromium_version}} · Linux x86_64 · signed</p>
+          <p class="status-line"><span class="status-dot" aria-hidden="true"></span>Release {{version}} · {{release_date}} · Chromium {{chromium_version}} · Linux x86_64 and macOS arm64 · signed</p>
           <p class="page-meta">
             One command, for your user only, with the release signature checked before anything is installed.
             Releases are on <a href="{{release_url}}" rel="noreferrer">GitHub Releases</a>, never on this site.
@@ -69,6 +69,7 @@
                   <tbody>
                     <tr><td><code>--flatpak</code></td><td>Install the Flatpak bundle. The default when <code>flatpak</code> is installed.</td></tr>
                     <tr><td><code>--tarball</code></td><td>Install the per-user build into <code>~/.local</code>, no Flatpak needed.</td></tr>
+                    <tr><td><code>--appimage</code></td><td>Put the AppImage in <code>~/Applications</code>; it adds itself to the app menu on first launch.</td></tr>
                     <tr><td><code>--set-default</code></td><td>Make Tobari the default web browser. Never done unless asked.</td></tr>
                     <tr><td><code>--version X.Y.Z</code></td><td>Install a specific release.</td></tr>
                     <tr><td><code>--uninstall</code></td><td>Remove either install. Your profile is kept.</td></tr>
@@ -191,9 +192,14 @@ packaging/flatpak/build.sh build --install       # local Flatpak</code></pre>
             </header>
             <dl class="platforms section-body" data-reveal>
               <div>
-                <dt>macOS</dt>
-                <dd class="state">Not a Phase 1 target</dd>
-                <dd class="why">Nothing in the current build is tested on a Mac, and no macOS artifact is produced. A <code>.dmg</code> people can open needs notarization, which needs a paid Apple Developer account. <a href="/docs/dev-macos/">DEV-MACOS</a></dd>
+                <dt>macOS (Apple silicon)</dt>
+                <dd class="state">Built, signed ad hoc, smoke-tested in CI</dd>
+                <dd class="why">The installer command installs <code>Tobari.app</code> into <code>~/Applications</code>; the <code>.dmg</code> is on the release page. It is not notarized, so a <code>.dmg</code> opened from a browser download needs right-click → Open the first time. It has not been used day to day on a Mac. <a href="/docs/dev-macos/">DEV-MACOS</a></dd>
+              </div>
+              <div>
+                <dt>AppImage</dt>
+                <dd class="state">Linux x86_64, portable</dd>
+                <dd class="why"><code>… | bash -s -- --appimage</code> puts it in <code>~/Applications</code>; on first launch it adds itself to the app menu. Needs unprivileged user namespaces for its sandbox. <a href="/docs/packaging/#appimage">PACKAGING § AppImage</a></dd>
               </div>
               <div>
                 <dt>Windows</dt>

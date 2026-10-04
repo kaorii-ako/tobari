@@ -54,6 +54,8 @@ jobs:
           pid=$!
           status=0
           node scripts/smoke.mjs 9222 || status=$?
+          # What the window looked like, for a human to check.
+          screencapture -x "$RUNNER_TEMP/tobari-macos.png" || true
           kill "$pid" 2>/dev/null || true
           if [ "$status" != 0 ]; then tail -50 "$RUNNER_TEMP/tobari.log"; fi
           exit "$status"
@@ -69,5 +71,7 @@ jobs:
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: tobari-macos-arm64
-          path: ${{ env.DMG }}
+          path: |
+            ${{ env.DMG }}
+            ${{ runner.temp }}/tobari-macos.png
           retention-days: 14

@@ -295,14 +295,16 @@
         <div class="wrap split">
           <header class="chapter-head">
             <span class="eyebrow">Install</span>
-            <h2 class="chapter-title" id="install-title">Three ways in.</h2>
-            <p class="chapter-sub">All three install for your user only and keep Chromium's sandbox on. Updating is running the same thing again.</p>
+            <h2 class="chapter-title" id="install-title">Every way in.</h2>
+            <p class="chapter-sub">Linux and Apple-silicon Macs. Every method installs for your user only and keeps Chromium's sandbox on. Updating is running the same thing again.</p>
           </header>
           <div class="bezel ways">
             <div class="bezel-core tabs" data-tabs>
               <div class="tab-list" role="tablist" aria-label="Install method">
                 <button role="tab" id="tab-script" aria-controls="way-script" aria-selected="true" type="button">Installer</button>
                 <button role="tab" id="tab-flatpak" aria-controls="way-flatpak" aria-selected="false" type="button">Flatpak by hand</button>
+                <button role="tab" id="tab-appimage" aria-controls="way-appimage" aria-selected="false" type="button">AppImage</button>
+                <button role="tab" id="tab-mac" aria-controls="way-mac" aria-selected="false" type="button">macOS</button>
                 <button role="tab" id="tab-source" aria-controls="way-source" aria-selected="false" type="button">From source</button>
               </div>
               <div class="tab-panel" role="tabpanel" id="way-script" aria-labelledby="tab-script">
@@ -320,6 +322,21 @@ minisign -Vm SHA256SUMS -P {{pubkey}}
 sha256sum -c --ignore-missing SHA256SUMS
 flatpak install --user tobari-$V.flatpak</code></pre>
                 <p>The runtime comes from Flathub. The app is <code>dev.tobari.Browser</code>; its profile lives in <code>~/.var/app/dev.tobari.Browser/</code>.</p>
+              </div>
+              <div class="tab-panel" role="tabpanel" id="way-appimage" aria-labelledby="tab-appimage">
+<pre class="block" tabindex="0"><code>curl -fsSL {{install_url}} | bash -s -- --appimage
+
+# or download it yourself, check it, and run it
+U={{release_dl}}
+curl -fLO $U/Tobari-{{version}}-x86_64.AppImage -O $U/SHA256SUMS -O $U/SHA256SUMS.minisig
+minisign -Vm SHA256SUMS -P {{pubkey}} &amp;&amp; sha256sum -c --ignore-missing SHA256SUMS
+chmod +x Tobari-{{version}}-x86_64.AppImage &amp;&amp; ./Tobari-{{version}}-x86_64.AppImage</code></pre>
+                <p>One file, no installation. On first launch it adds itself to your app menu so the dock shows its name and icon. Its sandbox needs unprivileged user namespaces; where they are disabled it says so and points you at the Flatpak.</p>
+              </div>
+              <div class="tab-panel" role="tabpanel" id="way-mac" aria-labelledby="tab-mac">
+<pre class="block" tabindex="0"><code>brew install minisign     # to check the signature
+curl -fsSL {{install_url}} | bash</code></pre>
+                <p>On an Apple-silicon Mac the same command installs <code>Tobari.app</code> into <code>~/Applications</code>. The app is ad-hoc signed but not notarized (there is no paid Apple developer account), so a <code>.dmg</code> opened from a browser download needs right-click → Open the first time; the command-line install does not. <a href="/docs/dev-macos/">macOS notes</a></p>
               </div>
               <div class="tab-panel" role="tabpanel" id="way-source" aria-labelledby="tab-source">
 <pre class="block" tabindex="0"><code>git clone {{gh}}
@@ -387,7 +404,7 @@ packaging/install.sh build</code></pre>
             </details>
             <details>
               <summary>macOS or Windows?</summary>
-              <p>Linux only. macOS is not a Phase 1 target, because there is no Mac to test on and no way to notarize a build. Windows is out of scope. <a href="/docs/dev-macos/">Why</a></p>
+              <p>Apple-silicon Macs, yes: the build is compiled, launched and checked on GitHub's macOS machines for every change, and it is ad-hoc signed rather than notarized. It has not been used day to day on a Mac. Intel Macs and Windows are not supported. <a href="/docs/dev-macos/">macOS notes</a></p>
             </details>
             <details>
               <summary>How do I remove it?</summary>
@@ -432,7 +449,7 @@ packaging/install.sh build</code></pre>
         <div class="finale-curtain" aria-hidden="true"></div>
         <div class="wrap finale-inner">
           <h2 class="finale-title" id="finale-title" data-finale-title><span class="w"><span>Draw</span></span> <span class="w"><span>the</span></span> <span class="w"><span>curtain.</span></span></h2>
-          <p class="finale-sub">One command. Signed, per-user, sandboxed. {{version}} for Linux on x86_64.</p>
+          <p class="finale-sub">One command. Signed, per-user, sandboxed. {{version}} for Linux and Apple-silicon Macs.</p>
           <div class="bezel cmd-shell finale-cmd">
             <div class="bezel-core cmd" role="group" aria-label="Install command">
               <span class="cmd-prompt" aria-hidden="true">$</span>

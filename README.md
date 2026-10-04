@@ -2,7 +2,7 @@
 
 **A browser that closes over the window.**
 
-A Chromium browser for Linux that blocks ads and trackers before they load,
+A Chromium browser for Linux (and, as a preview, Apple-silicon Macs) that blocks ads and trackers before they load,
 resolves `!bangs` on your machine, sends nothing home, and publishes what it
 costs and what it gives up.
 
@@ -23,11 +23,12 @@ deliberately. No "untraceable", no "anonymous", no claim that is not backed by
 | Blocking | `adblock-rust`, ~142,000 rules from EasyList, EasyPrivacy and uBlock Origin; cancels requests before they load; per-site switch and badge count in the toolbar |
 | Bangs | 35 DuckDuckGo-style bangs, resolved locally; the search engine never sees a bang query |
 | Extensions | Chrome Web Store, including password managers |
+| Setup | a first-run welcome flow: pick DuckDuckGo, Brave, Startpage, Kagi, Ecosia, Google or Bing, appearance and privacy options |
 | Defaults | DuckDuckGo, no suggestions, no prediction, third-party cookies blocked, HTTPS-Only on |
 | Hardening | V8 optimizing compilers off by default (per-site "Fast JavaScript" switch), device APIs blocked, workers filtered too |
 | Phoning home | none on its own except weekly filter-list updates — measured, see SECURITY.md |
 | Sandbox | always on; never `--no-sandbox` |
-| Packages | Flatpak (primary), per-user install |
+| Packages | Flatpak (primary), AppImage, per-user install; macOS `.dmg` for Apple silicon (preview) |
 
 Measured on 2026-10-02 (Tobari 0.1.0, CEF 154.0.33), ten identical tabs, three interleaved runs:
 **861.1 MB PSS against Chrome's 1,219.6 MB (29.4% lower), 20 processes against
@@ -55,8 +56,10 @@ AI work is kept on the `phase-3-ai` branch.
 curl -fsSL https://kaorii-ako.github.io/tobari/install.sh | bash
 ```
 
-Linux x86_64. Installs the Flatpak if you have Flatpak, otherwise a per-user
-build in `~/.local`; either way only for your user. The script checks the
+Linux x86_64: installs the Flatpak if you have Flatpak, otherwise a per-user
+build in `~/.local` (`--appimage` for the AppImage). Apple-silicon Mac:
+installs `Tobari.app` into `~/Applications` (needs `brew install minisign`).
+Always only for your user. The script checks the
 release's minisign signature (key `0F0DC333B8A4E968`, in `tobari.pub`) and the
 artifact's checksum before installing anything. Options, manual verification
 and uninstalling: [the install page](https://kaorii-ako.github.io/tobari/install/)
