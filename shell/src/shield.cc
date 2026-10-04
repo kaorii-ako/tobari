@@ -11,6 +11,7 @@
 #include "bangs.h"
 #include "chrome_client.h"
 #include "filters_update.h"
+#include "onboarding.h"
 #include "include/base/cef_callback.h"
 #include "include/cef_parser.h"
 #include "include/cef_request_context.h"
@@ -251,6 +252,15 @@ class ShieldFactory : public CefSchemeHandlerFactory {
                                  : CEF_CONTENT_SETTING_VALUE_ALLOW);
         }
         return Serialize(PageState(url));
+      };
+    } else if (path == "/setup/state") {
+      compute = [] { return Serialize(SetupState()); };
+    } else if (path == "/setup/apply") {
+      compute = [in] { return Serialize(ApplySetup(in)); };
+    } else if (path == "/setup/done") {
+      compute = [] {
+        MarkOnboarded();
+        return Serialize(SetupState());
       };
     } else if (path == "/stats") {
       compute = [] { return Serialize(Stats()); };

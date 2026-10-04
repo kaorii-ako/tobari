@@ -55,6 +55,7 @@ set(TOBARI_SRCS
   src/chrome_client.cc
   src/defaults.cc
   src/filters_update.cc
+  src/onboarding.cc
   src/paths.cc
   src/shield.cc
 )

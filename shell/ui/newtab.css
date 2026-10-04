@@ -137,6 +137,14 @@ svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width:
   border-top: var(--bw) solid var(--line-hair);
 }
 .readout__cell { display: flex; flex-direction: column; gap: var(--sp-1); }
+.readout__link {
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-color: var(--line-firm);
+  text-underline-offset: 0.22em;
+  transition: text-decoration-color var(--dur-1) var(--ease-out);
+}
+.readout__link:hover { text-decoration-color: var(--signal); }
 .readout dt {
   font-family: var(--font-mono);
   font-size: var(--fs-100);

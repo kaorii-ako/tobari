@@ -14,6 +14,7 @@
 #include "chrome_client.h"
 #include "defaults.h"
 #include "filters_update.h"
+#include "onboarding.h"
 #include "shield.h"
 #include "paths.h"
 #include "include/cef_pack_strings.h"
@@ -188,7 +189,10 @@ void App::OnContextInitialized() {
     WriteFileAtomic(dump, CefWriteJSON(v, JSON_WRITER_PRETTY_PRINT).ToString());
   }
   const std::string requested = UrlFromCommandLine(CefCommandLine::GetGlobalCommandLine(), std::string());
-  ChromeClient::Get()->OpenWindow(requested.empty() ? kStartUrl : requested);
+  // A profile's first launch opens the welcome flow instead of a blank tab;
+  // a URL handed to Tobari on the command line still wins.
+  const std::string start = Onboarded() ? kStartUrl : kWelcomeUrl;
+  ChromeClient::Get()->OpenWindow(requested.empty() ? start : requested);
 }
 
 bool App::OnAlreadyRunningAppRelaunch(CefRefPtr<CefCommandLine> command_line,

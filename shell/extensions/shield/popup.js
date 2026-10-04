@@ -75,6 +75,11 @@ el("jit").addEventListener("click", async () => {
   if (tab) chrome.tabs.reload(tab.id);
 });
 
+el("setup").addEventListener("click", () => {
+  chrome.tabs.create({ url: chrome.runtime.getURL("welcome.html") });
+  window.close();
+});
+
 el("update").addEventListener("click", async () => {
   paint(null, await api("/update"));
   const poll = setInterval(async () => {

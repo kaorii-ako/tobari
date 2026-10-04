@@ -118,7 +118,11 @@ ui.seek.addEventListener("submit", (e) => {
   let url;
   if (bang && bang.query) url = applyBang(bang, bang.query);
   else if (looksLikeUrl(raw)) url = /^[a-z][a-z0-9+.-]*:/i.test(raw) ? raw : `https://${raw}`;
-  else url = DEFAULT_SEARCH.replace("{}", encodeURIComponent(raw));
+  else if (globalThis.chrome?.search?.query) {
+    // The default engine is whatever the user chose at setup or in Settings.
+    chrome.search.query({ text: raw, disposition: "CURRENT_TAB" });
+    return;
+  } else url = DEFAULT_SEARCH.replace("{}", encodeURIComponent(raw));
   location.assign(url);
 });
 
