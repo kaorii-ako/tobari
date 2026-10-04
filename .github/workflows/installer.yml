@@ -4,7 +4,7 @@ name: installer
 # published release, on a clean macOS and a clean Linux machine, then starts
 # what it installed and runs scripts/smoke.mjs. Runs when this file changes
 # (bump RELEASE_CHECK below after a release) or by hand.
-# RELEASE_CHECK: 0.2.0 (rerun after the shasum fix)
+# RELEASE_CHECK: 0.3.0
 
 on:
   push:
