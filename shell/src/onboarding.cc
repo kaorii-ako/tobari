@@ -8,8 +8,6 @@
 
 namespace tobari {
 
-const char kWelcomeUrl[] = "chrome-extension://lgfgpfedeaaahediodajihnoneonicaf/welcome.html";
-
 namespace {
 
 // Search engines offered at setup. Every results URL here is one the bang

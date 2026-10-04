@@ -20,8 +20,8 @@ html, body { height: 100%; }
 body {
   margin: 0;
   display: grid;
-  place-items: center;
-  padding: 24px 16px;
+  place-items: stretch;
+  padding: 0;
   background: var(--ink-000);
   color: var(--fg-0);
   font-family: var(--font-sans);
@@ -47,40 +47,49 @@ code { font-family: var(--font-mono); font-size: 0.92em; color: var(--fg-0); }
     radial-gradient(40% 40% at 15% 85%, color-mix(in srgb, var(--fg-0) 5%, transparent), transparent 70%);
   transition: background 600ms var(--ease-strong);
 }
-.glyph {
-  position: absolute;
-  right: -4vw;
-  bottom: -14vh;
-  font-size: 70vh;
-  line-height: 1;
-  color: color-mix(in srgb, var(--fg-0) 3.5%, transparent);
-  user-select: none;
-}
+
 
 /* ------------------------------------------------------------ sheet */
 
+/* The window is the sheet: it fills the window, with the step content in a
+   column and the actions pinned to the bottom. */
 .sheet {
   position: relative;
-  width: min(100%, 560px);
-  padding: 8px;
+  display: grid;
+  grid-template-rows: auto auto 1fr auto;
+  min-height: 100vh;
   border: 1px solid var(--edge);
-  border-radius: 28px;
-  background: color-mix(in srgb, var(--fg-0) 3%, transparent);
-  box-shadow: 0 40px 80px -40px rgba(0, 0, 0, 0.7);
-  animation: arrive 700ms var(--ease-drawer) both;
+  animation: arrive 600ms var(--ease-drawer) both;
 }
-.sheet::before {
-  content: "";
-  position: absolute;
-  inset: 8px;
-  z-index: -1;
-  border-radius: 20px;
-  background: var(--ink-050);
-  box-shadow: inset 0 1px 0 var(--hi);
-}
-@keyframes arrive { from { opacity: 0; transform: translateY(16px) scale(0.98); } }
+@keyframes arrive { from { opacity: 0; transform: translateY(10px); } }
 
-.progress { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; padding: 22px 28px 0; }
+/* Drawn title bar: the window is frameless. Dragging it moves the window. */
+.titlebar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 40px;
+  padding: 0 8px 0 16px;
+  -webkit-app-region: drag;
+  user-select: none;
+}
+.titlebar-name { display: inline-flex; align-items: center; gap: 8px; font-size: 12px; color: var(--fg-2); }
+.titlebar-name img { border-radius: 4px; }
+.titlebar-close {
+  -webkit-app-region: no-drag;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--fg-2);
+  cursor: pointer;
+  transition: background-color 140ms var(--ease-strong), color 140ms var(--ease-strong);
+}
+.titlebar-close:hover { background: color-mix(in srgb, var(--fg-0) 8%, transparent); color: var(--fg-0); }
+.progress { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; padding: 6px 36px 0; }
 .progress span { height: 3px; border-radius: 3px; background: var(--edge); overflow: hidden; position: relative; }
 .progress span::after {
   content: "";
@@ -93,7 +102,7 @@ code { font-family: var(--font-mono); font-size: 0.92em; color: var(--fg-0); }
 }
 .progress span.is-done::after { transform: scaleX(1); }
 
-.viewport { position: relative; display: grid; padding: 28px 28px 8px; min-height: 480px; }
+.viewport { position: relative; display: grid; align-content: start; padding: 32px 36px 8px; overflow: auto; }
 .step { grid-area: 1 / 1; display: grid; align-content: start; gap: 14px; }
 .step[hidden] { display: none; }
 
@@ -114,6 +123,7 @@ code { font-family: var(--font-mono); font-size: 0.92em; color: var(--fg-0); }
   font-size: 28px;
 }
 .mark-done { color: var(--accent); }
+.mark-logo { padding: 0; border: 0; background: none; box-shadow: none; border-radius: 14px; }
 
 .facts { display: grid; gap: 14px; margin-top: 10px; }
 .facts li { display: grid; grid-template-columns: 8px 1fr; gap: 14px; align-items: start; }
@@ -123,7 +133,7 @@ code { font-family: var(--font-mono); font-size: 0.92em; color: var(--fg-0); }
 
 /* ------------------------------------------------------------ choices */
 
-.choices { display: grid; gap: 6px; margin-top: 4px; max-height: 330px; overflow: auto; padding: 2px; scrollbar-width: thin; }
+.choices { display: grid; gap: 6px; margin-top: 4px; padding: 2px; }
 .choice {
   display: grid;
   grid-template-columns: 36px 1fr auto;
@@ -155,6 +165,14 @@ code { font-family: var(--font-mono); font-size: 0.92em; color: var(--fg-0); }
   font-size: 15px;
   font-weight: 500;
   color: var(--fg-1);
+}
+.logo-tile {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  object-fit: cover;
+  background: #fff;
+  box-shadow: 0 0 0 1px var(--edge);
 }
 .choice-text strong { display: block; font-weight: 500; }
 .choice-text span { display: block; color: var(--fg-2); font-size: 12.5px; }
@@ -298,7 +316,7 @@ code { font-family: var(--font-mono); font-size: 0.92em; color: var(--fg-0); }
 
 /* ------------------------------------------------------------ footer */
 
-.nav { display: flex; align-items: center; gap: 8px; padding: 16px 28px 26px; }
+.nav { display: flex; align-items: center; gap: 8px; padding: 16px 36px 28px; border-top: 1px solid var(--edge); background: color-mix(in srgb, var(--ink-050) 92%, transparent); }
 .link { margin-right: auto; padding: 8px 0; border: 0; background: none; color: var(--fg-2); cursor: pointer; font-size: 13px; }
 .link:hover { color: var(--fg-0); }
 .link[hidden] { display: none; }
@@ -322,7 +340,7 @@ code { font-family: var(--font-mono); font-size: 0.92em; color: var(--fg-0); }
   .btn-primary:hover .btn-icon { transform: translateX(2px); }
   .btn-ghost:hover { color: var(--fg-0); }
 }
-.status { position: absolute; left: 0; right: 0; bottom: -28px; text-align: center; font-size: 12px; color: var(--fg-2); }
+.status { position: absolute; left: 0; right: 0; bottom: 6px; text-align: center; font-size: 12px; color: var(--fg-2); }
 
 /* ------------------------------------------------------------ step motion */
 /* Forward moves left, back moves right: the same path in both directions. */
@@ -344,7 +362,4 @@ code { font-family: var(--font-mono); font-size: 0.92em; color: var(--fg-0); }
   @keyframes fade { from { opacity: 0; } }
 }
 
-@media (max-height: 700px) {
-  .viewport { min-height: 400px; }
-  .choices { max-height: 260px; }
-}
+

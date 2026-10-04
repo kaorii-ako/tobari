@@ -10,6 +10,7 @@
 #include "include/cef_command_ids.h"
 #include "include/cef_request_context.h"
 #include "shield.h"
+#include "welcome_window.h"
 
 namespace tobari {
 namespace {
@@ -177,7 +178,9 @@ void ChromeClient::OnBeforeClose(CefRefPtr<CefBrowser> browser) {
     quit = --open_browsers_ <= 0;
   }
   if (quit) {
-    CefQuitMessageLoop();
+    // The setup window is not a browser window of this client; close it too,
+    // and end the loop once it has gone.
+    CloseWelcomeWindow(true);
   }
 }
 
@@ -205,7 +208,7 @@ CefResourceRequestHandler::ReturnValue ChromeClient::OnBeforeResourceLoad(
   // network error an unknown host would, so pages cannot use it to tell
   // Tobari apart from other Chromium browsers.
   if (url.rfind("https://tobari.internal/", 0) == 0) {
-    return FromShieldExtension(frame, request) ? RV_CONTINUE : RV_CANCEL;
+    return BridgeRequestAllowed(frame, request) ? RV_CONTINUE : RV_CANCEL;
   }
 
   if (Exempt(url)) return RV_CONTINUE;

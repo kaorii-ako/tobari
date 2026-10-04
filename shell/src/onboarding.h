@@ -6,13 +6,10 @@
 
 namespace tobari {
 
-// First-run setup: the welcome page in the bundled Tobari extension lets a
+// First-run setup: tobari://welcome, in its own window, lets a
 // new user pick a search engine, appearance and privacy options. These read
 // and write Chromium's own preferences, so everything chosen here can also be
 // changed later in chrome://settings. All functions run on the UI thread.
-
-// Page shown instead of the new tab on the first launch of a profile.
-extern const char kWelcomeUrl[];
 
 bool Onboarded();
 

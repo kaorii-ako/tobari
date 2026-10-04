@@ -52,6 +52,12 @@
   </screenshots>
   <content_rating type="oars-1.1"/>
   <releases>
+    <release version="0.3.0" date="2026-10-04" type="development">
+      <url>https://github.com/kaorii-ako/tobari/releases/tag/v0.3.0</url>
+      <description>
+        <p>Setup opens in its own window with search engine logos; Tobari's own pages under tobari://, like chrome://.</p>
+      </description>
+    </release>
     <release version="0.2.0" date="2026-10-04" type="development">
       <url>https://github.com/kaorii-ako/tobari/releases/tag/v0.2.0</url>
       <description>

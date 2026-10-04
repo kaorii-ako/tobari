@@ -34,6 +34,7 @@ class Blocking {
 
   void SetHostDisabled(const std::string& host, bool disabled);
   bool HostDisabled(const std::string& host) const;
+  std::vector<std::string> DisabledHosts() const;
 
  private:
   Blocking() = default;

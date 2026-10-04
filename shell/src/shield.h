@@ -13,4 +13,8 @@ void RegisterShieldBridge();
 // True when |request| was made by the bundled Tobari toolbar extension.
 bool FromShieldExtension(CefRefPtr<CefFrame> frame, CefRefPtr<CefRequest> request);
 
+// True when the bridge would answer |request|: anything from the toolbar
+// extension, and the one call (open the setup window) the new tab may make.
+bool BridgeRequestAllowed(CefRefPtr<CefFrame> frame, CefRefPtr<CefRequest> request);
+
 }  // namespace tobari

@@ -3,7 +3,10 @@
 // halfway keeps what was chosen. Finishing or skipping marks setup done, and
 // the next launch opens the new tab instead.
 
-import { api } from "./api.js";
+import { api as call } from "/page.js";
+
+// The bridge paths the extension used map onto this page's own /api/.
+const api = (path, body) => call(path.replace(/^\//, ""), body);
 
 const $ = (s, root = document) => root.querySelector(s);
 const $$ = (s, root = document) => [...root.querySelectorAll(s)];
@@ -117,10 +120,12 @@ function buildEngines() {
     b.className = "choice";
     b.setAttribute("role", "radio");
     b.dataset.id = e.id;
-    const tile = document.createElement("span");
-    tile.className = "mono-tile";
-    tile.setAttribute("aria-hidden", "true");
-    tile.textContent = e.name.charAt(0);
+    const tile = document.createElement("img");
+    tile.className = "logo-tile";
+    tile.src = `/logos/${e.id}.png`;
+    tile.width = 36;
+    tile.height = 36;
+    tile.alt = "";
     const text = document.createElement("span");
     text.className = "choice-text";
     const name = document.createElement("strong");
@@ -193,7 +198,7 @@ function buildToggles() {
 
 function buildActions() {
   for (const b of $$("[data-open]")) {
-    b.addEventListener("click", () => chrome.tabs.create({ url: b.dataset.open, active: true }));
+    b.addEventListener("click", () => api("/open", { url: b.dataset.open }));
   }
 }
 
@@ -242,16 +247,14 @@ async function finish() {
   next.disabled = true;
   await pending;
   await api("/setup/done");
-  openNewTab();
+  closeSetup();
 }
 
-// Navigating this extension's tab to chrome://newtab/ would be refused: the
-// new tab belongs to another extension. A tab the browser creates itself
-// shows it, so open one and close this one.
-async function openNewTab() {
-  const self = await chrome.tabs.getCurrent();
-  await chrome.tabs.create({ active: true, windowId: self?.windowId });
-  if (self) chrome.tabs.remove(self.id);
+// In its own window, the browser closes it. Opened by typing tobari://welcome
+// into a tab instead, the tab closes itself.
+async function closeSetup() {
+  await api("/setup/close");
+  window.close();
 }
 
 next.addEventListener("click", () => {
@@ -262,7 +265,10 @@ back.addEventListener("click", () => show(current - 1, -1));
 skip.addEventListener("click", finish);
 document.addEventListener("keydown", (e) => {
   if (e.key === "Enter" && e.target === document.body) next.click();
+  if (e.key === "Escape") finish();
 });
+// Closing setup keeps whatever was chosen so far and does not ask again.
+$("[data-close]").addEventListener("click", finish);
 
 /* ---------------------------------------------------------------- start */
 
@@ -270,7 +276,7 @@ async function start() {
   state = await api("/setup/state");
   if (!state) {
     status.textContent = "Tobari's settings bridge did not answer. Defaults are in place; you can change them in Settings.";
-    next.addEventListener("click", openNewTab, { once: true });
+    next.addEventListener("click", closeSetup, { once: true });
     return;
   }
   buildEngines();

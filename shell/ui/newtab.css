@@ -138,6 +138,11 @@ svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width:
 }
 .readout__cell { display: flex; flex-direction: column; gap: var(--sp-1); }
 .readout__link {
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  cursor: pointer;
   color: inherit;
   text-decoration: underline;
   text-decoration-color: var(--line-firm);

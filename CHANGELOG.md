@@ -7,6 +7,19 @@ names the commit it describes so it can be checked against `git log`.
 Numbers quoted here are the ones recorded at the time; the current figures and
 their caveats live in `BENCHMARKS.md`, `SECURITY.md` and `docs/DESIGN.md`.
 
+## 2026-10-04 — 0.3.0: setup in its own window, `tobari://` pages
+
+- **Setup opens in its own window** over the browser, not as a tab: a
+  frameless window with its own title bar and close button (so it looks and
+  moves the same on GNOME, KDE and macOS), grouped under Tobari in the dock.
+  Closing it keeps what was chosen.
+- **Search engine logos** on the engine step, bundled with the browser.
+- **`tobari://` pages**, like `chrome://`: `tobari://welcome` (setup),
+  `tobari://about` (versions, data folder, every Tobari page),
+  `tobari://blocking` (counts, filter lists with an update button, sites with
+  blocking off and a button to turn it back on) and `tobari://bangs`. Typing
+  them in the address bar works; websites cannot open, frame or fetch them.
+
 ## 2026-10-04 — 0.2.0: welcome flow, AppImage, macOS
 
 - **First-run welcome.** A new profile opens a short setup sheet: search

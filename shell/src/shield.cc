@@ -12,6 +12,11 @@
 #include "chrome_client.h"
 #include "filters_update.h"
 #include "onboarding.h"
+#include "schemes.h"
+#include "welcome_window.h"
+#include "include/cef_stream.h"
+#include "include/cef_version.h"
+#include "include/wrapper/cef_stream_resource_handler.h"
 #include "include/base/cef_callback.h"
 #include "include/cef_parser.h"
 #include "include/cef_request_context.h"
@@ -25,6 +30,7 @@ namespace tobari {
 namespace {
 
 constexpr char kShieldOrigin[] = "chrome-extension://lgfgpfedeaaahediodajihnoneonicaf";
+constexpr char kNewTabOrigin[] = "chrome-extension://jfngkfgpblbmkkhalnefimbonoikdmjb";
 constexpr char kHost[] = "tobari.internal";
 
 std::string Body(CefRefPtr<CefRequest> request) {
@@ -203,6 +209,13 @@ CefRefPtr<CefDictionaryValue> Stats() {
   return d;
 }
 
+bool FromExtension(const char* origin, CefRefPtr<CefFrame> frame, CefRefPtr<CefRequest> request) {
+  const std::string expected = std::string(origin) + "/";
+  const std::string frame_url = frame ? frame->GetURL().ToString() : std::string();
+  const std::string site = request->GetFirstPartyForCookies().ToString();
+  return frame_url.rfind(expected, 0) == 0 || site.rfind(expected, 0) == 0;
+}
+
 class ShieldFactory : public CefSchemeHandlerFactory {
  public:
   ShieldFactory() = default;
@@ -220,14 +233,20 @@ class ShieldFactory : public CefSchemeHandlerFactory {
     //
     // Not usable: CEF reports Origin as "null" for every caller, and Chromium
     // strips Referer on extension-to-web requests.
-    if (!FromShieldExtension(frame, request) || request->GetMethod().ToString() != "POST") {
-      return Forbidden();
-    }
-    const std::string origin = kShieldOrigin;
-
+    if (request->GetMethod().ToString() != "POST") return Forbidden();
     CefURLParts parts;
     CefParseURL(request->GetURL(), parts);
     const std::string path = CefString(&parts.path).ToString();
+
+    // The new-tab page may ask for exactly one thing: the setup window.
+    if (path == "/setup/show" && FromExtension(kNewTabOrigin, frame, request)) {
+      return new BridgeHandler(200, kNewTabOrigin, [] {
+        ShowWelcomeWindow();
+        return std::string("{}");
+      });
+    }
+    if (!FromShieldExtension(frame, request)) return Forbidden();
+    const std::string origin = kShieldOrigin;
     CefRefPtr<CefDictionaryValue> in = ParseObject(Body(request));
     const std::string url = in->GetString("url").ToString();
 
@@ -253,15 +272,13 @@ class ShieldFactory : public CefSchemeHandlerFactory {
         }
         return Serialize(PageState(url));
       };
+    } else if (path == "/setup/show") {
+      compute = [] {
+        ShowWelcomeWindow();
+        return std::string("{}");
+      };
     } else if (path == "/setup/state") {
       compute = [] { return Serialize(SetupState()); };
-    } else if (path == "/setup/apply") {
-      compute = [in] { return Serialize(ApplySetup(in)); };
-    } else if (path == "/setup/done") {
-      compute = [] {
-        MarkOnboarded();
-        return Serialize(SetupState());
-      };
     } else if (path == "/stats") {
       compute = [] { return Serialize(Stats()); };
     } else if (path == "/update") {
@@ -280,13 +297,187 @@ class ShieldFactory : public CefSchemeHandlerFactory {
   DISALLOW_COPY_AND_ASSIGN(ShieldFactory);
 };
 
+// ------------------------------------------------------------------ tobari://
+
+bool IsTobariPage(CefRefPtr<CefFrame> frame) {
+  return frame && frame->GetURL().ToString().rfind("tobari://", 0) == 0;
+}
+
+// Pages that exist. tobari://<host>/ serves pages/<host>.html.
+bool KnownPage(const std::string& host) {
+  return host == "welcome" || host == "about" || host == "blocking" || host == "bangs";
+}
+
+// Shared assets (CSS, scripts, fonts, logos) under pages/. Only plain
+// relative paths: letters, digits, '-', '_', '.', '/', and no "..".
+bool SafeAssetPath(const std::string& path) {
+  if (path.size() < 2 || path[0] != '/' || path.find("..") != std::string::npos) return false;
+  for (char c : path) {
+    if (!(isalnum(static_cast<unsigned char>(c)) || c == '-' || c == '_' || c == '.' || c == '/')) {
+      return false;
+    }
+  }
+  return true;
+}
+
+std::string MimeFor(const std::string& path) {
+  const size_t dot = path.find_last_of('.');
+  const std::string ext = dot == std::string::npos ? "" : path.substr(dot + 1);
+  if (ext == "html") return "text/html";
+  if (ext == "css") return "text/css";
+  if (ext == "js") return "text/javascript";
+  if (ext == "json") return "application/json";
+  if (ext == "png") return "image/png";
+  if (ext == "svg") return "image/svg+xml";
+  if (ext == "woff2") return "font/woff2";
+  return "application/octet-stream";
+}
+
+CefRefPtr<CefResourceHandler> ServeFile(const std::string& file, int status) {
+  CefRefPtr<CefStreamReader> stream = CefStreamReader::CreateForFile(file);
+  if (!stream) return nullptr;
+  CefResponse::HeaderMap headers;
+  headers.insert({"Content-Security-Policy",
+                  "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; "
+                  "font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'; "
+                  "frame-ancestors 'none'; form-action 'none'"});
+  headers.insert({"X-Frame-Options", "DENY"});
+  headers.insert({"X-Content-Type-Options", "nosniff"});
+  headers.insert({"Cache-Control", "no-store"});
+  return new CefStreamResourceHandler(status, status == 200 ? "OK" : "Not Found", MimeFor(file),
+                                      headers, stream);
+}
+
+// Links a tobari:// page may open, always in a tab of the main window: web
+// pages, and the two Chromium settings pages setup points at.
+bool OpenableUrl(const std::string& url) {
+  return IsWebUrl(url) || url == "chrome://settings/importData" || url == "chrome://settings/";
+}
+
+CefRefPtr<CefDictionaryValue> About() {
+  CefRefPtr<CefDictionaryValue> d = CefDictionaryValue::Create();
+  d->SetString("version", TOBARI_VERSION);
+  d->SetString("cef", CEF_VERSION);
+  char chromium[64];
+  snprintf(chromium, sizeof(chromium), "%d.%d.%d.%d", CHROME_VERSION_MAJOR, CHROME_VERSION_MINOR,
+           CHROME_VERSION_BUILD, CHROME_VERSION_PATCH);
+  d->SetString("chromium", chromium);
+#if defined(__APPLE__)
+  d->SetString("platform", "macOS");
+#else
+  d->SetString("platform", "Linux");
+#endif
+  d->SetString("dataDir", DataDir());
+  d->SetString("resources", ResourcesDir());
+  return d;
+}
+
+CefRefPtr<CefDictionaryValue> DisabledHosts() {
+  CefRefPtr<CefDictionaryValue> d = CefDictionaryValue::Create();
+  CefRefPtr<CefListValue> list = CefListValue::Create();
+  size_t i = 0;
+  for (const std::string& host : Blocking::Get().DisabledHosts()) list->SetString(i++, host);
+  d->SetList("hosts", list);
+  return d;
+}
+
+class TobariFactory : public CefSchemeHandlerFactory {
+ public:
+  CefRefPtr<CefResourceHandler> Create(CefRefPtr<CefBrowser> browser, CefRefPtr<CefFrame> frame,
+                                       const CefString& scheme_name,
+                                       CefRefPtr<CefRequest> request) override {
+    CefURLParts parts;
+    CefParseURL(request->GetURL(), parts);
+    const std::string host = CefString(&parts.host).ToString();
+    const std::string path = CefString(&parts.path).ToString();
+    const std::string pages = ResourcesDir() + "/pages";
+
+    if (path.rfind("/api/", 0) == 0) {
+      // Only a tobari:// page can call its API; nothing else can even load
+      // one (the scheme is display-isolated), so this also keeps websites out.
+      if (!IsTobariPage(frame) || request->GetMethod().ToString() != "POST") return Forbidden();
+      return Api(path.substr(5), ParseObject(Body(request)), frame);
+    }
+    if (request->GetMethod().ToString() != "GET") return Forbidden();
+    if (path.empty() || path == "/") {
+      if (KnownPage(host)) return ServeFile(pages + "/" + host + ".html", 200);
+      return ServeFile(pages + "/not-found.html", 404);
+    }
+    if (!SafeAssetPath(path)) return Forbidden();
+    CefRefPtr<CefResourceHandler> file = ServeFile(pages + path, 200);
+    return file ? file : ServeFile(pages + "/not-found.html", 404);
+  }
+
+ private:
+  CefRefPtr<CefResourceHandler> Api(const std::string& name, CefRefPtr<CefDictionaryValue> in,
+                                    CefRefPtr<CefFrame> frame) {
+    BridgeHandler::Compute compute;
+    if (name == "setup/state") {
+      compute = [] { return Serialize(SetupState()); };
+    } else if (name == "setup/apply") {
+      compute = [in] { return Serialize(ApplySetup(in)); };
+    } else if (name == "setup/done") {
+      compute = [] {
+        MarkOnboarded();
+        return Serialize(SetupState());
+      };
+    } else if (name == "setup/close") {
+      compute = [] {
+        CloseWelcomeWindow(false);
+        return std::string("{}");
+      };
+    } else if (name == "setup/show") {
+      compute = [] {
+        ShowWelcomeWindow();
+        return std::string("{}");
+      };
+    } else if (name == "open") {
+      const std::string url = in->GetString("url").ToString();
+      if (!OpenableUrl(url)) return Forbidden();
+      compute = [url] {
+        ChromeClient::Get()->OpenInLastWindow(url);
+        return std::string("{}");
+      };
+    } else if (name == "about") {
+      compute = [] { return Serialize(About()); };
+    } else if (name == "stats") {
+      compute = [] { return Serialize(Stats()); };
+    } else if (name == "update") {
+      compute = [] {
+        FilterUpdater::Get().Start(true);
+        return Serialize(Stats());
+      };
+    } else if (name == "hosts") {
+      compute = [] { return Serialize(DisabledHosts()); };
+    } else if (name == "unblock") {
+      const std::string host = in->GetString("host").ToString();
+      compute = [host] {
+        if (!host.empty()) Blocking::Get().SetHostDisabled(host, false);
+        return Serialize(DisabledHosts());
+      };
+    } else {
+      return Forbidden();
+    }
+    return new BridgeHandler(200, std::string(), std::move(compute));
+  }
+
+  IMPLEMENT_REFCOUNTING(TobariFactory);
+};
+
 }  // namespace
 
+void RegisterTobariPages() {
+  CefRegisterSchemeHandlerFactory("tobari", "", new TobariFactory());
+}
+
 bool FromShieldExtension(CefRefPtr<CefFrame> frame, CefRefPtr<CefRequest> request) {
-  const std::string expected = std::string(kShieldOrigin) + "/";
-  const std::string frame_url = frame ? frame->GetURL().ToString() : std::string();
-  const std::string site = request->GetFirstPartyForCookies().ToString();
-  return frame_url.rfind(expected, 0) == 0 || site.rfind(expected, 0) == 0;
+  return FromExtension(kShieldOrigin, frame, request);
+}
+
+bool BridgeRequestAllowed(CefRefPtr<CefFrame> frame, CefRefPtr<CefRequest> request) {
+  if (FromShieldExtension(frame, request)) return true;
+  return request->GetURL().ToString() == "https://tobari.internal/setup/show" &&
+         FromExtension(kNewTabOrigin, frame, request);
 }
 
 void RegisterShieldBridge() {

@@ -403,6 +403,10 @@ packaging/install.sh build</code></pre>
               <p>Everything stays on your machine: <code>~/.local/share/tobari</code> for the per-user build, <code>~/.var/app/dev.tobari.Browser/</code> for the Flatpak. Bookmarks and passwords can be moved with Chromium's own import (Settings → Import bookmarks and settings) or an HTML or CSV export.</p>
             </details>
             <details>
+              <summary>What are tobari:// pages?</summary>
+              <p>Tobari's own pages, like Chrome's <code>chrome://</code> pages: <code>tobari://about</code> for versions and where your data lives, <code>tobari://blocking</code> for filter lists and the sites you allowed, <code>tobari://bangs</code> for every bang, and <code>tobari://welcome</code> to run setup again. Type them into the address bar. Websites cannot open them. <a href="/security/#tobaris-own-pages-tobari">How they are isolated</a></p>
+            </details>
+            <details>
               <summary>macOS or Windows?</summary>
               <p>Apple-silicon Macs, yes: the build is compiled, launched and checked on GitHub's macOS machines for every change, and it is ad-hoc signed rather than notarized. It has not been used day to day on a Mac. Intel Macs and Windows are not supported. <a href="/docs/dev-macos/">macOS notes</a></p>
             </details>

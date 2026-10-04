@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bangs · Tobari</title>
+<link rel="icon" href="/tobari.png">
+<link rel="stylesheet" href="/tokens.css">
+<link rel="stylesheet" href="/pages.css">
+</head>
+<body>
+<header class="top">
+  <a class="brand" href="tobari://about/"><img src="/tobari.png" width="24" height="24" alt=""><span>Tobari</span></a>
+  <nav aria-label="Tobari pages">
+    <a href="tobari://about/">about</a>
+    <a href="tobari://blocking/">blocking</a>
+    <a href="tobari://bangs/" aria-current="page">bangs</a>
+    <a href="tobari://welcome/">welcome</a>
+  </nav>
+</header>
+<main>
+  <section class="head">
+    <h1>Bangs</h1>
+    <p>Type a bang and a query in the address bar or the new tab, like <code>!gh tokio</code>. Tobari rewrites the search before it leaves your machine, so your search engine never sees it.</p>
+  </section>
+  <input class="search" type="search" placeholder="Filter bangs" aria-label="Filter bangs" data-filter>
+  <ul class="bang-table" data-bangs></ul>
+</main>
+<script type="module" src="/bangs.js"></script>
+</body>
+</html>

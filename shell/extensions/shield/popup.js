@@ -75,8 +75,8 @@ el("jit").addEventListener("click", async () => {
   if (tab) chrome.tabs.reload(tab.id);
 });
 
-el("setup").addEventListener("click", () => {
-  chrome.tabs.create({ url: chrome.runtime.getURL("welcome.html") });
+el("setup").addEventListener("click", async () => {
+  await api("/setup/show");
   window.close();
 });
 

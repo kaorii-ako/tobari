@@ -1,0 +1,86 @@
+/* Shared look for tobari:// pages (about, blocking, bangs). Tokens and Plex
+   come from tokens.css, the same set as the new tab and the toolbar popup. */
+:root { color-scheme: dark; --edge: color-mix(in srgb, var(--fg-0) 9%, transparent); }
+:root[data-theme="daybreak"] { color-scheme: light; }
+*, *::before, *::after { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body {
+  margin: 0;
+  background: var(--ink-000);
+  color: var(--fg-0);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+}
+h1, h2, p, ul, ol, dl, dd { margin: 0; }
+ul, ol { padding: 0; list-style: none; }
+a { color: inherit; text-underline-offset: 0.2em; text-decoration-color: var(--line-firm); }
+a:hover { text-decoration-color: var(--signal); }
+code, .mono { font-family: var(--font-mono); font-size: 0.92em; }
+:focus-visible { outline: 2px solid var(--signal); outline-offset: 2px; border-radius: 6px; }
+
+.top {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  padding: 14px max(24px, calc(50vw - 420px));
+  border-bottom: 1px solid var(--edge);
+  background: color-mix(in srgb, var(--ink-000) 85%, transparent);
+  backdrop-filter: blur(14px);
+}
+.brand { display: inline-flex; align-items: center; gap: 10px; font-weight: 600; text-decoration: none; }
+.brand img { border-radius: 7px; }
+.top nav { margin-left: auto; display: flex; gap: 4px; flex-wrap: wrap; }
+.top nav a {
+  padding: 6px 12px;
+  border-radius: 999px;
+  color: var(--fg-1);
+  text-decoration: none;
+  font-family: var(--font-mono);
+  font-size: 12px;
+}
+.top nav a:hover { color: var(--fg-0); background: color-mix(in srgb, var(--fg-0) 6%, transparent); }
+.top nav a[aria-current="page"] { color: var(--fg-0); background: color-mix(in srgb, var(--fg-0) 9%, transparent); }
+
+main { width: min(100% - 48px, 840px); margin: 40px auto 80px; display: grid; gap: 28px; }
+.head h1 { font-size: 30px; font-weight: 600; letter-spacing: -0.02em; line-height: 1.15; }
+.head p { margin-top: 8px; color: var(--fg-1); max-width: 62ch; }
+.card { padding: 20px 22px; border: 1px solid var(--edge); border-radius: 16px; background: var(--ink-050); }
+.card h2 { font-family: var(--font-mono); font-size: 11px; font-weight: 500; letter-spacing: 0.09em; text-transform: uppercase; color: var(--fg-2); margin-bottom: 12px; }
+.facts { display: grid; grid-template-columns: max-content 1fr; gap: 8px 24px; }
+.facts dt { color: var(--fg-2); }
+.facts dd { font-family: var(--font-mono); font-size: 13px; overflow-wrap: anywhere; }
+.rows li { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; padding: 10px 0; border-top: 1px solid var(--edge); }
+.rows li:first-child { border-top: 0; padding-top: 0; }
+.rows .note { color: var(--fg-2); font-size: 13px; }
+.big { font-family: var(--font-mono); font-size: 36px; font-weight: 500; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+.grid3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.grid3 .card { display: grid; gap: 4px; }
+.grid3 .label { color: var(--fg-2); font-size: 12px; }
+.btn {
+  min-height: 34px;
+  padding: 0 14px;
+  border: 1px solid var(--edge);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--fg-0);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+  transition: background-color 140ms cubic-bezier(0.23, 1, 0.32, 1), transform 120ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+.btn:hover { background: color-mix(in srgb, var(--fg-0) 6%, transparent); }
+.btn:active { transform: scale(0.97); }
+.btn-primary { background: var(--fg-0); color: var(--ink-000); border-color: transparent; }
+.btn-primary:hover { background: var(--fg-1); }
+.muted { color: var(--fg-2); }
+.search { width: 100%; min-height: 40px; padding: 0 14px; border: 1px solid var(--edge); border-radius: 12px; background: var(--ink-050); color: var(--fg-0); font: inherit; }
+.bang-table { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 6px 16px; }
+.bang-table li { display: flex; gap: 12px; align-items: baseline; padding: 6px 0; border-bottom: 1px solid var(--edge); }
+.bang-table .tok { font-family: var(--font-mono); color: var(--signal); min-width: 7ch; }
+@media (max-width: 640px) { .grid3 { grid-template-columns: 1fr; } .top { flex-wrap: wrap; } }
+.actions { margin-top: 14px; display: flex; gap: 12px; align-items: center; }

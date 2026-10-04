@@ -88,13 +88,14 @@ engine normally.
 
 ### First-run setup
 
-A new profile opens a welcome sheet before the first tab. It offers a search
+A new profile opens a setup window (`tobari://welcome`) beside the browser
+window. It offers a search
 engine (DuckDuckGo, Brave Search, Startpage, Kagi, Ecosia, Google, Bing),
 appearance, and three privacy choices: search suggestions, reopening tabs, and
 the V8 optimizer everywhere. Skipping it keeps the defaults below. Each choice
 is written to Chromium's own preferences, so `chrome://settings` shows and
-changes the same values; setup can be reopened from the toolbar popup or the
-new tab.
+changes the same values; setup can be reopened from the toolbar popup, the
+new tab or by typing `tobari://welcome`.
 
 - Choosing an engine sends nothing anywhere. Search suggestions stay **off**
   unless turned on; when on, what you type in the address bar goes to the
@@ -246,6 +247,28 @@ are deliberately not used because they do not work here: CEF reports `Origin`
 as `null` for every caller, and Chromium strips `Referer` on
 extension-to-web requests. Verified: a request from an ordinary web page fails
 like an unknown host; the toolbar popup and badge are served.
+
+## Tobari's own pages: `tobari://`
+
+`tobari://welcome`, `tobari://about`, `tobari://blocking` and `tobari://bangs`
+are served by the browser itself from files in the install, like
+`chrome://` pages.
+
+- The scheme is registered as **display-isolated**: only the user (typing it)
+  or the browser can open a `tobari://` page. A website cannot link to,
+  redirect to, frame or fetch one. Verified: from a web page, a navigation to
+  `tobari://about` is ignored, an iframe never loads, and `fetch()` of a page
+  or of its API fails.
+- Each page reaches the browser through its own `/api/` path, answered only
+  when the requesting frame is a `tobari://` page. The API can read and change
+  the setup choices, show filter-list state, unblock a site, and open a link
+  in the main window — only `http(s)` links and two `chrome://settings` pages.
+- Pages are served with a strict content security policy (scripts and styles
+  from the page only, no framing) and `X-Frame-Options: DENY`; file paths are
+  restricted to plain names, so nothing outside the pages directory is served.
+- The new-tab page may ask the toolbar bridge for exactly one thing, opening
+  the setup window; every other bridge call still answers only the toolbar
+  extension.
 
 ## Extensions you install
 

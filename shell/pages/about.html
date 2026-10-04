@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>About Tobari</title>
+<link rel="icon" href="/tobari.png">
+<link rel="stylesheet" href="/tokens.css">
+<link rel="stylesheet" href="/pages.css">
+</head>
+<body>
+<header class="top">
+  <a class="brand" href="tobari://about/"><img src="/tobari.png" width="24" height="24" alt=""><span>Tobari</span></a>
+  <nav aria-label="Tobari pages">
+    <a href="tobari://about/" aria-current="page">about</a>
+    <a href="tobari://blocking/">blocking</a>
+    <a href="tobari://bangs/">bangs</a>
+    <a href="tobari://welcome/">welcome</a>
+  </nav>
+</header>
+<main>
+  <section class="head">
+    <h1>About Tobari</h1>
+    <p>A Chromium browser that blocks ads and trackers before they load, resolves bangs on your machine, and sends nothing home.</p>
+  </section>
+  <section class="card">
+    <h2>Version</h2>
+    <dl class="facts" data-about>
+      <dt>Tobari</dt><dd data-k="version">—</dd>
+      <dt>Chromium</dt><dd data-k="chromium">—</dd>
+      <dt>CEF</dt><dd data-k="cef">—</dd>
+      <dt>Platform</dt><dd data-k="platform">—</dd>
+      <dt>Profile and data</dt><dd data-k="dataDir">—</dd>
+    </dl>
+  </section>
+  <section class="card">
+    <h2>Tobari pages</h2>
+    <ul class="rows">
+      <li><a href="tobari://welcome/"><code>tobari://welcome</code></a><span class="note">search engine, look and privacy setup</span></li>
+      <li><a href="tobari://blocking/"><code>tobari://blocking</code></a><span class="note">what is blocked, filter lists, sites you allowed</span></li>
+      <li><a href="tobari://bangs/"><code>tobari://bangs</code></a><span class="note">every bang and where it goes</span></li>
+      <li><a href="tobari://about/"><code>tobari://about</code></a><span class="note">this page</span></li>
+    </ul>
+  </section>
+  <section class="card">
+    <h2>Chromium pages</h2>
+    <p class="muted">Chromium's own pages work as in Chrome. Type them into the address bar: <code>chrome://settings</code>, <code>chrome://extensions</code>, <code>chrome://history</code>, <code>chrome://downloads</code>.</p>
+  </section>
+</main>
+<script type="module" src="/about.js"></script>
+</body>
+</html>

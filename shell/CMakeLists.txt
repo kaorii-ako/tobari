@@ -62,8 +62,18 @@ set(TOBARI_SRCS
   src/filters_update.cc
   src/onboarding.cc
   src/paths.cc
+  src/schemes.cc
   src/shield.cc
+  src/welcome_window.cc
 )
+
+# Version for tobari://about and the macOS bundle, from the newest release in
+# the AppStream metainfo.
+set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS
+  "${CMAKE_CURRENT_SOURCE_DIR}/../packaging/dev.tobari.Browser.metainfo.xml")
+file(READ "${CMAKE_CURRENT_SOURCE_DIR}/../packaging/dev.tobari.Browser.metainfo.xml" _metainfo)
+string(REGEX MATCH "<release version=\"([^\"]+)\"" _release "${_metainfo}")
+set(TOBARI_VERSION "${CMAKE_MATCH_1}")
 
 if(OS_LINUX)
   add_executable(tobari src/main.cc ${TOBARI_SRCS})
@@ -90,9 +100,6 @@ if(OS_MAC)
   # Tobari.app with CEF's framework and the five helper apps CEF requires
   # (renderer, GPU, plugin, alerts and the plain helper) in Contents/Frameworks;
   # the bundled extensions and filter lists go in Contents/Resources.
-  file(READ "${CMAKE_CURRENT_SOURCE_DIR}/../packaging/dev.tobari.Browser.metainfo.xml" _metainfo)
-  string(REGEX MATCH "<release version=\"([^\"]+)\"" _release "${_metainfo}")
-  set(TOBARI_VERSION "${CMAKE_MATCH_1}")
   set(TOBARI_APP "${CEF_TARGET_OUT_DIR}/Tobari.app")
   configure_file("${CMAKE_CURRENT_SOURCE_DIR}/mac/Info.plist.in" "${CMAKE_CURRENT_BINARY_DIR}/Info.plist" @ONLY)
 
@@ -122,9 +129,9 @@ if(OS_MAC)
     string(REPLACE "@TOBARI_VERSION@" "${TOBARI_VERSION}" _plist "${_plist}")
     file(WRITE "${_helper_plist}" "${_plist}")
 
-    add_executable(${_helper_target} MACOSX_BUNDLE src/mac/helper_mac.cc)
+    add_executable(${_helper_target} MACOSX_BUNDLE src/mac/helper_mac.cc src/schemes.cc)
     SET_EXECUTABLE_TARGET_PROPERTIES(${_helper_target})
-    target_include_directories(${_helper_target} PRIVATE "${CEF_ROOT}")
+    target_include_directories(${_helper_target} PRIVATE "${CEF_ROOT}" "${CMAKE_CURRENT_SOURCE_DIR}/src")
     add_dependencies(${_helper_target} libcef_dll_wrapper)
     target_link_libraries(${_helper_target} libcef_dll_wrapper ${CEF_STANDARD_LIBS})
     set_target_properties(${_helper_target} PROPERTIES
@@ -159,6 +166,8 @@ endif()
 
 set(EXT_SRC "${CMAKE_CURRENT_SOURCE_DIR}/extensions")
 set(EXT_OUT "${TOBARI_RESOURCES_OUT}/extensions")
+set(PAGES_OUT "${TOBARI_RESOURCES_OUT}/pages")
+file(GLOB_RECURSE PAGES_DEPS CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/pages/*")
 set(UI_DIR "${CMAKE_CURRENT_SOURCE_DIR}/ui")
 set(NEWTAB_UI_FILES newtab.html newtab.css newtab.js tokens.css motion.js prefs.js bangs.js bangs.json)
 file(GLOB_RECURSE EXT_DEPS CONFIGURE_DEPENDS "${EXT_SRC}/*")
@@ -177,10 +186,18 @@ add_custom_target(tobari_bundled_extensions ALL
   COMMAND ${CMAKE_COMMAND} -E copy_directory "${UI_DIR}/vendor" "${EXT_OUT}/newtab/vendor"
   COMMAND ${CMAKE_COMMAND} -E copy "${UI_DIR}/tokens.css" "${EXT_OUT}/shield/tokens.css"
   COMMAND ${CMAKE_COMMAND} -E copy_directory "${UI_DIR}/fonts" "${EXT_OUT}/shield/fonts"
-  DEPENDS ${EXT_DEPS} ${TOBARI_UI_FILES}
+  # tobari:// pages: their own files plus the shared tokens, fonts, bang
+  # table and the app icon.
+  COMMAND ${CMAKE_COMMAND} -E rm -rf "${PAGES_OUT}"
+  COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_CURRENT_SOURCE_DIR}/pages" "${PAGES_OUT}"
+  COMMAND ${CMAKE_COMMAND} -E copy "${UI_DIR}/tokens.css" "${UI_DIR}/bangs.json" "${PAGES_OUT}/"
+  COMMAND ${CMAKE_COMMAND} -E copy_directory "${UI_DIR}/fonts" "${PAGES_OUT}/fonts"
+  COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_CURRENT_SOURCE_DIR}/icons/tobari-128.png" "${PAGES_OUT}/tobari.png"
+  DEPENDS ${EXT_DEPS} ${TOBARI_UI_FILES} ${PAGES_DEPS}
   COMMENT "Staging bundled extensions")
 
 add_dependencies(tobari tobari_bundled_extensions)
+target_compile_definitions(tobari PRIVATE "TOBARI_VERSION=\"${TOBARI_VERSION}\"")
 
 file(GLOB TOBARI_FILTER_FILES CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/filters/*.txt")
 

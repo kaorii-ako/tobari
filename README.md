@@ -23,8 +23,9 @@ deliberately. No "untraceable", no "anonymous", no claim that is not backed by
 | Blocking | `adblock-rust`, ~142,000 rules from EasyList, EasyPrivacy and uBlock Origin; cancels requests before they load; per-site switch and badge count in the toolbar |
 | Bangs | 35 DuckDuckGo-style bangs, resolved locally; the search engine never sees a bang query |
 | Extensions | Chrome Web Store, including password managers |
-| Setup | a first-run welcome flow: pick DuckDuckGo, Brave, Startpage, Kagi, Ecosia, Google or Bing, appearance and privacy options |
+| Setup | a first-run setup window (`tobari://welcome`): pick DuckDuckGo, Brave, Startpage, Kagi, Ecosia, Google or Bing, appearance and privacy options |
 | Defaults | DuckDuckGo, no suggestions, no prediction, third-party cookies blocked, HTTPS-Only on |
+| Tobari pages | `tobari://about`, `tobari://blocking`, `tobari://bangs`, `tobari://welcome`, like `chrome://` |
 | Hardening | V8 optimizing compilers off by default (per-site "Fast JavaScript" switch), device APIs blocked, workers filtered too |
 | Phoning home | none on its own except weekly filter-list updates — measured, see SECURITY.md |
 | Sandbox | always on; never `--no-sandbox` |

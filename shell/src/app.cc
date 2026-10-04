@@ -15,6 +15,8 @@
 #include "defaults.h"
 #include "filters_update.h"
 #include "onboarding.h"
+#include "schemes.h"
+#include "welcome_window.h"
 #include "shield.h"
 #include "paths.h"
 #include "include/cef_pack_strings.h"
@@ -46,6 +48,10 @@ std::vector<std::string> ExtensionDirs(const std::string& root) {
 }
 
 }  // namespace
+
+void App::OnRegisterCustomSchemes(CefRawPtr<CefSchemeRegistrar> registrar) {
+  RegisterTobariScheme(registrar);
+}
 
 void App::OnBeforeCommandLineProcessing(const CefString& process_type,
                                         CefRefPtr<CefCommandLine> command_line) {
@@ -178,6 +184,7 @@ void App::OnContextInitialized() {
   LoadBangs();
   Blocking::Get().Load();
   RegisterShieldBridge();
+  RegisterTobariPages();
   ChromeClient::CoverWorkerRequests();
   ApplyFirstRunDefaults();
   CefPostDelayedTask(TID_UI, base::BindOnce([] { FilterUpdater::Get().Start(false); }), 60 * 1000);
@@ -191,10 +198,12 @@ void App::OnContextInitialized() {
     WriteFileAtomic(dump, CefWriteJSON(v, JSON_WRITER_PRETTY_PRINT).ToString());
   }
   const std::string requested = UrlFromCommandLine(CefCommandLine::GetGlobalCommandLine(), std::string());
-  // A profile's first launch opens the welcome flow instead of a blank tab;
-  // a URL handed to Tobari on the command line still wins.
-  const std::string start = Onboarded() ? kStartUrl : kWelcomeUrl;
-  ChromeClient::Get()->OpenWindow(requested.empty() ? start : requested);
+  ChromeClient::Get()->OpenWindow(requested.empty() ? kStartUrl : requested);
+  // A profile's first launch shows setup in its own window over the browser.
+  // Shortly after the browser window, so the window manager stacks it on top.
+  if (!Onboarded()) {
+    CefPostDelayedTask(TID_UI, base::BindOnce([] { ShowWelcomeWindow(); }), 700);
+  }
 }
 
 bool App::OnAlreadyRunningAppRelaunch(CefRefPtr<CefCommandLine> command_line,

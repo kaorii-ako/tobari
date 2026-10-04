@@ -1,7 +1,8 @@
 // Smoke test for a Tobari build: run against a browser started with
 // --remote-debugging-port on a fresh profile. Checks that the engine runs,
-// that the first launch opens the welcome flow, that the extension pages
-// render, and that the native bridge answers.
+// that the first launch opens the setup window (tobari://welcome), that the
+// tobari:// page renders and its API answers, and that the browser window
+// opened beside it.
 //
 //   node scripts/smoke.mjs <port>
 const port = Number(process.argv[2] || 9222);
@@ -18,10 +19,16 @@ console.log(`engine: ${version.Browser}`);
 let welcome = null;
 for (let i = 0; i < 20 && !welcome; i++) {
   const list = await (await fetch(`http://127.0.0.1:${port}/json/list`)).json();
-  welcome = list.find((t) => t.url.includes("/welcome.html"));
+  welcome = list.find((t) => t.url.startsWith("tobari://welcome"));
   if (!welcome) await sleep(1000);
 }
-if (!welcome) fail("first launch did not open the welcome page");
+if (!welcome) fail("first launch did not open the setup window (tobari://welcome)");
+{
+  const list = await (await fetch(`http://127.0.0.1:${port}/json/list`)).json();
+  if (!list.some((t) => t.type === "page" && t.url.startsWith("chrome://newtab"))) {
+    fail("the browser window with a new tab did not open");
+  }
+}
 
 const ws = new WebSocket(welcome.webSocketDebuggerUrl);
 await new Promise((r, j) => { ws.onopen = r; ws.onerror = j; });
@@ -39,8 +46,9 @@ const evaluate = (expression) => new Promise((resolve) => {
 await sleep(1500);
 const title = await evaluate("document.title");
 if (title !== "Welcome to Tobari") fail(`welcome page title was ${JSON.stringify(title)}`);
-const engines = await evaluate("import(chrome.runtime.getURL('api.js')).then(m => m.api('/setup/state')).then(s => s ? s.engines.length : -1)");
-if (!(engines > 0)) fail("the native bridge did not answer /setup/state");
-console.log(`welcome page rendered; bridge offers ${engines} search engines`);
+const engines = await evaluate("fetch('/api/setup/state', {method: 'POST', body: '{}'}).then(r => r.json()).then(s => s.engines.length).catch(() => -1)");
+if (!(engines > 0)) fail("tobari://welcome/api/setup/state did not answer");
+const logos = await evaluate("[...document.querySelectorAll('.logo-tile')].filter(i => i.naturalWidth > 0).length");
+console.log(`setup window rendered; ${engines} search engines offered, ${logos} logos loaded`);
 console.log("PASS");
 process.exit(0);

@@ -3,10 +3,27 @@
 
 #include "include/cef_app.h"
 #include "include/wrapper/cef_library_loader.h"
+#include "schemes.h"
 
 #if defined(CEF_USE_SANDBOX)
 #include "include/cef_sandbox_mac.h"
 #endif
+
+namespace {
+
+// Sub-processes must know the tobari:// scheme too, or its pages lose their
+// origin and display isolation in the renderer.
+class HelperApp : public CefApp {
+ public:
+  void OnRegisterCustomSchemes(CefRawPtr<CefSchemeRegistrar> registrar) override {
+    tobari::RegisterTobariScheme(registrar);
+  }
+
+ private:
+  IMPLEMENT_REFCOUNTING(HelperApp);
+};
+
+}  // namespace
 
 int main(int argc, char* argv[]) {
 #if defined(CEF_USE_SANDBOX)
@@ -22,5 +39,6 @@ int main(int argc, char* argv[]) {
   }
 
   CefMainArgs main_args(argc, argv);
-  return CefExecuteProcess(main_args, nullptr, nullptr);
+  CefRefPtr<HelperApp> app(new HelperApp);
+  return CefExecuteProcess(main_args, app, nullptr);
 }

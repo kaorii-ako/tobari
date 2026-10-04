@@ -232,3 +232,15 @@ if (prefersReducedMotion()) {
 
 ui.seekInput.focus();
 resume();
+
+/* -------------------------------------------------- setup window */
+// Opens tobari://welcome in its own window. The browser answers this one
+// request from the new tab and nothing else.
+document.getElementById("setupLink")?.addEventListener("click", () => {
+  fetch("https://tobari.internal/setup/show", {
+    method: "POST",
+    headers: { "Content-Type": "text/plain" },
+    body: "{}",
+    cache: "no-store",
+  }).catch(() => {});
+});

@@ -175,6 +175,11 @@ bool Blocking::ShouldBlock(const std::string& url,
                                      resource_type.c_str(), method.c_str()) != 0;
 }
 
+std::vector<std::string> Blocking::DisabledHosts() const {
+  std::lock_guard<std::mutex> lock(hosts_mutex_);
+  return std::vector<std::string>(disabled_hosts_.begin(), disabled_hosts_.end());
+}
+
 void Blocking::LoadDisabledHosts() {
   std::lock_guard<std::mutex> lock(hosts_mutex_);
   if (hosts_loaded_) return;
