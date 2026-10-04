@@ -4,6 +4,7 @@
 #include <map>
 #include <mutex>
 #include <string>
+#include <vector>
 
 #include "include/cef_client.h"
 #include "include/cef_command_handler.h"
@@ -30,6 +31,10 @@ class ChromeClient : public CefClient,
   // Opens |url| as a foreground tab in the most recently focused window, or in
   // a new window if none is open.
   void OpenInLastWindow(const std::string& url);
+
+  // Asks every open browser to close; the last one to go quits the message
+  // loop (OnBeforeClose). Used by macOS's Quit.
+  void CloseAllBrowsers(bool force);
 
   CefRefPtr<CefLifeSpanHandler> GetLifeSpanHandler() override { return this; }
   CefRefPtr<CefFocusHandler> GetFocusHandler() override { return this; }
@@ -80,6 +85,7 @@ class ChromeClient : public CefClient,
   int blocked_total_ = 0;
   int open_browsers_ = 0;
   CefRefPtr<CefBrowser> last_focused_;
+  std::map<int, CefRefPtr<CefBrowser>> browsers_;
   std::string pending_tab_url_;
   std::chrono::steady_clock::time_point pending_since_;
 

@@ -72,7 +72,7 @@ std::string Decode(const std::string& value) {
 
 void LoadBangs() {
   std::string json;
-  if (!ReadFile(ExecutableDir() + "/extensions/newtab/bangs.json", &json)) return;
+  if (!ReadFile(ResourcesDir() + "/extensions/newtab/bangs.json", &json)) return;
   CefRefPtr<CefValue> parsed = CefParseJSON(json, JSON_PARSER_RFC);
   if (!parsed || parsed->GetType() != VTYPE_LIST) return;
   CefRefPtr<CefListValue> list = parsed->GetList();

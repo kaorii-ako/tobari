@@ -24,15 +24,24 @@ if [ "$ALWAYS_VERIFY" != "1" ] && [ -f "$ROOT/.verified" ]; then
   exit 0
 fi
 
-# Pinned SHA-1 from Spotify's CEF build index. Bumping CEF means updating both
-# CEF_VERSION and this hash together; see docs/RELEASING.md.
-SHA1="${CEF_SHA1:-9794ecf85ccd4dfcca42bfaac7a7666004f051e8}"
+# Pinned SHA-1s from Spotify's CEF build index, one per platform. Bumping CEF
+# means updating CEF_VERSION and every hash together; see docs/RELEASING.md.
+case "$PLATFORM" in
+  linux64)    PINNED_SHA1="9794ecf85ccd4dfcca42bfaac7a7666004f051e8" ;;
+  macosarm64) PINNED_SHA1="bfa2358a5fba8d0a016118941d9cda0bf2d06f20" ;;
+  macosx64)   PINNED_SHA1="056aee40d5c32068686808887dd38ef1540b2aba" ;;
+  *) echo "no pinned hash for platform $PLATFORM" >&2; exit 1 ;;
+esac
+SHA1="${CEF_SHA1:-$PINNED_SHA1}"
+
+# sha1sum on Linux, shasum on macOS.
+sha1() { if command -v sha1sum >/dev/null 2>&1; then sha1sum "$1"; else shasum -a 1 "$1"; fi | cut -d' ' -f1; }
 
 ARCHIVE="$ARCHIVE_DIR/$NAME.tar.bz2"
 ENC=$(python3 -c 'import sys, urllib.parse; print(urllib.parse.quote(sys.argv[1]))' "$NAME.tar.bz2")
 
 for attempt in 1 2 3 4 5; do
-  if [ -f "$ARCHIVE" ] && [ "$(sha1sum "$ARCHIVE" | cut -d' ' -f1)" = "$SHA1" ]; then
+  if [ -f "$ARCHIVE" ] && [ "$(sha1 "$ARCHIVE")" = "$SHA1" ]; then
     break
   fi
   if curl --proto =https -sS --fail -C - --max-time 3600 -o "$ARCHIVE" "https://cef-builds.spotifycdn.com/$ENC"; then
@@ -42,7 +51,7 @@ for attempt in 1 2 3 4 5; do
   sleep 5
 done
 
-ACTUAL=$(sha1sum "$ARCHIVE" | cut -d' ' -f1)
+ACTUAL=$(sha1 "$ARCHIVE")
 if [ "$ACTUAL" != "$SHA1" ]; then
   echo "SHA-1 mismatch for $NAME: expected $SHA1, got $ACTUAL" >&2
   rm -f "$ARCHIVE"

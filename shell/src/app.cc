@@ -51,6 +51,7 @@ void App::OnBeforeCommandLineProcessing(const CefString& process_type,
                                         CefRefPtr<CefCommandLine> command_line) {
   if (!process_type.empty()) return;
 
+#if defined(__linux__)
   if (!command_line->HasSwitch("ozone-platform")) {
     command_line->AppendSwitchWithValue("ozone-platform", "wayland");
   }
@@ -58,6 +59,7 @@ void App::OnBeforeCommandLineProcessing(const CefString& process_type,
   if (!command_line->HasSwitch("class")) {
     command_line->AppendSwitchWithValue("class", "dev.tobari.Browser");
   }
+#endif
 
   command_line->AppendSwitch("disable-breakpad");
   command_line->AppendSwitch("disable-crash-reporter");
@@ -91,7 +93,7 @@ void App::OnBeforeCommandLineProcessing(const CefString& process_type,
   // Only the extensions shipped next to the binary load unpacked. A directory
   // under the user's data dir would let any same-user process plant an
   // extension that runs on every launch without an install prompt.
-  std::vector<std::string> dirs = ExtensionDirs(ExecutableDir() + "/extensions");
+  std::vector<std::string> dirs = ExtensionDirs(ResourcesDir() + "/extensions");
   if (command_line->HasSwitch("load-extension")) {
     dirs.push_back(command_line->GetSwitchValue("load-extension").ToString());
   }

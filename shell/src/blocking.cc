@@ -59,7 +59,7 @@ long long PublishedAt(const std::string& path, bool user_copy) {
   }
   if (user_copy) return Mtime(path);
   std::string snapshot;
-  if (ReadFile(ExecutableDir() + "/filters/SNAPSHOT", &snapshot)) {
+  if (ReadFile(ResourcesDir() + "/filters/SNAPSHOT", &snapshot)) {
     const long long when = std::atoll(snapshot.c_str());
     if (when > 0) return when;
   }
@@ -108,7 +108,7 @@ void Blocking::Load() {
   std::vector<ListInfo> lists;
   for (const char* name : kLists) {
     const std::string user_path = FiltersDir() + "/" + name;
-    const std::string bundled_path = ExecutableDir() + "/filters/" + name;
+    const std::string bundled_path = ResourcesDir() + "/filters/" + name;
     const std::string path = Readable(user_path) ? user_path : (Readable(bundled_path) ? bundled_path : "");
     if (path.empty()) continue;
     lists.push_back({name, path, CountRules(path), PublishedAt(path, path == user_path)});
@@ -127,7 +127,7 @@ void Blocking::Load() {
     fprintf(stderr, "tobari: filter lists failed to load; using the bundled copies\n");
     lists.clear();
     for (const char* name : kLists) {
-      const std::string bundled_path = ExecutableDir() + "/filters/" + name;
+      const std::string bundled_path = ResourcesDir() + "/filters/" + name;
       if (Readable(bundled_path)) {
         lists.push_back({name, bundled_path, CountRules(bundled_path), PublishedAt(bundled_path, false)});
       }

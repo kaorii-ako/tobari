@@ -1,0 +1,73 @@
+name: macos
+
+# Builds Tobari.app for Apple Silicon, ad-hoc signs it, launches it on the
+# runner's desktop and runs scripts/smoke.mjs against it, then packages a
+# .dmg. There is no Mac to test on outside this job, and no Apple Developer
+# account, so the build is not notarized; see docs/DEV-MACOS.md.
+
+on:
+  push:
+    paths:
+      - "shell/**"
+      - "blocker/**"
+      - "packaging/dev.tobari.Browser.metainfo.xml"
+      - "scripts/smoke.mjs"
+      - ".github/workflows/macos.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  app:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Cache CEF archive
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.cache/tobari-cef-archive
+          key: cef-archive-macosarm64-${{ hashFiles('shell/provision-cef.sh') }}
+
+      - name: Provision CEF
+        run: |
+          export CEF_PLATFORM=macosarm64 TOBARI_CEF_ARCHIVE_DIR="$HOME/.cache/tobari-cef-archive" TOBARI_CEF_ALWAYS_VERIFY=1
+          echo "CEF_ROOT=$(shell/provision-cef.sh | tail -1)" >> "$GITHUB_ENV"
+
+      - name: Build
+        run: |
+          cmake -S shell -B build -DCEF_ROOT="$CEF_ROOT" -DCMAKE_BUILD_TYPE=Release -DPROJECT_ARCH=arm64
+          cmake --build build --parallel 4
+
+      - name: Ad-hoc sign
+        # Apple Silicon refuses to run unsigned code; an ad-hoc signature is
+        # the minimum. It is not a Developer ID, so Gatekeeper still warns.
+        run: |
+          codesign --force --deep --sign - build/Tobari.app
+          codesign --verify --deep --strict --verbose=2 build/Tobari.app
+
+      - name: Smoke test
+        run: |
+          export HOME="$RUNNER_TEMP/home" && mkdir -p "$HOME"
+          build/Tobari.app/Contents/MacOS/Tobari --remote-debugging-port=9222 > "$RUNNER_TEMP/tobari.log" 2>&1 &
+          pid=$!
+          status=0
+          node scripts/smoke.mjs 9222 || status=$?
+          kill "$pid" 2>/dev/null || true
+          if [ "$status" != 0 ]; then tail -50 "$RUNNER_TEMP/tobari.log"; fi
+          exit "$status"
+
+      - name: Package
+        run: |
+          version="$(sed -n 's/.*<release version="\([^"]*\)".*/\1/p' packaging/dev.tobari.Browser.metainfo.xml | head -1)"
+          mkdir -p dmg && cp -R build/Tobari.app dmg/ && ln -s /Applications dmg/Applications
+          hdiutil create -volname "Tobari $version" -srcfolder dmg -ov -format UDZO "Tobari-$version-macos-arm64.dmg"
+          shasum -a 256 "Tobari-$version-macos-arm64.dmg"
+          echo "DMG=Tobari-$version-macos-arm64.dmg" >> "$GITHUB_ENV"
+
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: tobari-macos-arm64
+          path: ${{ env.DMG }}
+          retention-days: 14

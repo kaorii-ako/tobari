@@ -117,6 +117,7 @@ void ChromeClient::OnAfterCreated(CefRefPtr<CefBrowser> browser) {
   {
     std::lock_guard<std::mutex> lock(mutex_);
     ++open_browsers_;
+    browsers_[browser->GetIdentifier()] = browser;
     if (!last_focused_) last_focused_ = browser;
     // Only the tab IDC_NEW_TAB just made may take a queued launch URL: never a
     // page-opened popup, and never anything after the request has gone stale.
@@ -153,11 +154,25 @@ void ChromeClient::OpenInLastWindow(const std::string& url) {
   target->GetHost()->ExecuteChromeCommand(IDC_NEW_TAB, CEF_WOD_NEW_FOREGROUND_TAB);
 }
 
+void ChromeClient::CloseAllBrowsers(bool force) {
+  std::vector<CefRefPtr<CefBrowser>> all;
+  {
+    std::lock_guard<std::mutex> lock(mutex_);
+    for (const auto& entry : browsers_) all.push_back(entry.second);
+  }
+  if (all.empty()) {
+    CefQuitMessageLoop();
+    return;
+  }
+  for (const auto& browser : all) browser->GetHost()->CloseBrowser(force);
+}
+
 void ChromeClient::OnBeforeClose(CefRefPtr<CefBrowser> browser) {
   bool quit = false;
   {
     std::lock_guard<std::mutex> lock(mutex_);
     pages_.erase(browser->GetIdentifier());
+    browsers_.erase(browser->GetIdentifier());
     if (last_focused_ && last_focused_->IsSame(browser)) last_focused_ = nullptr;
     quit = --open_browsers_ <= 0;
   }

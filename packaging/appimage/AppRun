@@ -1,0 +1,51 @@
+#!/bin/sh
+# Tobari AppImage entry point.
+#
+# An AppImage is mounted without setuid support, so Chromium's SUID sandbox
+# helper cannot work here; the sandbox relies on unprivileged user namespaces
+# instead. If they are unavailable Chromium refuses to start renderers rather
+# than run unsandboxed, so say why up front.
+HERE="$(dirname "$(readlink -f "$0")")"
+
+if command -v unshare >/dev/null 2>&1 && ! unshare -Ur true 2>/dev/null; then
+  msg="Tobari needs unprivileged user namespaces for its sandbox, and they are disabled on this system. Use the Flatpak instead: https://kaorii-ako.github.io/tobari/install/"
+  echo "$msg" >&2
+  command -v notify-send >/dev/null 2>&1 && notify-send -a Tobari "Tobari cannot start" "$msg"
+  exit 1
+fi
+
+# Desktop integration, once: without an app entry the desktop cannot match
+# Tobari's window (app id dev.tobari.Browser) to a name and icon. The entry
+# points at this AppImage file and is rewritten if the file moves. Skipped
+# when the Flatpak is installed, whose own entry would otherwise be shadowed,
+# and when TOBARI_NO_INTEGRATION=1.
+integrate() {
+  [ -n "${APPIMAGE:-}" ] || return 0
+  [ "${TOBARI_NO_INTEGRATION:-0}" = 1 ] && return 0
+  if command -v flatpak >/dev/null 2>&1 && flatpak info dev.tobari.Browser >/dev/null 2>&1; then
+    return 0
+  fi
+  data="${XDG_DATA_HOME:-$HOME/.local/share}"
+  entry="$data/applications/dev.tobari.Browser.desktop"
+  if [ -f "$entry" ] && ! grep -q "X-Tobari-AppImage=true" "$entry"; then
+    return 0  # an entry from another install method; leave it alone
+  fi
+  if [ -f "$entry" ] && grep -qF "Exec=\"$APPIMAGE\" %U" "$entry"; then
+    return 0
+  fi
+  mkdir -p "$data/applications"
+  sed -e "s|^Exec=AppRun --new-window|Exec=\"$APPIMAGE\" --new-window|" \
+      -e "s|^Exec=AppRun|Exec=\"$APPIMAGE\"|" \
+      -e '/^\[Desktop Entry\]/a X-Tobari-AppImage=true' \
+      "$HERE/dev.tobari.Browser.desktop" > "$entry.tmp" && mv "$entry.tmp" "$entry"
+  for d in "$HERE"/usr/share/icons/hicolor/*/apps; do
+    size="$(basename "$(dirname "$d")")"
+    mkdir -p "$data/icons/hicolor/$size/apps"
+    cp -f "$d/dev.tobari.Browser.png" "$data/icons/hicolor/$size/apps/" 2>/dev/null
+  done
+  command -v update-desktop-database >/dev/null 2>&1 && update-desktop-database "$data/applications" 2>/dev/null
+  return 0
+}
+integrate
+
+exec "$HERE/usr/lib/tobari/tobari" "$@"

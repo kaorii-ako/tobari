@@ -6,6 +6,9 @@ namespace tobari {
 
 std::string ExecutableDir();
 std::string ExecutablePath();
+// Where the bundled extensions and filter lists live: next to the binary on
+// Linux, Contents/Resources inside the app bundle on macOS.
+std::string ResourcesDir();
 std::string DataDir();
 std::string ProfileDir();
 std::string FiltersDir();

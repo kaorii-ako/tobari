@@ -4,6 +4,11 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
+#if defined(__APPLE__)
+#include <limits.h>
+#include <mach-o/dyld.h>
+#endif
+
 #include <cerrno>
 #include <cstdio>
 #include <cstdlib>
@@ -27,11 +32,19 @@ std::string Xdg(const char* var, const char* fallback) {
 }  // namespace
 
 std::string ExecutablePath() {
+#if defined(__APPLE__)
+  char raw[PATH_MAX];
+  uint32_t size = sizeof(raw);
+  if (_NSGetExecutablePath(raw, &size) != 0) return "./Tobari";
+  char resolved[PATH_MAX];
+  return realpath(raw, resolved) ? resolved : raw;
+#else
   char buffer[4096];
   const ssize_t len = readlink("/proc/self/exe", buffer, sizeof(buffer) - 1);
   if (len <= 0) return "./tobari";
   buffer[len] = '\0';
   return buffer;
+#endif
 }
 
 std::string ExecutableDir() {
@@ -40,11 +53,26 @@ std::string ExecutableDir() {
   return slash == std::string::npos ? std::string(".") : path.substr(0, slash);
 }
 
+std::string ResourcesDir() {
+#if defined(__APPLE__)
+  return ExecutableDir() + "/../Resources";
+#else
+  return ExecutableDir();
+#endif
+}
+
+#if defined(__APPLE__)
+std::string DataDir() { return Home() + "/Library/Application Support/Tobari"; }
+#else
 std::string DataDir() { return Xdg("XDG_DATA_HOME", ".local/share") + "/tobari"; }
+#endif
 std::string ProfileDir() { return DataDir() + "/profiles/default"; }
 std::string FiltersDir() { return DataDir() + "/filters"; }
 
 std::string DownloadsDir() {
+#if defined(__APPLE__)
+  return Home() + "/Downloads";
+#endif
   const char* v = getenv("XDG_DOWNLOAD_DIR");
   if (v && *v) return v;
   std::string dirs;
