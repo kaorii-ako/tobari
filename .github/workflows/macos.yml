@@ -50,11 +50,14 @@ jobs:
       - name: Smoke test
         run: |
           export HOME="$RUNNER_TEMP/home" && mkdir -p "$HOME"
-          build/Tobari.app/Contents/MacOS/Tobari --remote-debugging-port=9222 > "$RUNNER_TEMP/tobari.log" 2>&1 &
+          # --use-mock-keychain: the empty HOME has no login keychain, and the
+          # prompt about it would otherwise cover the window in the screenshot.
+          build/Tobari.app/Contents/MacOS/Tobari --remote-debugging-port=9222 --use-mock-keychain > "$RUNNER_TEMP/tobari.log" 2>&1 &
           pid=$!
           status=0
           node scripts/smoke.mjs 9222 || status=$?
-          # What the window looked like, for a human to check.
+          # What the windows looked like, for a human to check.
+          sleep 3
           screencapture -x "$RUNNER_TEMP/tobari-macos.png" || true
           kill "$pid" 2>/dev/null || true
           if [ "$status" != 0 ]; then tail -50 "$RUNNER_TEMP/tobari.log"; fi
