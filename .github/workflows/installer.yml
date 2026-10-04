@@ -1,0 +1,61 @@
+name: installer
+
+# Runs the public one-line installer exactly as a user would, against the
+# published release, on a clean macOS and a clean Linux machine, then starts
+# what it installed and runs scripts/smoke.mjs. Run by hand after a release.
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  macos:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Install with the public command
+        run: |
+          brew install minisign
+          curl -fsSL https://kaorii-ako.github.io/tobari/install.sh | bash
+          test -x "$HOME/Applications/Tobari.app/Contents/MacOS/Tobari"
+          codesign --verify --deep --strict "$HOME/Applications/Tobari.app"
+      - name: Smoke test the installed app
+        run: |
+          "$HOME/Applications/Tobari.app/Contents/MacOS/Tobari" --remote-debugging-port=9222 > "$RUNNER_TEMP/tobari.log" 2>&1 &
+          pid=$!
+          status=0
+          node scripts/smoke.mjs 9222 || status=$?
+          kill "$pid" 2>/dev/null || true
+          [ "$status" = 0 ] || tail -40 "$RUNNER_TEMP/tobari.log"
+          exit "$status"
+
+  linux:
+    runs-on: ubuntu-24.04
+    strategy:
+      matrix:
+        mode: [tarball, appimage]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Runtime libraries and a display
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends xvfb libnss3 libatk-bridge2.0-0 libcups2 libdrm2 \
+            libgbm1 libxkbcommon0 libxcomposite1 libxdamage1 libxrandr2 libasound2t64 libpango-1.0-0 libgtk-3-0 libfuse2t64
+          # Ubuntu 24.04 restricts unprivileged user namespaces through AppArmor;
+          # Chromium's sandbox needs them, so allow them on this runner.
+          sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+      - name: Install with the public command
+        run: curl -fsSL https://kaorii-ako.github.io/tobari/install.sh | bash -s -- --${{ matrix.mode }}
+      - name: Smoke test the installed app
+        run: |
+          if [ "${{ matrix.mode }}" = appimage ]; then bin="$HOME/Applications/Tobari.AppImage"; else bin="$HOME/.local/bin/tobari"; fi
+          Xvfb :99 -screen 0 1280x800x24 & sleep 2
+          DISPLAY=:99 "$bin" --ozone-platform=x11 --remote-debugging-port=9222 > "$RUNNER_TEMP/tobari.log" 2>&1 &
+          pid=$!
+          status=0
+          node scripts/smoke.mjs 9222 || status=$?
+          kill "$pid" 2>/dev/null || true
+          [ "$status" = 0 ] || tail -40 "$RUNNER_TEMP/tobari.log"
+          exit "$status"
