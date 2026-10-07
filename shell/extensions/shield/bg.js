@@ -1,3 +1,5 @@
+import { autoGroupEnabled, groupBySite } from "./groups.js";
+
 const BRIDGE = "bridge.html";
 const IDLE_CLOSE_MS = 30000;
 let closeTimer = null;
@@ -78,3 +80,18 @@ chrome.tabs.onActivated.addListener(async ({ tabId }) => {
   if (tab) refresh(tabId, tab.url);
 });
 chrome.tabs.onRemoved.addListener(stopPolling);
+
+// Automatic grouping by site, when turned on in the popup. Debounced per
+// window, so a burst of loads groups once.
+const groupTimers = new Map();
+function scheduleGrouping(windowId) {
+  clearTimeout(groupTimers.get(windowId));
+  groupTimers.set(windowId, setTimeout(async () => {
+    groupTimers.delete(windowId);
+    if (await autoGroupEnabled()) groupBySite(windowId).catch(() => {});
+  }, 800));
+}
+chrome.tabs.onUpdated.addListener((tabId, info, tab) => {
+  if (info.url || info.status === "complete") scheduleGrouping(tab.windowId);
+});
+chrome.tabs.onCreated.addListener((tab) => scheduleGrouping(tab.windowId));

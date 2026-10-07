@@ -1,4 +1,5 @@
 import { api } from "./api.js";
+import { autoGroupEnabled, setAutoGroup, groupBySite, ungroupOurs, applyGroups, regroupableTabs } from "./groups.js";
 
 const el = (id) => document.getElementById(id);
 const card = document.querySelector(".card");
@@ -84,6 +85,43 @@ el("import").addEventListener("click", () => {
   chrome.tabs.create({ url: chrome.runtime.getURL("import.html") });
   window.close();
 });
+
+async function currentWindowId() {
+  return (await chrome.windows.getCurrent()).id;
+}
+
+async function paintAutoGroup() {
+  el("autogroup").setAttribute("aria-checked", String(await autoGroupEnabled()));
+}
+el("autogroup").addEventListener("click", async () => {
+  const on = !(await autoGroupEnabled());
+  await setAutoGroup(on);
+  paintAutoGroup();
+  if (on) groupBySite(await currentWindowId());
+});
+el("groupNow").addEventListener("click", async () => {
+  const n = await groupBySite(await currentWindowId());
+  el("status").textContent = n ? `${n} group${n === 1 ? "" : "s"}` : "nothing to group";
+});
+el("ungroup").addEventListener("click", async () => {
+  await ungroupOurs(await currentWindowId());
+  el("status").textContent = "ungrouped";
+});
+// Topic grouping by the local AI model (tobari://ai). The titles and
+// addresses of the tabs go to the model on this computer, nowhere else.
+el("groupAi").addEventListener("click", async () => {
+  const windowId = await currentWindowId();
+  const tabs = await regroupableTabs(windowId);
+  if (tabs.length < 2) { el("status").textContent = "nothing to organize"; return; }
+  el("groupAi").disabled = true;
+  el("status").textContent = "organizing…";
+  const r = await api("/ai/group", { tabs: tabs.map((t) => ({ id: t.id, title: t.title || "", url: t.url })) });
+  el("groupAi").disabled = false;
+  if (!r || r.error) { el("status").textContent = r?.error || "AI is not set up — see tobari://ai"; return; }
+  const n = await applyGroups(windowId, r.groups || []);
+  el("status").textContent = `${n} group${n === 1 ? "" : "s"}`;
+});
+paintAutoGroup();
 
 el("update").addEventListener("click", async () => {
   paint(null, await api("/update"));

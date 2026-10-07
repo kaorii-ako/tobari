@@ -127,3 +127,17 @@ button:focus-visible { outline: 2px solid var(--signal); outline-offset: 2px; }
 .switch[aria-checked="true"] { background: var(--signal-weak); border-color: var(--signal-edge); }
 .switch[aria-checked="true"] .switch__dot { background: var(--signal); transform: translateX(16px); }
 .switch:disabled { opacity: 0.4; cursor: default; }
+
+.tabtools { display: flex; flex-wrap: wrap; gap: var(--sp-3); margin-top: var(--sp-4); }
+.chip {
+  min-height: 26px;
+  padding: 0 var(--sp-5);
+  border: var(--bw) solid var(--line-hair);
+  border-radius: var(--r-full);
+  color: var(--fg-1);
+  font-size: var(--fs-200);
+  transition: border-color var(--dur-1) var(--ease-out), color var(--dur-1) var(--ease-out), transform 120ms var(--ease-out);
+}
+.chip:hover { border-color: var(--fg-3); color: var(--fg-0); }
+.chip:active { transform: scale(0.97); }
+.chip:disabled { opacity: 0.5; cursor: default; }
