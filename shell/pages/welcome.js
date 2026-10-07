@@ -273,7 +273,12 @@ $("[data-close]").addEventListener("click", finish);
 /* ---------------------------------------------------------------- start */
 
 async function start() {
-  state = await api("/setup/state");
+  // The window can open while the browser is still busy starting; give the
+  // first answer a moment before falling back.
+  for (let i = 0; i < 8 && !state; i++) {
+    state = await api("/setup/state");
+    if (!state) await new Promise((r) => setTimeout(r, 250 * (i + 1)));
+  }
   if (!state) {
     status.textContent = "Tobari's settings bridge did not answer. Defaults are in place; you can change them in Settings.";
     next.addEventListener("click", closeSetup, { once: true });
