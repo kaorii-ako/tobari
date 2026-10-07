@@ -23,7 +23,8 @@
     "bookmarks",
     "history",
     "tabGroups",
-    "storage"
+    "storage",
+    "sidePanel"
   ],
   "host_permissions": [
     "https://tobari.internal/*"
@@ -36,5 +37,8 @@
   },
   "content_security_policy": {
     "extension_pages": "script-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'"
+  },
+  "side_panel": {
+    "default_path": "assistant.html"
   }
 }

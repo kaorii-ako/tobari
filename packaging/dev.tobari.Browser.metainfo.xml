@@ -52,6 +52,12 @@
   </screenshots>
   <content_rating type="oars-1.1"/>
   <releases>
+    <release version="0.4.0" date="2026-10-07" type="development">
+      <url>https://github.com/kaorii-ako/tobari/releases/tag/v0.4.0</url>
+      <description>
+        <p>Import cookies, bookmarks, history and extensions from Chrome, Brave, Edge, Vivaldi or Firefox; tab groups by site; a local AI that summarizes pages, answers questions about them and groups tabs by topic, running on your computer.</p>
+      </description>
+    </release>
     <release version="0.3.0" date="2026-10-04" type="development">
       <url>https://github.com/kaorii-ako/tobari/releases/tag/v0.3.0</url>
       <description>

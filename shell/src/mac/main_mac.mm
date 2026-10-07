@@ -11,6 +11,7 @@
 #include "include/cef_application_mac.h"
 #include "include/wrapper/cef_library_loader.h"
 
+#include "ai.h"
 #include "app.h"
 #include "chrome_client.h"
 #include "defaults.h"
@@ -89,6 +90,7 @@ int main(int argc, char* argv[]) {
     [NSApp setDelegate:delegate];
 
     CefRunMessageLoop();
+    tobari::ai::Shutdown();
     CefShutdown();
   }
   return 0;

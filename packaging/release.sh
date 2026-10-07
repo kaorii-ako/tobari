@@ -22,6 +22,7 @@ OUT="${2:-$ROOT/dist/release-$VERSION}"
 KEY="${TOBARI_SIGNING_KEY:-$HOME/.minisign/tobari.key}"
 
 [ -x "$BUILD/tobari" ] || { echo "no tobari binary in $BUILD" >&2; exit 1; }
+[ -x "$BUILD/ai/llama-server" ] || { echo "no AI engine in $BUILD/ai; run packaging/ai/build-llama.sh $BUILD" >&2; exit 1; }
 grep -q "VERSION=\"\${TOBARI_VERSION:-$VERSION}\"" "$HERE/get-tobari.sh" \
   || { echo "get-tobari.sh does not pin $VERSION; update it first" >&2; exit 1; }
 

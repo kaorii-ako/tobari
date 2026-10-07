@@ -69,6 +69,9 @@ class ChromeClient : public CefClient,
   bool IsChromePageActionIconVisible(cef_chrome_page_action_icon_type_t icon_type) override;
   bool IsChromeToolbarButtonVisible(cef_chrome_toolbar_button_type_t button_type) override;
 
+  // The open tab showing |url|, preferring the focused one, or null.
+  CefRefPtr<CefBrowser> BrowserForUrl(const std::string& url);
+
   int BlockedForUrl(const std::string& url);
   int BlockedTotal();
 

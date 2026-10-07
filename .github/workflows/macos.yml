@@ -12,6 +12,8 @@ on:
       - "blocker/**"
       - "packaging/dev.tobari.Browser.metainfo.xml"
       - "scripts/smoke.mjs"
+      - "scripts/ai-smoke.mjs"
+      - "packaging/ai/**"
       - ".github/workflows/macos.yml"
   workflow_dispatch:
 
@@ -40,10 +42,29 @@ jobs:
           cmake -S shell -B build -DCEF_ROOT="$CEF_ROOT" -DCMAKE_BUILD_TYPE=Release -DPROJECT_ARCH=arm64
           cmake --build build --parallel 4
 
+      - name: Cache llama.cpp source
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.cache/tobari-dev/llama.cpp-*
+          key: llama-macosarm64-${{ hashFiles('packaging/ai/build-llama.sh') }}
+
+      - name: Build the AI engine
+        # llama.cpp's server with the Metal backend, bundled in
+        # Contents/Resources/ai before the app is signed.
+        run: |
+          command -v ninja >/dev/null || brew install ninja
+          packaging/ai/build-llama.sh build
+          cp -R build/ai build/Tobari.app/Contents/Resources/ai
+          build/Tobari.app/Contents/Resources/ai/llama-server --version
+
       - name: Ad-hoc sign
         # Apple Silicon refuses to run unsigned code; an ad-hoc signature is
         # the minimum. It is not a Developer ID, so Gatekeeper still warns.
         run: |
+          # The engine is not nested code in a standard place, so --deep
+          # does not reach it; sign its files first.
+          find build/Tobari.app/Contents/Resources/ai -type f \( -name llama-server -o -name '*.dylib' \) \
+            -exec codesign --force --sign - {} \;
           codesign --force --deep --sign - build/Tobari.app
           codesign --verify --deep --strict --verbose=2 build/Tobari.app
 
@@ -56,11 +77,21 @@ jobs:
           pid=$!
           status=0
           node scripts/smoke.mjs 9222 || status=$?
+          # Local AI end to end: the small model, checked against its pinned
+          # hash, put where tobari://ai would have downloaded it.
+          models="$HOME/Library/Application Support/Tobari/models" && mkdir -p "$models"
+          curl -fsSL --retry 3 -o "$models/Qwen3-0.6B-Q4_K_M.gguf" \
+            https://huggingface.co/unsloth/Qwen3-0.6B-GGUF/resolve/main/Qwen3-0.6B-Q4_K_M.gguf
+          echo "ac2d97712095a558e31573f62f466a3f9d93990898b0ec79d7c974c1780d524a  $models/Qwen3-0.6B-Q4_K_M.gguf" | shasum -a 256 -c
+          if [ "$status" = 0 ]; then node scripts/ai-smoke.mjs 9222 || status=$?; fi
           # What the windows looked like, for a human to check.
           sleep 3
           screencapture -x "$RUNNER_TEMP/tobari-macos.png" || true
           kill "$pid" 2>/dev/null || true
-          if [ "$status" != 0 ]; then tail -50 "$RUNNER_TEMP/tobari.log"; fi
+          if [ "$status" != 0 ]; then
+            tail -50 "$RUNNER_TEMP/tobari.log"
+            tail -50 "$HOME/Library/Application Support/Tobari/state/ai.log" 2>/dev/null || true
+          fi
           exit "$status"
 
       - name: Package

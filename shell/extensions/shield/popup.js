@@ -97,6 +97,23 @@ el("autogroup").addEventListener("click", async () => {
   const on = !(await autoGroupEnabled());
   await setAutoGroup(on);
   paintAutoGroup();
+
+// The assistant lives in the side panel; where Chromium offers none, in a
+// small window of its own that reads this tab.
+el("askAi").addEventListener("click", async () => {
+  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+  try {
+    await chrome.sidePanel.open({ windowId: tab.windowId });
+  } catch {
+    await chrome.windows.create({
+      url: chrome.runtime.getURL(`assistant.html?tab=${tab.id}`),
+      type: "popup",
+      width: 420,
+      height: 640,
+    });
+  }
+  window.close();
+});
   if (on) groupBySite(await currentWindowId());
 });
 el("groupNow").addEventListener("click", async () => {

@@ -21,6 +21,9 @@ size_t tobari_registrable_domain(const char* host, char* out, size_t cap);
 char* tobari_import(const char* op, const char* arg);
 void tobari_free_string(char* s);
 
+/* SHA-256 of a file, hex, into out[65]. Returns 1 on success. */
+int tobari_sha256_file(const char* path, char* out);
+
 #ifdef __cplusplus
 }
 #endif

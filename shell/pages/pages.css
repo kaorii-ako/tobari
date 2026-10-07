@@ -84,3 +84,21 @@ main { width: min(100% - 48px, 840px); margin: 40px auto 80px; display: grid; ga
 .bang-table .tok { font-family: var(--font-mono); color: var(--signal); min-width: 7ch; }
 @media (max-width: 640px) { .grid3 { grid-template-columns: 1fr; } .top { flex-wrap: wrap; } }
 .actions { margin-top: 14px; display: flex; gap: 12px; align-items: center; }
+
+/* tobari://ai */
+.small { font-size: 12.5px; margin-top: 4px; }
+.models { display: grid; gap: 8px; margin-bottom: 12px; }
+.model { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 14px 16px; border: 1px solid var(--edge); border-radius: 12px; }
+.model.on { border-color: color-mix(in srgb, var(--signal) 55%, transparent); }
+.model-actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.model progress { width: 120px; height: 6px; accent-color: var(--signal); }
+.tag { font-family: var(--font-mono); font-size: 11px; color: var(--signal); padding: 4px 10px; border-radius: 999px; background: color-mix(in srgb, var(--signal) 12%, transparent); }
+.error { color: var(--signal); }
+.chat { display: grid; gap: 10px; max-height: 420px; overflow-y: auto; margin-bottom: 12px; }
+.chat:empty { display: none; }
+.msg { padding: 10px 14px; border-radius: 12px; white-space: pre-wrap; max-width: 85%; }
+.msg.user { justify-self: end; background: color-mix(in srgb, var(--fg-0) 8%, transparent); }
+.msg.assistant { justify-self: start; border: 1px solid var(--edge); }
+.msg.pending::after { content: "…"; color: var(--fg-2); }
+.ask { display: flex; gap: 8px; }
+@media (max-width: 640px) { .model { flex-direction: column; align-items: flex-start; } }

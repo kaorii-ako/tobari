@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ask AI · Tobari</title>
+<link rel="stylesheet" href="tokens.css">
+<link rel="stylesheet" href="assistant.css">
+</head>
+<body>
+<header class="bar">
+  <div class="page">
+    <span class="label">Reading</span>
+    <span class="title" id="title">—</span>
+  </div>
+  <button class="icon" id="clear" type="button" title="New conversation" aria-label="New conversation"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.5 8a5.5 5.5 0 1 0 1.6-3.9"/><path d="M2.5 2.5v3.2h3.2"/></svg></button>
+</header>
+<main class="log" id="log" aria-live="polite">
+  <div class="empty" id="empty">
+    <p>Ask about this page, or get the gist in a few lines.</p>
+    <button class="btn btn-primary" id="summarize" type="button" disabled>Summarize this page</button>
+    <p class="fine">Runs on this computer. The page and your questions stay here.</p>
+  </div>
+  <div class="setup" id="setup" hidden>
+    <p>Tobari's AI needs a model first. It is downloaded once and runs on this computer.</p>
+    <button class="btn btn-primary" id="openAi" type="button">Choose a model</button>
+  </div>
+</main>
+<form class="ask" id="form">
+  <textarea id="input" rows="1" placeholder="Ask about this page…" maxlength="2000"></textarea>
+  <button class="send" id="send" type="submit" aria-label="Send"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 13V3"/><path d="M3.5 7.5 8 3l4.5 4.5"/></svg></button>
+</form>
+<script type="module" src="assistant.js"></script>
+</body>
+</html>

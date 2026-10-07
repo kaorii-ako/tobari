@@ -7,6 +7,7 @@
 #include <mutex>
 #include <string>
 
+#include "ai_bridge.h"
 #include "blocking.h"
 #include "bangs.h"
 #include "chrome_client.h"
@@ -255,6 +256,10 @@ class ShieldFactory : public CefSchemeHandlerFactory {
     CefRefPtr<CefDictionaryValue> in = ParseObject(Body(request));
     const std::string url = in->GetString("url").ToString();
 
+    if (path.rfind("/ai/", 0) == 0) {
+      CefRefPtr<CefResourceHandler> ai = AiHandler(AiCaller::kShield, path.substr(4), in, origin);
+      return ai ? ai : Forbidden();
+    }
     BridgeHandler::Compute compute;
     if (path == "/state") {
       compute = [url] { return Serialize(PageState(url)); };
@@ -321,7 +326,7 @@ bool IsTobariPage(CefRefPtr<CefFrame> frame) {
 
 // Pages that exist. tobari://<host>/ serves pages/<host>.html.
 bool KnownPage(const std::string& host) {
-  return host == "welcome" || host == "about" || host == "blocking" || host == "bangs";
+  return host == "welcome" || host == "about" || host == "blocking" || host == "bangs" || host == "ai";
 }
 
 // Shared assets (CSS, scripts, fonts, logos) under pages/. Only plain
@@ -428,6 +433,10 @@ class TobariFactory : public CefSchemeHandlerFactory {
  private:
   CefRefPtr<CefResourceHandler> Api(const std::string& name, CefRefPtr<CefDictionaryValue> in,
                                     CefRefPtr<CefFrame> frame) {
+    if (name.rfind("ai/", 0) == 0) {
+      CefRefPtr<CefResourceHandler> ai = AiHandler(AiCaller::kTobariPage, name.substr(3), in, std::string());
+      return ai ? ai : Forbidden();
+    }
     BridgeHandler::Compute compute;
     if (name == "setup/state") {
       compute = [] { return Serialize(SetupState()); };

@@ -1,6 +1,7 @@
 #include "include/cef_app.h"
 #include "include/cef_command_line.h"
 
+#include "ai.h"
 #include "app.h"
 #include "defaults.h"
 #include "paths.h"
@@ -31,6 +32,7 @@ int main(int argc, char* argv[]) {
     return CefGetExitCode();
   }
   CefRunMessageLoop();
+  tobari::ai::Shutdown();
   CefShutdown();
 
   return 0;

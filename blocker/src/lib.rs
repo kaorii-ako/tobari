@@ -127,3 +127,31 @@ pub extern "C" fn tobari_free_string(s: *mut c_char) {
         unsafe { drop(CString::from_raw(s)) };
     }
 }
+
+/// SHA-256 of a file as 64 lowercase hex characters plus NUL into |out|
+/// (at least 65 bytes). Returns 1 on success.
+#[no_mangle]
+pub extern "C" fn tobari_sha256_file(path: *const c_char, out: *mut c_char) -> c_int {
+    use sha2::Digest;
+    use std::io::Read;
+    let Some(path) = cstr(path) else { return 0 };
+    if out.is_null() {
+        return 0;
+    }
+    let Ok(mut file) = std::fs::File::open(path) else { return 0 };
+    let mut hasher = sha2::Sha256::new();
+    let mut buf = vec![0u8; 1 << 20];
+    loop {
+        match file.read(&mut buf) {
+            Ok(0) => break,
+            Ok(n) => hasher.update(&buf[..n]),
+            Err(_) => return 0,
+        }
+    }
+    let hex: String = hasher.finalize().iter().map(|b| format!("{b:02x}")).collect();
+    unsafe {
+        ptr::copy_nonoverlapping(hex.as_ptr(), out as *mut u8, 64);
+        *out.add(64) = 0;
+    }
+    1
+}

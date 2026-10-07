@@ -69,6 +69,39 @@ modules:
       - make SHELL=/bin/bash
       - make install SHELL=/bin/bash FLATPAK_DEST=/app
 
+  # Headers llama.cpp's Vulkan backend compiles against; the SDK ships the
+  # Vulkan headers and shader compilers but not these. Build-time only.
+  - name: spirv-headers
+    buildsystem: cmake-ninja
+    cleanup:
+      - '*'
+    sources:
+      - type: git
+        url: https://github.com/KhronosGroup/SPIRV-Headers
+        tag: vulkan-sdk-1.4.350.1
+        commit: ad9184e76a66b1001c29db9b0a3e87f646c64de0
+
+  # Tobari's local AI engine: llama.cpp's server, the same tag
+  # packaging/ai/build-llama.sh pins, with the Vulkan backend and CPU code
+  # chosen at run time. Installed beside Tobari in /app/lib/tobari/ai.
+  - name: llama-server
+    buildsystem: simple
+    sources:
+      - type: git
+        url: https://github.com/ggml-org/llama.cpp
+        tag: b11053
+        commit: 1af554f8fc78ba029665a47b839484d9763e2a75
+    build-commands:
+      - cmake -S . -B _build -G Ninja -DCMAKE_BUILD_TYPE=Release -DLLAMA_CURL=OFF
+          -DLLAMA_BUILD_TESTS=OFF -DLLAMA_BUILD_EXAMPLES=OFF -DLLAMA_BUILD_SERVER=ON
+          -DBUILD_SHARED_LIBS=ON -DCMAKE_INSTALL_RPATH='$ORIGIN' -DCMAKE_BUILD_WITH_INSTALL_RPATH=ON
+          -DGGML_VULKAN=ON -DGGML_NATIVE=OFF -DGGML_BACKEND_DL=ON -DGGML_CPU_ALL_VARIANTS=ON
+      - >-
+        cmake --build _build --target llama-server $(ninja -C _build -t targets all | sed -n 's/^\(ggml-[a-z0-9_-]*\): phony$/\1/p' | grep -v '^ggml-base$')
+      - install -d /app/lib/tobari/ai
+      - cp -P _build/bin/llama-server _build/bin/lib*.so* /app/lib/tobari/ai/
+      - install -m644 LICENSE /app/lib/tobari/ai/LICENSE.llama.cpp
+
   - name: tobari
     buildsystem: simple
     build-options:

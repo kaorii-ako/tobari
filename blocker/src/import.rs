@@ -21,6 +21,10 @@
 //! Since cookie database version 24 the plaintext starts with the SHA-256 of
 //! the cookie's host, which is checked and removed.
 
+// Key sources are per platform (keyring and Flatpak portal on Linux, the
+// Keychain on macOS); each build leaves the other's fields and variants unused.
+#![allow(dead_code)]
+
 use std::collections::HashMap;
 use std::fs;
 use std::path::{Path, PathBuf};

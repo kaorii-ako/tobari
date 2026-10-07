@@ -155,6 +155,16 @@ void ChromeClient::OpenInLastWindow(const std::string& url) {
   target->GetHost()->ExecuteChromeCommand(IDC_NEW_TAB, CEF_WOD_NEW_FOREGROUND_TAB);
 }
 
+CefRefPtr<CefBrowser> ChromeClient::BrowserForUrl(const std::string& url) {
+  std::lock_guard<std::mutex> lock(mutex_);
+  if (url.empty()) return nullptr;
+  if (last_focused_ && last_focused_->GetMainFrame()->GetURL().ToString() == url) return last_focused_;
+  for (const auto& entry : browsers_) {
+    if (entry.second->GetMainFrame()->GetURL().ToString() == url) return entry.second;
+  }
+  return nullptr;
+}
+
 void ChromeClient::CloseAllBrowsers(bool force) {
   std::vector<CefRefPtr<CefBrowser>> all;
   {

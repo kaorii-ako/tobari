@@ -23,7 +23,7 @@
 # Reading this before running it is a good idea. It is short on purpose.
 set -euo pipefail
 
-VERSION="${TOBARI_VERSION:-0.3.0}"
+VERSION="${TOBARI_VERSION:-0.4.0}"
 REPO="kaorii-ako/tobari"
 # The release key (docs/RELEASING.md). Key id 0F0DC333B8A4E968.
 PUBKEY="RWRo6aS4M8MND+s3tkrSD2POK8Donu5pWez8QI5+Pf6KZike67q2L6iB"

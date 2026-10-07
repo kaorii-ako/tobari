@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AI · Tobari</title>
+<link rel="icon" href="/tobari.png">
+<link rel="stylesheet" href="/tokens.css">
+<link rel="stylesheet" href="/pages.css">
+</head>
+<body>
+<header class="top">
+  <a class="brand" href="tobari://about/"><img src="/tobari.png" width="24" height="24" alt=""><span>Tobari</span></a>
+  <nav aria-label="Tobari pages">
+    <a href="tobari://about/">about</a>
+    <a href="tobari://blocking/">blocking</a>
+    <a href="tobari://bangs/">bangs</a>
+    <a href="tobari://ai/" aria-current="page">ai</a>
+    <a href="tobari://welcome/">welcome</a>
+  </nav>
+</header>
+<main>
+  <section class="head">
+    <h1>AI, on this computer</h1>
+    <p>Summarize the page you are reading, ask about it, and sort your tabs into groups. The model runs on your own computer with llama.cpp. Pages, questions and answers never leave it, and nothing runs until you use it.</p>
+  </section>
+
+  <section class="card" data-no-engine hidden>
+    <h2>Not in this build</h2>
+    <p>This copy of Tobari was built without the AI engine. The release downloads include it.</p>
+  </section>
+
+  <section class="card">
+    <h2>Model</h2>
+    <ul class="models" data-models></ul>
+    <p class="muted small">Downloads come from Hugging Face and are checked against a fixed SHA-256 before use. Models are kept in <code data-dir></code>.</p>
+  </section>
+
+  <section class="card" data-try hidden>
+    <h2>Try it</h2>
+    <div class="chat" data-log aria-live="polite"></div>
+    <form class="ask" data-form>
+      <input class="search" data-input placeholder="Ask anything…" autocomplete="off" maxlength="2000">
+      <button class="btn btn-primary" type="submit" data-send>Send</button>
+    </form>
+    <p class="muted small" data-engine></p>
+  </section>
+
+  <section class="card">
+    <h2>Where to find it</h2>
+    <ul class="rows">
+      <li><span>Summarize or ask about a page</span><span class="note">Tobari button → Ask AI about this page</span></li>
+      <li><span>Group tabs by topic</span><span class="note">Tobari button → Organize with AI</span></li>
+    </ul>
+  </section>
+</main>
+<script type="module" src="/ai.js"></script>
+</body>
+</html>
