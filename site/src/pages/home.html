@@ -122,7 +122,7 @@
             <div class="tour-sticky">
               <span class="eyebrow">Tour</span>
               <h2 class="chapter-title" id="tour-title">It is Chromium, quieter.</h2>
-              <p class="chapter-sub">Chromium's own window, tabs and settings, so nothing has to be relearned. What Tobari adds sits underneath, plus two small pieces of its own.</p>
+              <p class="chapter-sub">Chromium's own window, tabs and settings, so nothing has to be relearned. What Tobari adds sits underneath, plus a few small pieces of its own.</p>
             </div>
           </header>
           <div class="tour-list">
@@ -138,6 +138,13 @@
               <figcaption>
                 <h3>One popup, two switches</h3>
                 <p>The badge counts what was blocked on the page. Turn blocking off for a site that breaks, or give a site you trust the JavaScript optimizer back. Both choices persist.</p>
+              </figcaption>
+            </figure>
+            <figure class="tour-item tour-item-narrow" data-tour>
+              <div class="bezel bezel-lg"><div class="bezel-core"><img src="/assets/shots/askai.webp" width="760" height="1280" alt="Tobari's Ask AI side panel reading the Wikipedia article on lighthouses: six bullet points summarizing it, written by a Qwen3 4B model running on the same computer, with a field below to ask about the page." loading="lazy" decoding="async"></div></div>
+              <figcaption>
+                <h3>Ask the page, on your computer</h3>
+                <p>Ask AI summarizes the page or answers questions about it in a side panel; Organize with AI sorts your tabs by topic. The model runs here through llama.cpp, downloaded only if you pick one in <code>tobari://ai</code>. Small models make mistakes, so check what matters.</p>
               </figcaption>
             </figure>
             <figure class="tour-item" data-tour>
@@ -403,8 +410,16 @@ packaging/install.sh build</code></pre>
               <p>Everything stays on your machine: <code>~/.local/share/tobari</code> for the per-user build, <code>~/.var/app/dev.tobari.Browser/</code> for the Flatpak. Bookmarks and passwords can be moved with Chromium's own import (Settings → Import bookmarks and settings) or an HTML or CSV export.</p>
             </details>
             <details>
+              <summary>Can I bring my cookies, bookmarks and history?</summary>
+              <p>Yes. Toolbar menu → Import reads Chrome, Chromium, Brave, Edge, Vivaldi (native or Flatpak) or Firefox on the same computer and copies cookies (so you stay signed in), bookmarks, history and a list of your extensions with links to install them. The other browser's files are only read. Passwords move through that browser's CSV export; the import page walks through it. <a href="/security/#importing-from-another-browser">What it reads</a></p>
+            </details>
+            <details>
+              <summary>Is the AI sending my pages somewhere?</summary>
+              <p>No. Ask AI and Organize with AI run a Qwen3 model on your own computer with llama.cpp, listening only on this machine behind a random key. Nothing is downloaded until you choose a model in <code>tobari://ai</code>, and the file is checked against a pinned hash. The model has no tools, so a page written to manipulate it can at worst make its answer about that page wrong. <a href="/security/#local-ai">Threat model</a></p>
+            </details>
+            <details>
               <summary>What are tobari:// pages?</summary>
-              <p>Tobari's own pages, like Chrome's <code>chrome://</code> pages: <code>tobari://about</code> for versions and where your data lives, <code>tobari://blocking</code> for filter lists and the sites you allowed, <code>tobari://bangs</code> for every bang, and <code>tobari://welcome</code> to run setup again. Type them into the address bar. Websites cannot open them. <a href="/security/#tobaris-own-pages-tobari">How they are isolated</a></p>
+              <p>Tobari's own pages, like Chrome's <code>chrome://</code> pages: <code>tobari://about</code> for versions and where your data lives, <code>tobari://blocking</code> for filter lists and the sites you allowed, <code>tobari://bangs</code> for every bang, <code>tobari://ai</code> for the local model, and <code>tobari://welcome</code> to run setup again. Type them into the address bar. Websites cannot open them. <a href="/security/#tobaris-own-pages-tobari">How they are isolated</a></p>
             </details>
             <details>
               <summary>macOS or Windows?</summary>
@@ -466,6 +481,6 @@ packaging/install.sh build</code></pre>
             <a class="pill pill-ghost" href="{{release_url}}" rel="noreferrer"><span>Release {{version}}</span><span class="pill-icon" aria-hidden="true"><svg viewBox="0 0 16 16" width="12" height="12"><path d="M5 11 11 5M6 5h5v5" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span></a>
             <a class="pill pill-ghost" href="{{gh}}" rel="noreferrer"><span>Source</span><span class="pill-icon" aria-hidden="true"><svg viewBox="0 0 16 16" width="12" height="12"><path d="M5 11 11 5M6 5h5v5" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span></a>
           </div>
-          <p class="finale-note">A fully local AI assistant is planned for Phase 3; it is not in this build. Watch the repository with <strong>Watch → Custom → Releases</strong> to hear about new versions without giving anyone an email address.</p>
+          <p class="finale-note">Watch the repository with <strong>Watch → Custom → Releases</strong> to hear about new versions without giving anyone an email address.</p>
         </div>
       </section>

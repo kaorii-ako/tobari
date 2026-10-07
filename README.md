@@ -25,7 +25,10 @@ deliberately. No "untraceable", no "anonymous", no claim that is not backed by
 | Extensions | Chrome Web Store, including password managers |
 | Setup | a first-run setup window (`tobari://welcome`): pick DuckDuckGo, Brave, Startpage, Kagi, Ecosia, Google or Bing, appearance and privacy options |
 | Defaults | DuckDuckGo, no suggestions, no prediction, third-party cookies blocked, HTTPS-Only on |
-| Tobari pages | `tobari://about`, `tobari://blocking`, `tobari://bangs`, `tobari://welcome`, like `chrome://` |
+| Tobari pages | `tobari://about`, `tobari://blocking`, `tobari://bangs`, `tobari://ai`, `tobari://welcome`, like `chrome://` |
+| Switching | import cookies, bookmarks, history and the extension list from Chrome, Chromium, Brave, Edge, Vivaldi or Firefox; read-only, on this computer |
+| Tab groups | group tabs by site, automatically or on demand |
+| Local AI | summarize or ask about the page in a side panel, group tabs by topic; a Qwen3 model running on this computer through llama.cpp, downloaded only if you choose one |
 | Hardening | V8 optimizing compilers off by default (per-site "Fast JavaScript" switch), device APIs blocked, workers filtered too |
 | Phoning home | none on its own except weekly filter-list updates — measured, see SECURITY.md |
 | Sandbox | always on; never `--no-sandbox` |
@@ -48,8 +51,10 @@ Phase 1 — the browser — works end to end and is packaged. Not yet done:
 [docs/VALIDATION.md](docs/VALIDATION.md) still records **no go/pivot/stop
 decision**; Phase 1 was built under a waiver.
 
-The local AI assistant is planned for Phase 3 and is not in this build. Earlier
-AI work is kept on the `phase-3-ai` branch.
+The local AI (Ask AI, Organize with AI) shipped in 0.4.0, ahead of the phase
+plan, because it was asked for; its threat model is in
+[SECURITY.md](SECURITY.md#local-ai). The earlier, larger AI design is kept on
+the `phase-3-ai` branch.
 
 ## Install
 

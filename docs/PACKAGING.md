@@ -12,6 +12,28 @@
 
 Every format keeps Chromium's sandbox on. None ever passes `--no-sandbox`.
 
+## The AI engine
+
+Every format bundles llama.cpp's `llama-server` in `ai/` next to Tobari
+(`Contents/Resources/ai` on macOS), for the local AI (SECURITY.md § Local AI).
+It is built separately from the CMake build:
+
+```sh
+packaging/ai/build-llama.sh ~/.cache/tobari-dev/build   # stages <build>/ai
+```
+
+The script clones tag `b11053` once and builds the server with its shared
+libraries: on Linux the Vulkan backend plus one CPU backend per instruction-set
+level (`GGML_BACKEND_DL`, `GGML_CPU_ALL_VARIANTS`; the fastest one the machine
+supports is loaded at run time, and the CPU is used when there is no GPU); on
+macOS the Metal backend. `packaging/release.sh` refuses a build without it. A
+build without it still runs; `tobari://ai` says the engine is missing.
+
+The from-source Flatpak manifest builds the same tag in its `llama-server`
+module, with `SPIRV-Headers` (build-time only) for the Vulkan shaders.
+Verified on 2026-10-07: the module builds offline in the 26.08 SDK and the
+server finds both GPUs inside the runtime.
+
 ## Flatpak
 
 There are two manifests in `packaging/flatpak/`. Both produce the same app:

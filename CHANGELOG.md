@@ -7,6 +7,27 @@ names the commit it describes so it can be checked against `git log`.
 Numbers quoted here are the ones recorded at the time; the current figures and
 their caveats live in `BENCHMARKS.md`, `SECURITY.md` and `docs/DESIGN.md`.
 
+## 2026-10-07 — 0.4.0: import from other browsers, tab groups, local AI
+
+- **Import from another browser.** Toolbar menu → Import: cookies (so you stay
+  signed in), bookmarks (into a "From Chrome"-style folder on the bookmarks
+  bar), history and a list of your extensions with links to install them, from
+  Chrome, Chromium, Brave, Edge, Vivaldi (native or Flatpak) or Firefox.
+  Read-only: the other browser's files are copied and read, never changed.
+  Cookie keys come from the keyring (Linux) or Keychain (macOS) only for the
+  import. Passwords move through the other browser's CSV export; the page
+  explains how.
+- **Tab groups.** "Group tabs by site" in the toolbar menu, as a switch that
+  groups new tabs as you open them, or once with Group now. Ungroup removes
+  only the groups Tobari made.
+- **Local AI.** Ask AI opens a side panel that summarizes the page or answers
+  questions about it; Organize with AI sorts the window's tabs into groups by
+  topic. Both run a Qwen3 model on this computer through llama.cpp's server
+  (Vulkan on Linux, Metal on macOS), which starts on first use and stops after
+  ten idle minutes. `tobari://ai` downloads a model (0.6B, 4B or 30B-A3B),
+  checks it against a pinned SHA-256, and switches or deletes models. Nothing
+  is downloaded until you choose. Threat model in SECURITY.md.
+
 ## 2026-10-04 — 0.3.0: setup in its own window, `tobari://` pages
 
 - **Setup opens in its own window** over the browser, not as a tab: a

@@ -606,6 +606,7 @@ const ALLOWED_ORIGINS = [
   "https://easylist.to/",
   "https://github.com/uBlockOrigin/uAssets",
   "https://github.com/flatpak/flatpak-builder-tools",
+  "https://github.com/ggml-org/llama.cpp",
 ];
 
 function idsIn(html) {
@@ -631,7 +632,7 @@ async function verify() {
       if (tag.toLowerCase() === "link" && !/rel="(stylesheet|preload|icon)"/.test(m[0])) continue;
       if (/^(https?:)?\/\//i.test(value)) problems.push(`${url}: <${tag}> loads ${value}`);
     }
-    // Outbound links must be to the project, the filter list sources, or documentation.
+    // Outbound links must be to the project, the filter list sources, bundled software, or documentation.
     for (const m of html.matchAll(/<a\b[^>]*\shref="(https?:[^"]+)"/gi)) {
       if (!ALLOWED_ORIGINS.some((o) => m[1].startsWith(o))) problems.push(`${url}: outbound link to ${m[1]}`);
     }

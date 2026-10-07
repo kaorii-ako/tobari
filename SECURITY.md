@@ -225,16 +225,30 @@ What still happens, and when:
 - **The Chrome Web Store** is Google's site; visiting it is a normal visit.
 - **Spelling dictionaries.** If you turn on spell check for a language,
   Chromium downloads that language's dictionary once. Not measured.
+- **AI model downloads.** Only when you press Download in `tobari://ai`:
+  one file from `huggingface.co` (which redirects to its storage CDN), fetched
+  without cookies in a separate request context. See [Local AI](#local-ai).
 
 ## The toolbar extension and its bridge
 
 Two extensions ship inside Tobari with fixed keys and stable IDs: the new-tab
 page (`jfngkfgpblbmkkhalnefimbonoikdmjb`) and the blocking control
 (`lgfgpfedeaaahediodajihnoneonicaf`). Neither requests host access to web
-pages or injects content scripts. The blocking control holds the `tabs`
-permission so it can read the active tab's URL for the popup; that URL goes
-only to Tobari's own native code. Both extension pages run under a strict
+pages or injects content scripts. Both extension pages run under a strict
 content security policy (`script-src 'self'; object-src 'none'`).
+
+The toolbar extension's permissions, and what each is for:
+
+| permission | used for |
+|---|---|
+| `tabs` | the active tab's address for the popup; tab titles and addresses for grouping |
+| `tabGroups` | grouping tabs by site or by topic, and ungrouping the groups it made |
+| `bookmarks`, `history` | writing what you import from another browser; never read back or sent anywhere |
+| `sidePanel` | the Ask AI panel |
+| `offscreen`, `storage` | the badge counter; the group-by-site switch |
+
+Addresses and titles go only to Tobari's own native code over the bridge
+below.
 
 The blocking control talks to native code at `https://tobari.internal/`, which
 Tobari answers itself — the name never resolves on the network. It answers only
@@ -250,8 +264,8 @@ like an unknown host; the toolbar popup and badge are served.
 
 ## Tobari's own pages: `tobari://`
 
-`tobari://welcome`, `tobari://about`, `tobari://blocking` and `tobari://bangs`
-are served by the browser itself from files in the install, like
+`tobari://welcome`, `tobari://about`, `tobari://blocking`, `tobari://bangs` and
+`tobari://ai` are served by the browser itself from files in the install, like
 `chrome://` pages.
 
 - The scheme is registered as **display-isolated**: only the user (typing it)
@@ -261,8 +275,9 @@ are served by the browser itself from files in the install, like
   or of its API fails.
 - Each page reaches the browser through its own `/api/` path, answered only
   when the requesting frame is a `tobari://` page. The API can read and change
-  the setup choices, show filter-list state, unblock a site, and open a link
-  in the main window — only `http(s)` links and two `chrome://settings` pages.
+  the setup choices, show filter-list state, unblock a site, open a link
+  in the main window — only `http(s)` links and two `chrome://settings` pages —
+  and, on `tobari://ai` only, download, choose and delete AI models.
 - Pages are served with a strict content security policy (scripts and styles
   from the page only, no framing) and `X-Frame-Options: DENY`; file paths are
   restricted to plain names, so nothing outside the pages directory is served.
@@ -308,18 +323,83 @@ Chromium's sandbox is on in every build and every package. Tobari never passes
 - Anything an extension you install can do, it can do.
 - The engine-currency gap at the top of this page.
 
-## Planned: local AI (Phase 3)
+## Importing from another browser
 
-A future release adds an assistant that runs only on your machine through
-llama.cpp, with no cloud path of any kind. Its threat model, including the
-structural prompt-injection defence, will be documented here when it ships. It
-is not in this build.
+"Import" in the toolbar menu copies cookies, bookmarks, history and the list
+of installed extensions from Chrome, Chromium, Brave, Edge, Vivaldi (native or
+Flatpak) or Firefox, on this computer, when you ask.
+
+- **Read-only.** The other browser's databases are copied to a private
+  temporary directory and read there, so a running browser's locks do not
+  matter and nothing in its profile is ever written. The temporary copies are
+  deleted after each import.
+- **Cookie keys.** Chromium encrypts cookie values. To decrypt them Tobari
+  asks for that browser's key only when you import cookies: on Linux from the
+  Secret Service (GNOME Keyring, KWallet) — the "Chrome Safe Storage" item, or
+  for Flatpak browsers the item the desktop portal keeps for that app — and on
+  macOS from the Keychain ("Chrome Safe Storage"), where macOS asks you first.
+  On Linux, an unlocked keyring hands these items to any program running as
+  you without asking; that is how the keyring works, not something Tobari
+  changes. The key is used for that import and dropped.
+- **Flatpak.** The Flatpak build has read-only access to the other browsers'
+  profile folders (`~/.config/google-chrome`, `~/.mozilla`,
+  `~/.var/app/com.google.Chrome`, …) and may talk to the Secret Service, only
+  for this. Those permissions appear in the app's metadata.
+- **Passwords** are not imported directly; the import page explains how to
+  move them with the other browser's CSV export.
+- Extensions are not installed: you get a list of links to their store pages.
+- **Not verified:** cookies from Flatpak Chromium browsers that use the portal
+  key ("v12") are decrypted following Chromium's source, but no real profile
+  with such cookies was available to test against; Chrome 154's Flatpak still
+  uses the keyring key ("v11"), which was tested.
+
+## Local AI
+
+Ask AI (summarize the page, ask about it) and Organize with AI (group tabs by
+topic) run a language model **on this computer**, through
+[llama.cpp](https://github.com/ggml-org/llama.cpp)'s server, bundled with
+Tobari at tag `b11053`. There is no cloud path, no account and no telemetry.
+Nothing is downloaded or started until you choose a model in `tobari://ai`.
+
+- **Models.** Three Qwen3 models are offered (Apache-2.0), downloaded from
+  Hugging Face only when you press Download. Each file's SHA-256 is pinned in
+  Tobari; a download that does not match is deleted, never loaded. Models are
+  kept in Tobari's data folder (`models/`), and Delete removes them.
+- **The engine.** `llama-server` is started on first use and stopped after
+  ten idle minutes and when Tobari quits (on Linux the kernel also stops it if
+  Tobari crashes). It listens on `127.0.0.1` only, on a random port, and
+  refuses requests without a random 192-bit key that Tobari generates at each
+  start and never writes to disk. Its web interface is turned off. It runs as
+  you, outside Chromium's sandbox, like Tobari's own browser process, and it
+  parses the model file — one reason only hash-pinned files are loaded.
+- **What it sees.** For Ask AI: the visible text of the page in the tab you
+  asked about (up to about 14,000 characters), its title and address, and the
+  conversation in the panel. For Organize with AI: the titles and addresses of
+  the tabs in the window. Nothing is stored; the panel's conversations are
+  kept in memory while it is open.
+- **Who can use it.** Only the toolbar extension (page questions and
+  grouping) and `tobari://ai` (model management and a test chat). Web pages
+  cannot reach it — the same bridge rules as above, verified.
+- **Prompt injection.** Page text is untrusted: a page can contain text
+  written to steer the model. Tobari's defence is structural: the model has
+  no tools and can take no action. It cannot open pages, read other tabs,
+  run code or see cookies. Its reply is shown as plain text (never HTML). For
+  grouping, Tobari accepts only tab numbers that exist in the window and
+  group names; anything else in the reply is dropped. The worst a hostile page
+  can do is make the answer about that page wrong, so treat summaries as you
+  would any summary.
+- **Quality.** Small models make mistakes, and the 0.6B model often does.
+  The 4B model is the recommended one.
+- Available in the release downloads for Linux and macOS. A build made
+  without `packaging/ai/build-llama.sh` has no engine, and `tobari://ai` says
+  so.
 
 ## Verified
 
 Measured on Bazzite / Ryzen 5 9600X. Rows marked † were measured on CEF
 154.0.32 (Chromium 154.0.8037.58) on 2026-10-01 and not repeated; the rest on
-CEF 154.0.33 (Chromium 154.0.8037.94) on 2026-10-02.
+CEF 154.0.33 (Chromium 154.0.8037.94) on 2026-10-02, except the import and
+AI rows, measured on 2026-10-07.
 
 | check | result |
 |---|---|
@@ -341,6 +421,11 @@ CEF 154.0.33 (Chromium 154.0.8037.94) on 2026-10-02.
 | Sandbox, Flatpak | zypak SUID layer, seccomp-BPF: "adequately sandboxed"; Web Store offers "Add to Chrome" |
 | Flatpak † | blocker, bangs and both bundled extensions working; profile under `~/.var/app/dev.tobari.Browser/` |
 | Second launch with a URL | opened as a tab in the existing window |
+| Import from a Flatpak Chrome profile (throwaway, v11 cookies) | cookies decrypted exactly, flags and expiry kept; bookmark tree intact |
+| Import from a Firefox profile (synthetic) | cookies (container cookies skipped), bookmarks, history and extension list imported |
+| Local AI, Qwen3 0.6B, Linux (Vulkan, RX 6800 XT) | download matched its pinned hash; page summary and questions streamed; tab grouping returned valid groups; engine stopped when Tobari quit |
+| AI endpoints from a web page | fail like an unknown host |
+| AI model download from the toolbar extension | refused; only `tobari://ai` may download |
 
 ## Reporting
 
