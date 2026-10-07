@@ -6,7 +6,7 @@ pub async fn serve_async() -> anyhow::Result<()> {
         return setup_loop(missing).await;
     }
     let (_, manifest) = crate::models::load_manifest()?;
-    let entry = crate::models::default_model(&manifest)?.clone();
+    let entry = crate::models::selected_model(&manifest)?.clone();
     let model_path = crate::models::model_file_path(&entry);
     if !model_path.is_file() {
         anyhow::bail!("model file missing. Run `tobari-core download` first.");
@@ -59,15 +59,24 @@ async fn setup_loop(missing: Vec<String>) -> anyhow::Result<()> {
                 healthy: false,
                 missing: missing.clone(),
             },
-            HostRequest::InstallDeps => match crate::deps::install_missing().await {
-                Ok(()) => {
-                    crate::host::write_message(&HostResponse::Installed)?;
-                    return Ok(());
+            HostRequest::Models => {
+                let (_, manifest) = crate::models::load_manifest()?;
+                let active = crate::models::selected_model(&manifest)?.id.clone();
+                HostResponse::Models {
+                    models: crate::host::model_infos(&manifest, &active),
                 }
-                Err(e) => HostResponse::Error {
-                    message: format!("install failed: {e:#}"),
-                },
-            },
+            }
+            HostRequest::InstallDeps { model } => {
+                match crate::deps::install_missing(model.as_deref()).await {
+                    Ok(()) => {
+                        crate::host::write_message(&HostResponse::Installed)?;
+                        return Ok(());
+                    }
+                    Err(e) => HostResponse::Error {
+                        message: format!("install failed: {e:#}"),
+                    },
+                }
+            }
             _ => HostResponse::Error {
                 message: format!("setup required: missing {}", missing.join(", ")),
             },

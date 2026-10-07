@@ -11,7 +11,7 @@ pub fn missing() -> Vec<String> {
         out.push("llama-server".to_owned());
     }
     if let Ok((_, manifest)) = crate::models::load_manifest() {
-        if let Ok(m) = crate::models::default_model(&manifest) {
+        if let Ok(m) = crate::models::selected_model(&manifest) {
             if !crate::models::model_file_path(m).is_file() {
                 out.push(format!("model {} (~{} MB)", m.id, m.size_mb));
             }
@@ -20,8 +20,17 @@ pub fn missing() -> Vec<String> {
     out
 }
 
-/// CLI flow: list what is missing, ask, install.
-pub fn setup_interactive(assume_yes: bool) -> anyhow::Result<()> {
+/// CLI flow: pick a model, list what is missing, ask, install.
+/// `model` skips the menu; `assume_yes` skips both questions.
+pub fn setup_interactive(model: Option<String>, assume_yes: bool) -> anyhow::Result<()> {
+    let model = match model {
+        Some(id) => Some(id),
+        None if assume_yes => None,
+        None => Some(pick_model()?),
+    };
+    if let Some(id) = &model {
+        crate::models::save_selection(id)?;
+    }
     let need = missing();
     if need.is_empty() {
         println!("all dependencies present");
@@ -44,16 +53,69 @@ pub fn setup_interactive(assume_yes: bool) -> anyhow::Result<()> {
     tokio::runtime::Builder::new_current_thread()
         .enable_all()
         .build()?
-        .block_on(install_missing())
+        .block_on(install_missing(model.as_deref()))
 }
 
-pub async fn install_missing() -> anyhow::Result<()> {
+/// Installs llama-server if needed and downloads `model` (or the current
+/// selection), remembering it as the model `serve` loads.
+pub async fn install_missing(model: Option<&str>) -> anyhow::Result<()> {
+    let (_, manifest) = crate::models::load_manifest()?;
+    let m = match model {
+        Some(id) => manifest
+            .iter()
+            .find(|m| m.id == id)
+            .ok_or_else(|| anyhow::anyhow!("unknown model id {id}"))?,
+        None => crate::models::selected_model(&manifest)?,
+    };
     if !crate::paths::llama_bin().is_file() {
         install_llama().await?;
     }
+    crate::download::download_verified(m).await?;
+    crate::models::save_selection(&m.id)
+}
+
+/// Numbered model menu on the terminal; Enter keeps the current pick.
+fn pick_model() -> anyhow::Result<String> {
     let (_, manifest) = crate::models::load_manifest()?;
-    let m = crate::models::default_model(&manifest)?;
-    crate::download::download_verified(m).await
+    let current = crate::models::selected_model(&manifest)?.id.clone();
+    eprintln!("Choose a model:");
+    for (i, m) in manifest.iter().enumerate() {
+        let mark = if m.id == current { "*" } else { " " };
+        let have = if crate::models::model_file_path(m).is_file() {
+            ", downloaded"
+        } else {
+            ""
+        };
+        eprintln!(
+            "{mark} {}) {}  ~{} MB, {}{have}  {}",
+            i + 1,
+            m.id,
+            m.size_mb,
+            m.license,
+            m.about
+        );
+    }
+    loop {
+        print!("Model [Enter = {current}]: ");
+        std::io::stdout().flush()?;
+        let mut answer = String::new();
+        if std::io::stdin().read_line(&mut answer)? == 0 {
+            return Ok(current);
+        }
+        let answer = answer.trim();
+        if answer.is_empty() {
+            return Ok(current);
+        }
+        if let Some(m) = answer
+            .parse::<usize>()
+            .ok()
+            .and_then(|n| manifest.get(n.wrapping_sub(1)))
+            .or_else(|| manifest.iter().find(|m| m.id == answer))
+        {
+            return Ok(m.id.clone());
+        }
+        eprintln!("not a choice: {answer}");
+    }
 }
 
 fn asset_suffix() -> anyhow::Result<String> {

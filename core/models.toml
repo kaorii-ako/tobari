@@ -1,9 +1,53 @@
+# sha256 values are the Hugging Face LFS digests for each file.
+# The sidecar refuses to download or load a file that does not match.
+
 [[models]]
 id = "qwen3-4b-instruct-2507-q4_k_m"
+about = "Balanced default, good at most tasks"
 repo = "unsloth/Qwen3-4B-Instruct-2507-GGUF"
 file = "Qwen3-4B-Instruct-2507-Q4_K_M.gguf"
-sha256 = "PENDING: replaced with the real digest before any release. Run `tobari-core sha <file>` after downloading and pin the output here. The sidecar refuses to load while this is unpinned."
+sha256 = "3605803b982cb64aead44f6c1b2ae36e3acdb41d8e46c8a94c6533bc4c67e597"
 license = "Apache-2.0"
-size_mb = 2600
+size_mb = 2381
 ctx_default = 8192
 default = true
+
+[[models]]
+id = "qwen3-1.7b-q4_k_m"
+about = "Small and fast, for older or CPU-only machines"
+repo = "unsloth/Qwen3-1.7B-GGUF"
+file = "Qwen3-1.7B-Q4_K_M.gguf"
+sha256 = "b139949c5bd74937ad8ed8c8cf3d9ffb1e99c866c823204dc42c0d91fa181897"
+license = "Apache-2.0"
+size_mb = 1056
+ctx_default = 8192
+
+[[models]]
+id = "qwen3-8b-q4_k_m"
+about = "Strongest answers, needs ~8 GB of VRAM"
+repo = "unsloth/Qwen3-8B-GGUF"
+file = "Qwen3-8B-Q4_K_M.gguf"
+sha256 = "120307ba529eb2439d6c430d94104dabd578497bc7bfe7e322b5d9933b449bd4"
+license = "Apache-2.0"
+size_mb = 4794
+ctx_default = 8192
+
+[[models]]
+id = "phi-4-mini-instruct-q4_k_m"
+about = "Microsoft Phi-4 mini, strong at reasoning for its size"
+repo = "unsloth/Phi-4-mini-instruct-GGUF"
+file = "Phi-4-mini-instruct-Q4_K_M.gguf"
+sha256 = "88c00229914083cd112853aab84ed51b87bdf6b9ce42f532d8c85c7c63b1730a"
+license = "MIT"
+size_mb = 2376
+ctx_default = 8192
+
+[[models]]
+id = "gemma-3-4b-it-q4_k_m"
+about = "Google Gemma 3 4B, good multilingual and translation"
+repo = "unsloth/gemma-3-4b-it-GGUF"
+file = "gemma-3-4b-it-Q4_K_M.gguf"
+sha256 = "04a43a22e8d2003deda5acc262f68ec1005fa76c735a9962a8c77042a74a7d19"
+license = "Gemma"
+size_mb = 2374
+ctx_default = 8192

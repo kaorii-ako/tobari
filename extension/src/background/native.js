@@ -13,9 +13,12 @@ function ensurePort() {
                 streamTarget = null;
             return;
         }
-        for (let i = waiters.length - 1; i >= 0; i--) {
-            if (waiters[i](msg))
+        // The host answers in order, so the oldest matching waiter is the one.
+        for (let i = 0; i < waiters.length; i++) {
+            if (waiters[i](msg)) {
                 waiters.splice(i, 1);
+                break;
+            }
         }
     });
     port.onDisconnect.addListener(() => {
@@ -24,6 +27,8 @@ function ensurePort() {
     });
     return port;
 }
+// Reply type each request waits for, so concurrent requests can't swap answers.
+const REPLY = { status: "status", models: "models", install_deps: "installed" };
 function request(req, timeoutMs = 120000) {
     return new Promise((resolve, reject) => {
         try {
@@ -40,7 +45,7 @@ function request(req, timeoutMs = 120000) {
             reject(new Error("tobari-core did not answer. Is the sidecar installed?"));
         }, timeoutMs);
         function handler(msg) {
-            if (msg.type === "chunk")
+            if (msg.type !== REPLY[req.type] && msg.type !== "error")
                 return false;
             clearTimeout(timer);
             resolve(msg);
@@ -57,10 +62,16 @@ export async function getStatus() {
 }
 // Downloads llama-server and the model; the host exits afterwards and the
 // next request respawns it fully set up.
-export async function installDeps() {
-    const res = await request({ type: "install_deps" }, 60 * 60 * 1000);
+export async function installDeps(model) {
+    const res = await request({ type: "install_deps", model }, 60 * 60 * 1000);
     if (res.type === "error")
         throw new Error(res.message);
+}
+export async function getModels() {
+    const res = await request({ type: "models" });
+    if (res.type !== "models")
+        throw new Error(res.type === "error" ? res.message : "unexpected reply");
+    return res.models;
 }
 export function chat(messages, onChunk) {
     streamTarget = onChunk;

@@ -33,6 +33,9 @@ enum Cmd {
     Uninstall,
     /// Download llama-server and the default model if missing (asks first).
     Setup {
+        /// Model id from models.toml; skips the menu.
+        #[arg(long)]
+        model: Option<String>,
         #[arg(short, long)]
         yes: bool,
     },
@@ -53,9 +56,9 @@ fn main() -> anyhow::Result<()> {
         Cmd::Status => run_status(),
         Cmd::Install { ext_id } => {
             install::install(&ext_id)?;
-            deps::setup_interactive(false)
+            deps::setup_interactive(None, false)
         }
-        Cmd::Setup { yes } => deps::setup_interactive(yes),
+        Cmd::Setup { model, yes } => deps::setup_interactive(model, yes),
         Cmd::Uninstall => install::uninstall(),
         Cmd::Serve => serve(),
     }
@@ -69,7 +72,7 @@ fn run_download(model: Option<String>) -> anyhow::Result<()> {
         let (_, models) = models::load_manifest()?;
         let want = match model {
             Some(id) => id,
-            None => models::default_model(&models)?.id.clone(),
+            None => models::selected_model(&models)?.id.clone(),
         };
         let entry = models
             .iter()

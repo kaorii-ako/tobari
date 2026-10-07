@@ -1,4 +1,4 @@
-import type { HostRequest, HostResponse } from "../protocol.js";
+import type { HostRequest, HostResponse, ModelInfo } from "../protocol.js";
 
 const HOST_NAME = "dev.tobari.core";
 
@@ -15,8 +15,12 @@ function ensurePort(): chrome.runtime.Port {
       if (msg.done) streamTarget = null;
       return;
     }
-    for (let i = waiters.length - 1; i >= 0; i--) {
-      if (waiters[i](msg)) waiters.splice(i, 1);
+    // The host answers in order, so the oldest matching waiter is the one.
+    for (let i = 0; i < waiters.length; i++) {
+      if (waiters[i](msg)) {
+        waiters.splice(i, 1);
+        break;
+      }
     }
   });
   port.onDisconnect.addListener(() => {
@@ -25,6 +29,9 @@ function ensurePort(): chrome.runtime.Port {
   });
   return port;
 }
+
+// Reply type each request waits for, so concurrent requests can't swap answers.
+const REPLY: Record<string, HostResponse["type"]> = { status: "status", models: "models", install_deps: "installed" };
 
 function request(req: HostRequest, timeoutMs = 120000): Promise<HostResponse> {
   return new Promise((resolve, reject) => {
@@ -40,7 +47,7 @@ function request(req: HostRequest, timeoutMs = 120000): Promise<HostResponse> {
       reject(new Error("tobari-core did not answer. Is the sidecar installed?"));
     }, timeoutMs);
     function handler(msg: HostResponse): boolean {
-      if (msg.type === "chunk") return false;
+      if (msg.type !== REPLY[req.type] && msg.type !== "error") return false;
       clearTimeout(timer);
       resolve(msg);
       return true;
@@ -57,9 +64,15 @@ export async function getStatus(): Promise<HostResponse> {
 
 // Downloads llama-server and the model; the host exits afterwards and the
 // next request respawns it fully set up.
-export async function installDeps(): Promise<void> {
-  const res = await request({ type: "install_deps" }, 60 * 60 * 1000);
+export async function installDeps(model?: string): Promise<void> {
+  const res = await request({ type: "install_deps", model }, 60 * 60 * 1000);
   if (res.type === "error") throw new Error(res.message);
+}
+
+export async function getModels(): Promise<ModelInfo[]> {
+  const res = await request({ type: "models" });
+  if (res.type !== "models") throw new Error(res.type === "error" ? res.message : "unexpected reply");
+  return res.models;
 }
 
 export function chat(

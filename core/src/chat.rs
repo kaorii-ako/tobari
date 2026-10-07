@@ -33,14 +33,7 @@ pub async fn chat_loop(
                 crate::host::write_message(&resp)?;
             }
             crate::host::HostRequest::Models => {
-                let mut infos = Vec::new();
-                for m in manifest {
-                    infos.push(crate::host::ModelInfo {
-                        id: m.id.clone(),
-                        downloaded: crate::models::model_file_path(m).is_file(),
-                        active: m.id == active,
-                    });
-                }
+                let infos = crate::host::model_infos(manifest, &active);
                 crate::host::write_message(&crate::host::HostResponse::Models { models: infos })?;
             }
             crate::host::HostRequest::SetModel { id } => {
@@ -49,7 +42,7 @@ pub async fn chat_loop(
                     message: "model switching requires a restart in Phase 1".to_owned(),
                 })?;
             }
-            crate::host::HostRequest::InstallDeps => {
+            crate::host::HostRequest::InstallDeps { .. } => {
                 crate::host::write_message(&crate::host::HostResponse::Installed)?;
             }
             crate::host::HostRequest::Chat { messages, stream } => {

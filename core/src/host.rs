@@ -19,7 +19,10 @@ pub enum HostRequest {
     #[serde(rename = "set_model")]
     SetModel { id: String },
     #[serde(rename = "install_deps")]
-    InstallDeps,
+    InstallDeps {
+        #[serde(default)]
+        model: Option<String>,
+    },
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
@@ -53,6 +56,8 @@ pub enum HostResponse {
 #[derive(Debug, Serialize)]
 pub struct ModelInfo {
     pub id: String,
+    pub about: String,
+    pub size_mb: u64,
     pub downloaded: bool,
     pub active: bool,
 }
@@ -98,4 +103,17 @@ pub fn manifest_json(host_path: &str) -> String {
         ),
         path = host_path.replace('\\', "\\\\").replace('"', "\\\"")
     )
+}
+
+pub fn model_infos(manifest: &[crate::models::ModelEntry], active: &str) -> Vec<ModelInfo> {
+    manifest
+        .iter()
+        .map(|m| ModelInfo {
+            id: m.id.clone(),
+            about: m.about.clone(),
+            size_mb: m.size_mb,
+            downloaded: crate::models::model_file_path(m).is_file(),
+            active: m.id == active,
+        })
+        .collect()
 }

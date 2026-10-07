@@ -1,4 +1,4 @@
-import { chat, getStatus, installDeps } from "../background/native.js";
+import { chat, getModels, getStatus, installDeps } from "../background/native.js";
 import { parseCookies } from "./cookies.js";
 const log = document.getElementById("log");
 const form = document.getElementById("form");
@@ -16,7 +16,7 @@ async function refreshStatus() {
     try {
         const s = await getStatus();
         if (s.type === "status" && s.missing?.length) {
-            showSetup(s.missing);
+            void showSetup(s.missing);
             statusEl.textContent = "setup needed";
             return;
         }
@@ -32,19 +32,31 @@ async function refreshStatus() {
 const setupEl = document.getElementById("setup");
 const setupText = document.getElementById("setup-text");
 const setupGo = document.getElementById("setup-go");
+const setupModel = document.getElementById("setup-model");
 let installing = false;
-function showSetup(missing) {
-    if (installing)
+async function showSetup(missing) {
+    if (installing || !setupEl.hidden)
         return;
-    setupText.textContent = `Tobari needs to download: ${missing.join(", ")}. Install now?`;
+    setupText.textContent = `Tobari needs to download: ${missing.join(", ")}. Pick a model and install:`;
     setupEl.hidden = false;
+    try {
+        const models = await getModels();
+        setupModel.replaceChildren(...models.map((m) => {
+            const label = `${m.id} · ${(m.size_mb / 1024).toFixed(1)} GB${m.downloaded ? " · downloaded" : ""} — ${m.about}`;
+            return new Option(label, m.id, m.active, m.active);
+        }));
+    }
+    catch {
+        setupModel.hidden = true; // host picks its default
+    }
 }
 setupGo.addEventListener("click", async () => {
     installing = true;
     setupGo.disabled = true;
+    setupModel.disabled = true;
     setupText.textContent = "Downloading… this can take a while.";
     try {
-        await installDeps();
+        await installDeps(setupModel.hidden ? undefined : setupModel.value);
         setupEl.hidden = true;
     }
     catch (e) {
@@ -53,6 +65,7 @@ setupGo.addEventListener("click", async () => {
     finally {
         installing = false;
         setupGo.disabled = false;
+        setupModel.disabled = false;
         void refreshStatus();
     }
 });

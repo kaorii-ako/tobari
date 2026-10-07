@@ -33,7 +33,9 @@ cargo build --release -p tobari-core
 
 `install` (or `tobari-core setup`) lists what is missing, asks, then
 downloads a checksum-verified llama-server build from llama.cpp releases
-and the default model. The sidebar shows the same prompt if you skip it.
+and the model you pick from a menu (`setup --model <id>` skips it; ids are
+in `core/models.toml`). The sidebar shows the same prompt and model picker
+if you skip it.
 
 Then load `extension/dist/` unpacked in Chrome, Chromium, or Brave and
 open the Tobari sidebar. Under "Switch & tabs": import cookies

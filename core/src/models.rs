@@ -4,6 +4,8 @@ use std::path::PathBuf;
 #[derive(Debug, Clone, Deserialize)]
 pub struct ModelEntry {
     pub id: String,
+    #[serde(default)]
+    pub about: String,
     pub repo: String,
     pub file: String,
     pub sha256: String,
@@ -35,6 +37,22 @@ pub fn default_model(models: &[ModelEntry]) -> anyhow::Result<&ModelEntry> {
         .find(|m| m.default)
         .or_else(|| models.first())
         .ok_or_else(|| anyhow::anyhow!("models.toml contains no models"))
+}
+
+/// The model the user picked at install time, else the manifest default.
+pub fn selected_model(models: &[ModelEntry]) -> anyhow::Result<&ModelEntry> {
+    let picked = std::fs::read_to_string(crate::paths::selection_path()).unwrap_or_default();
+    match models.iter().find(|m| m.id == picked.trim()) {
+        Some(m) => Ok(m),
+        None => default_model(models),
+    }
+}
+
+pub fn save_selection(id: &str) -> anyhow::Result<()> {
+    let path = crate::paths::selection_path();
+    std::fs::create_dir_all(path.parent().unwrap())?;
+    std::fs::write(path, id)?;
+    Ok(())
 }
 
 pub fn model_file_path(m: &ModelEntry) -> PathBuf {

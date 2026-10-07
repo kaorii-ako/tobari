@@ -56,6 +56,10 @@ pub fn manifest_path() -> PathBuf {
     models_dir().join("models.toml")
 }
 
+pub fn selection_path() -> PathBuf {
+    config_dir().join("model")
+}
+
 pub fn llama_dir() -> PathBuf {
     models_dir().with_file_name("llama")
 }

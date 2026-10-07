@@ -46,6 +46,13 @@ body {
   font-size: 13px;
 }
 .banner[hidden] { display: none; }
+.banner select {
+  background: var(--bg);
+  color: var(--text);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 4px;
+}
 .tools summary { cursor: pointer; color: var(--dim); }
 .tools .row { display: flex; flex-wrap: wrap; gap: 6px; }
 .status { font-family: var(--mono); font-size: 11px; color: var(--dim); }
