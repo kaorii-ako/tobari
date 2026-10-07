@@ -11,6 +11,7 @@
 #include "bangs.h"
 #include "chrome_client.h"
 #include "filters_update.h"
+#include "importer.h"
 #include "onboarding.h"
 #include "schemes.h"
 #include "welcome_window.h"
@@ -67,8 +68,11 @@ class BridgeHandler : public CefResourceHandler {
  public:
   using Compute = std::function<std::string()>;
 
-  BridgeHandler(int status, std::string origin, Compute compute)
-      : status_(status), origin_(std::move(origin)), compute_(std::move(compute)) {}
+  // |thread|: where |compute| runs. The UI thread for anything touching
+  // preferences or content settings; TID_FILE_USER_BLOCKING for work that
+  // waits on disk or the keyring (imports).
+  BridgeHandler(int status, std::string origin, Compute compute, cef_thread_id_t thread = TID_UI)
+      : status_(status), origin_(std::move(origin)), compute_(std::move(compute)), thread_(thread) {}
 
   bool Open(CefRefPtr<CefRequest> request, bool& handle_request,
             CefRefPtr<CefCallback> callback) override {
@@ -78,7 +82,7 @@ class BridgeHandler : public CefResourceHandler {
       return true;
     }
     CefRefPtr<BridgeHandler> self(this);
-    CefPostTask(TID_UI, base::BindOnce(
+    CefPostTask(thread_, base::BindOnce(
         [](CefRefPtr<BridgeHandler> h, CefRefPtr<CefCallback> cb) {
           std::string body = h->compute_();
           {
@@ -127,6 +131,7 @@ class BridgeHandler : public CefResourceHandler {
   const int status_;
   const std::string origin_;
   const Compute compute_;
+  const cef_thread_id_t thread_;
   std::mutex mutex_;
   std::string body_;
   size_t offset_ = 0;
@@ -279,6 +284,17 @@ class ShieldFactory : public CefSchemeHandlerFactory {
       };
     } else if (path == "/setup/state") {
       compute = [] { return Serialize(SetupState()); };
+    } else if (path == "/import/sources") {
+      return new BridgeHandler(200, origin, [] { return ImportSources(); }, TID_FILE_USER_BLOCKING);
+    } else if (path == "/import/cookies") {
+      const std::string source = in->GetString("source").ToString();
+      return new BridgeHandler(200, origin, [source] { return ImportCookies(source); },
+                               TID_FILE_USER_BLOCKING);
+    } else if (path == "/import/bookmarks" || path == "/import/history" || path == "/import/extensions") {
+      const std::string source = in->GetString("source").ToString();
+      const std::string op = path.substr(strlen("/import/"));
+      return new BridgeHandler(200, origin, [op, source] { return ImportData(op, source); },
+                               TID_FILE_USER_BLOCKING);
     } else if (path == "/stats") {
       compute = [] { return Serialize(Stats()); };
     } else if (path == "/update") {
@@ -351,7 +367,8 @@ CefRefPtr<CefResourceHandler> ServeFile(const std::string& file, int status) {
 // Links a tobari:// page may open, always in a tab of the main window: web
 // pages, and the two Chromium settings pages setup points at.
 bool OpenableUrl(const std::string& url) {
-  return IsWebUrl(url) || url == "chrome://settings/importData" || url == "chrome://settings/";
+  return IsWebUrl(url) || url == "chrome://settings/importData" || url == "chrome://settings/" ||
+         url == std::string(kShieldOrigin) + "/import.html";
 }
 
 CefRefPtr<CefDictionaryValue> About() {

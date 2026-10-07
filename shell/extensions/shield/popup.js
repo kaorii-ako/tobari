@@ -80,6 +80,11 @@ el("setup").addEventListener("click", async () => {
   window.close();
 });
 
+el("import").addEventListener("click", () => {
+  chrome.tabs.create({ url: chrome.runtime.getURL("import.html") });
+  window.close();
+});
+
 el("update").addEventListener("click", async () => {
   paint(null, await api("/update"));
   const poll = setInterval(async () => {

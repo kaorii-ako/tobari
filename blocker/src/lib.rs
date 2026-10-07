@@ -1,4 +1,6 @@
-use std::ffi::{c_char, c_int, CStr};
+mod import;
+
+use std::ffi::{c_char, c_int, CStr, CString};
 use std::os::raw::c_void;
 use std::ptr;
 
@@ -106,4 +108,22 @@ pub extern "C" fn tobari_registrable_domain(host: *const c_char, out: *mut c_cha
         *out.add(bytes.len()) = 0;
     }
     bytes.len()
+}
+
+/// Runs one import operation (see import.rs): "sources", or "cookies",
+/// "bookmarks", "history", "extensions" for a source id from "sources".
+/// Returns a NUL-terminated JSON string to free with tobari_free_string.
+#[no_mangle]
+pub extern "C" fn tobari_import(op: *const c_char, arg: *const c_char) -> *mut c_char {
+    let op = cstr(op).unwrap_or_default();
+    let arg = cstr(arg).unwrap_or_default();
+    let out = import::run(&op, &arg).to_string();
+    CString::new(out).map(CString::into_raw).unwrap_or(ptr::null_mut())
+}
+
+#[no_mangle]
+pub extern "C" fn tobari_free_string(s: *mut c_char) {
+    if !s.is_null() {
+        unsafe { drop(CString::from_raw(s)) };
+    }
 }

@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Import · Tobari</title>
+<link rel="stylesheet" href="tokens.css">
+<link rel="stylesheet" href="import.css">
+</head>
+<body>
+<main>
+  <header class="head">
+    <img src="icons/128.png" width="40" height="40" alt="">
+    <div>
+      <h1>Bring your things to Tobari</h1>
+      <p>Copy what you need from the browser you are leaving. Nothing in that browser is changed, and nothing leaves this computer.</p>
+    </div>
+  </header>
+
+  <section class="card" aria-labelledby="from-title">
+    <h2 id="from-title">From</h2>
+    <div class="sources" role="radiogroup" aria-labelledby="from-title" data-sources>
+      <p class="muted">Looking for other browsers…</p>
+    </div>
+  </section>
+
+  <section class="card" aria-labelledby="what-title">
+    <h2 id="what-title">What</h2>
+    <label class="opt"><input type="checkbox" data-what="cookies" checked><span><strong>Cookies and sign-ins</strong><small>Stay signed in to the sites you use. Reading them needs the other browser's key from your keyring; your system may ask to unlock it.</small></span></label>
+    <label class="opt"><input type="checkbox" data-what="bookmarks" checked><span><strong>Bookmarks</strong><small>Into a folder on the bookmarks bar named after the browser.</small></span></label>
+    <label class="opt"><input type="checkbox" data-what="history" checked><span><strong>History</strong><small>The last 5,000 pages, so the address bar suggests them.</small></span></label>
+    <label class="opt"><input type="checkbox" data-what="extensions" checked><span><strong>Extensions</strong><small>A list of what you had, each one a click away in the Chrome Web Store.</small></span></label>
+    <div class="actions">
+      <button class="btn btn-primary" type="button" data-start disabled>Import</button>
+      <span class="muted" data-status></span>
+    </div>
+  </section>
+
+  <section class="card" data-results hidden aria-live="polite">
+    <h2>Done</h2>
+    <ul class="results" data-result-list></ul>
+    <div data-ext-wrap hidden>
+      <h3>Your extensions</h3>
+      <ul class="ext-list" data-ext-list></ul>
+    </div>
+  </section>
+
+  <section class="card" aria-labelledby="pw-title">
+    <h2 id="pw-title">Passwords</h2>
+    <p>Chromium keeps passwords in a store only it can write to, so they come across through Chromium's own importer:</p>
+    <ol class="steps">
+      <li><strong>From Chrome, Brave, Edge or Vivaldi:</strong> in that browser open Settings → Passwords → Export passwords to save a CSV file, then <button class="link" type="button" data-open="chrome://password-manager/settings">open Tobari's password import</button> and choose the file. Delete the CSV afterwards; it is not encrypted.</li>
+      <li><strong>From Firefox:</strong> <button class="link" type="button" data-open="chrome://settings/importData">open Chromium's importer</button> and pick Firefox.</li>
+    </ol>
+  </section>
+</main>
+<script type="module" src="import.js"></script>
+</body>
+</html>

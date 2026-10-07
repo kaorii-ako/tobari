@@ -18,7 +18,9 @@
   },
   "permissions": [
     "tabs",
-    "offscreen"
+    "offscreen",
+    "bookmarks",
+    "history"
   ],
   "host_permissions": [
     "https://tobari.internal/*"

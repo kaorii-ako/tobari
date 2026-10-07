@@ -17,6 +17,10 @@ int tobari_blocker_should_block(const void* handle,
                                 const char* method);
 size_t tobari_registrable_domain(const char* host, char* out, size_t cap);
 
+/* Import from another browser; returns JSON to release with tobari_free_string. */
+char* tobari_import(const char* op, const char* arg);
+void tobari_free_string(char* s);
+
 #ifdef __cplusplus
 }
 #endif

@@ -28,6 +28,20 @@ finish-args:
   - --talk-name=org.freedesktop.FileManager1
   - --talk-name=org.freedesktop.ScreenSaver
   - --talk-name=org.freedesktop.secrets
+  # Read-only access to other browsers' profiles, for "Import from another
+  # browser" (cookies, bookmarks, history, extension list). Never written.
+  - --filesystem=xdg-config/google-chrome:ro
+  - --filesystem=xdg-config/chromium:ro
+  - --filesystem=xdg-config/BraveSoftware:ro
+  - --filesystem=xdg-config/microsoft-edge:ro
+  - --filesystem=xdg-config/vivaldi:ro
+  - --filesystem=~/.mozilla:ro
+  - --filesystem=~/.var/app/com.google.Chrome:ro
+  - --filesystem=~/.var/app/org.chromium.Chromium:ro
+  - --filesystem=~/.var/app/com.brave.Browser:ro
+  - --filesystem=~/.var/app/com.microsoft.Edge:ro
+  - --filesystem=~/.var/app/com.vivaldi.Vivaldi:ro
+  - --filesystem=~/.var/app/org.mozilla.firefox:ro
   - --system-talk-name=org.freedesktop.UPower
   - --own-name=org.mpris.MediaPlayer2.chromium.*
 

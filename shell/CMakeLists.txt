@@ -60,6 +60,7 @@ set(TOBARI_SRCS
   src/chrome_client.cc
   src/defaults.cc
   src/filters_update.cc
+  src/importer.cc
   src/onboarding.cc
   src/paths.cc
   src/schemes.cc
