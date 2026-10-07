@@ -37,6 +37,17 @@ body {
   color: #0c0d14;
   font-weight: 800;
 }
+.banner, .tools {
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 13px;
+}
+.banner[hidden] { display: none; }
+.tools summary { cursor: pointer; color: var(--dim); }
+.tools .row { display: flex; flex-wrap: wrap; gap: 6px; }
 .status { font-family: var(--mono); font-size: 11px; color: var(--dim); }
 .log { flex: 1; overflow-y: auto; padding: 14px; display: flex; flex-direction: column; gap: 10px; }
 .msg { padding: 10px 12px; border-radius: 12px; border: 1px solid var(--line); background: var(--panel); white-space: pre-wrap; }

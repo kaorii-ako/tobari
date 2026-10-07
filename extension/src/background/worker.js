@@ -64,3 +64,42 @@ async function ask(prompt) {
     });
     return full;
 }
+// Auto tab islands: once two ungrouped tabs in a window share a site, put
+// them in a group named after it. Tabs the user grouped or pinned are left alone.
+const COLORS = ["blue", "red", "yellow", "green", "pink", "purple", "cyan", "orange"];
+function siteOf(url) {
+    if (!url || !/^https?:/.test(url))
+        return null;
+    return new URL(url).hostname.replace(/^www\./, "");
+}
+function colorFor(site) {
+    let h = 0;
+    for (const ch of site)
+        h = (h * 31 + ch.charCodeAt(0)) | 0;
+    return COLORS[Math.abs(h) % COLORS.length];
+}
+async function island(tab) {
+    const { autogroup } = await chrome.storage.local.get({ autogroup: true });
+    const site = siteOf(tab.url);
+    if (!autogroup || !site || tab.pinned || tab.id === undefined || tab.groupId !== chrome.tabGroups.TAB_GROUP_ID_NONE)
+        return;
+    const groups = await chrome.tabGroups.query({ windowId: tab.windowId, title: site });
+    if (groups.length > 0) {
+        await chrome.tabs.group({ groupId: groups[0].id, tabIds: tab.id });
+        return;
+    }
+    const peers = (await chrome.tabs.query({ windowId: tab.windowId, pinned: false }))
+        .filter((t) => t.groupId === chrome.tabGroups.TAB_GROUP_ID_NONE && siteOf(t.url) === site)
+        .map((t) => t.id);
+    if (peers.length < 2)
+        return;
+    const groupId = await chrome.tabs.group({ tabIds: peers, createProperties: { windowId: tab.windowId } });
+    await chrome.tabGroups.update(groupId, { title: site, color: colorFor(site), collapsed: false });
+}
+// Serialized so two tabs loading at once don't each create a group.
+let islandQueue = Promise.resolve();
+chrome.tabs.onUpdated.addListener((_id, change, tab) => {
+    if (change.status !== "complete")
+        return;
+    islandQueue = islandQueue.then(() => island(tab)).catch(() => { });
+});

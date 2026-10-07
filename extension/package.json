@@ -4,7 +4,8 @@
   "private": true,
   "scripts": {
     "build": "tsc && node scripts/assemble.mjs",
-    "watch": "tsc --watch"
+    "watch": "tsc --watch",
+    "test": "tsc && node scripts/test-cookies.mjs"
   },
   "devDependencies": {
     "typescript": "^5.5.0",

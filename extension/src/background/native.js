@@ -24,7 +24,7 @@ function ensurePort() {
     });
     return port;
 }
-function request(req) {
+function request(req, timeoutMs = 120000) {
     return new Promise((resolve, reject) => {
         try {
             ensurePort().postMessage(req);
@@ -38,7 +38,7 @@ function request(req) {
             if (i >= 0)
                 waiters.splice(i, 1);
             reject(new Error("tobari-core did not answer. Is the sidecar installed?"));
-        }, 120000);
+        }, timeoutMs);
         function handler(msg) {
             if (msg.type === "chunk")
                 return false;
@@ -54,6 +54,13 @@ export async function getStatus() {
     if (res.type === "error")
         throw new Error(res.message);
     return res;
+}
+// Downloads llama-server and the model; the host exits afterwards and the
+// next request respawns it fully set up.
+export async function installDeps() {
+    const res = await request({ type: "install_deps" }, 60 * 60 * 1000);
+    if (res.type === "error")
+        throw new Error(res.message);
 }
 export function chat(messages, onChunk) {
     streamTarget = onChunk;

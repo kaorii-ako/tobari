@@ -14,7 +14,7 @@ impl Supervised {
         model_path: &std::path::Path,
         port: u16,
         token: &str,
-        backend: Backend,
+        _backend: Backend,
         ctx: u32,
         ngl: u32,
     ) -> anyhow::Result<Self> {
@@ -38,12 +38,8 @@ impl Supervised {
             .arg("--n-gpu-layers")
             .arg(ngl.to_string())
             .stdin(Stdio::null())
-            .stdout(Stdio::inherit())
+            .stdout(Stdio::from(std::io::stderr()))
             .stderr(Stdio::inherit());
-        let flag = crate::backend::llama_backend_flag(backend);
-        if !flag.is_empty() {
-            cmd.arg(flag);
-        }
         #[cfg(target_os = "linux")]
         unsafe {
             use std::os::unix::process::CommandExt;

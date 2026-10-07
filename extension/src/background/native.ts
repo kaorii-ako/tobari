@@ -26,7 +26,7 @@ function ensurePort(): chrome.runtime.Port {
   return port;
 }
 
-function request(req: HostRequest): Promise<HostResponse> {
+function request(req: HostRequest, timeoutMs = 120000): Promise<HostResponse> {
   return new Promise((resolve, reject) => {
     try {
       ensurePort().postMessage(req);
@@ -38,7 +38,7 @@ function request(req: HostRequest): Promise<HostResponse> {
       const i = waiters.indexOf(handler);
       if (i >= 0) waiters.splice(i, 1);
       reject(new Error("tobari-core did not answer. Is the sidecar installed?"));
-    }, 120000);
+    }, timeoutMs);
     function handler(msg: HostResponse): boolean {
       if (msg.type === "chunk") return false;
       clearTimeout(timer);
@@ -53,6 +53,13 @@ export async function getStatus(): Promise<HostResponse> {
   const res = await request({ type: "status" });
   if (res.type === "error") throw new Error(res.message);
   return res;
+}
+
+// Downloads llama-server and the model; the host exits afterwards and the
+// next request respawns it fully set up.
+export async function installDeps(): Promise<void> {
+  const res = await request({ type: "install_deps" }, 60 * 60 * 1000);
+  if (res.type === "error") throw new Error(res.message);
 }
 
 export function chat(

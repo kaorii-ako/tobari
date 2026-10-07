@@ -5,10 +5,19 @@
   "description": "A browser that closes over the window. Local-only AI sidebar.",
   "minimum_chrome_version": "116",
   "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAq/rayQZb7dwNBKIhn/3TlWP/d78RYTce6WEdx3SGZj9e2o/W77HMFGQ2kfphWRR9A/0U6Lg//MfvQZ3uRQYK7gUqA6NA0TWE4kGoQ9aZ8S0DQjCZ8SLOeBSHCJcYbDoTX44XbnMnnrLJ9AyYtejKHK4qHs13GThWVXPySkel91VeOGO5Emqyz/+1z4qGHeKlHWnQf8MjW6t7S8MaEOenDHZhyg/Eu5yqi6eBPLDL5e3roSeRkheVC5LVpoF+bGtwl1xEoyC1NCDuruAgoRALTni3dnopBGrf6kgOk8Y9V7BkKC8h1WeZXMmfzyjqDAOZVAy1Bgv64a9umr12Dc9kKQIDAQAB",
-  "permissions": ["sidePanel", "contextMenus", "activeTab", "scripting", "storage"],
+  "permissions": [
+    "sidePanel",
+    "contextMenus",
+    "activeTab",
+    "scripting",
+    "storage",
+    "tabs",
+    "tabGroups"
+  ],
   "host_permissions": [],
   "background": {
-    "service_worker": "background.js"
+    "service_worker": "background.js",
+    "type": "module"
   },
   "side_panel": {
     "default_path": "sidepanel.html"
@@ -28,5 +37,11 @@
   },
   "content_security_policy": {
     "extension_pages": "script-src 'self'; object-src 'self'; connect-src 'self';"
-  }
+  },
+  "optional_permissions": [
+    "cookies"
+  ],
+  "optional_host_permissions": [
+    "<all_urls>"
+  ]
 }

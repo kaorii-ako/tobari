@@ -76,12 +76,3 @@ fn vulkan_icd_present() -> bool {
     }
     false
 }
-
-pub fn llama_backend_flag(backend: Backend) -> &'static str {
-    match backend {
-        Backend::Vulkan => "--vulkan",
-        Backend::Cuda => "--cuda",
-        Backend::Metal => "--metal",
-        Backend::Cpu => "",
-    }
-}

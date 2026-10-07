@@ -11,6 +11,19 @@
 <div class="brand"><span class="kanji">帳</span><span class="word">Tobari</span></div>
 <div id="status" class="status">starting…</div>
 </header>
+<div id="setup" class="banner" hidden>
+<span id="setup-text"></span>
+<button type="button" id="setup-go">Install</button>
+</div>
+<details class="tools">
+<summary>Switch &amp; tabs</summary>
+<div class="row">
+<button type="button" id="import-cookies">Import cookies</button>
+<button type="button" id="import-browser">Import bookmarks, passwords, history</button>
+</div>
+<label><input type="checkbox" id="autogroup"> Auto tab islands (group tabs by site)</label>
+<input type="file" id="cookie-file" accept=".txt,.json,text/plain,application/json" hidden>
+</details>
 <main id="log" class="log"></main>
 <form id="form" class="composer">
 <textarea id="input" rows="3" placeholder="Ask about this page…"></textarea>

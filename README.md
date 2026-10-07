@@ -28,12 +28,18 @@ docs/        DEV-LINUX.md, PACKAGING.md
 ```sh
 docs/DEV-LINUX.md      # step one: container setup, required on Bazzite
 cargo build --release -p tobari-core
-./target/release/tobari-core install
-./target/release/tobari-core download
+./target/release/tobari-core install --ext-id <id>   # also offers to fetch deps
 ```
 
-Then load `extension/` unpacked in Chrome, Chromium, or Brave and open
-the Tobari sidebar.
+`install` (or `tobari-core setup`) lists what is missing, asks, then
+downloads a checksum-verified llama-server build from llama.cpp releases
+and the default model. The sidebar shows the same prompt if you skip it.
+
+Then load `extension/dist/` unpacked in Chrome, Chromium, or Brave and
+open the Tobari sidebar. Under "Switch & tabs": import cookies
+(cookies.txt or Cookie-Editor JSON), open Chrome's importer for
+bookmarks/passwords/history, and toggle auto tab islands (tabs grouped
+by site).
 
 ## Security
 

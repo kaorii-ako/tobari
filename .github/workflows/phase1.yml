@@ -28,3 +28,4 @@ jobs:
           node-version: 22
       - run: npm ci --prefix extension
       - run: npm run build --prefix extension
+      - run: npm test --prefix extension

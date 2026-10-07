@@ -13,8 +13,7 @@ pub fn fresh_token() -> String {
 }
 
 pub fn sha256_file(path: &Path) -> anyhow::Result<String> {
-    let mut file = std::fs::File::open(path)
-        .with_context(|| format!("open {}", path.display()))?;
+    let mut file = std::fs::File::open(path).with_context(|| format!("open {}", path.display()))?;
     let mut hasher = Sha256::new();
     let mut buf = [0u8; 1 << 20];
     loop {
@@ -29,7 +28,7 @@ pub fn sha256_file(path: &Path) -> anyhow::Result<String> {
 }
 
 pub async fn download_verified(m: &ModelEntry) -> anyhow::Result<()> {
-    if m.sha256.trim().is_empty() {
+    if !m.sha256_pinned() {
         anyhow::bail!(
             "refusing to download {}: no sha256 pinned in models.toml",
             m.id
@@ -39,7 +38,7 @@ pub async fn download_verified(m: &ModelEntry) -> anyhow::Result<()> {
     if dest.is_file() {
         let actual = sha256_file(&dest)?;
         if actual.eq_ignore_ascii_case(m.sha256.trim()) {
-            println!("model already present and verified: {}", dest.display());
+            eprintln!("model already present and verified: {}", dest.display());
             return Ok(());
         }
         anyhow::bail!(
@@ -49,7 +48,7 @@ pub async fn download_verified(m: &ModelEntry) -> anyhow::Result<()> {
     }
     std::fs::create_dir_all(dest.parent().unwrap())?;
     let url = crate::models::download_url(m);
-    println!("downloading {} from {}", m.id, url);
+    eprintln!("downloading {} from {}", m.id, url);
     let mut resp = reqwest::get(&url)
         .await
         .with_context(|| format!("GET {}", url))?;
@@ -85,7 +84,6 @@ pub async fn download_verified(m: &ModelEntry) -> anyhow::Result<()> {
         anyhow::bail!("checksum mismatch after download: refusing to keep file");
     }
     std::fs::rename(&tmp, &dest)?;
-    println!("verified: {}", dest.display());
+    eprintln!("verified: {}", dest.display());
     Ok(())
 }
-

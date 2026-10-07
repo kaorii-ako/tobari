@@ -7,10 +7,12 @@ export type HostRequest =
   | { type: "status" }
   | { type: "chat"; messages: ChatMessage[]; stream: boolean }
   | { type: "models" }
-  | { type: "set_model"; id: string };
+  | { type: "set_model"; id: string }
+  | { type: "install_deps" };
 
 export type HostResponse =
-  | { type: "status"; backend: string; model: string; port: number; healthy: boolean }
+  | { type: "status"; backend: string; model: string; port: number; healthy: boolean; missing?: string[] }
+  | { type: "installed" }
   | { type: "chunk"; content: string; done: boolean }
   | { type: "models"; models: Array<{ id: string; downloaded: boolean; active: boolean }> }
   | { type: "error"; message: string };

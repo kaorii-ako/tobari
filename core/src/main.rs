@@ -1,5 +1,6 @@
 mod backend;
 mod chat;
+mod deps;
 mod download;
 mod host;
 mod install;
@@ -30,6 +31,11 @@ enum Cmd {
         ext_id: String,
     },
     Uninstall,
+    /// Download llama-server and the default model if missing (asks first).
+    Setup {
+        #[arg(short, long)]
+        yes: bool,
+    },
     Sha {
         file: std::path::PathBuf,
     },
@@ -45,7 +51,11 @@ fn main() -> anyhow::Result<()> {
         }
         Cmd::Download { model } => run_download(model),
         Cmd::Status => run_status(),
-        Cmd::Install { ext_id } => install::install(&ext_id),
+        Cmd::Install { ext_id } => {
+            install::install(&ext_id)?;
+            deps::setup_interactive(false)
+        }
+        Cmd::Setup { yes } => deps::setup_interactive(yes),
         Cmd::Uninstall => install::uninstall(),
         Cmd::Serve => serve(),
     }
@@ -90,4 +100,3 @@ fn serve() -> anyhow::Result<()> {
         .build()?;
     rt.block_on(serve::serve_async())
 }
-

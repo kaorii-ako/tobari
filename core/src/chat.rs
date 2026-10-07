@@ -28,6 +28,7 @@ pub async fn chat_loop(
                     model: active.clone(),
                     port,
                     healthy,
+                    missing: Vec::new(),
                 };
                 crate::host::write_message(&resp)?;
             }
@@ -40,9 +41,7 @@ pub async fn chat_loop(
                         active: m.id == active,
                     });
                 }
-                crate::host::write_message(&crate::host::HostResponse::Models {
-                    models: infos,
-                })?;
+                crate::host::write_message(&crate::host::HostResponse::Models { models: infos })?;
             }
             crate::host::HostRequest::SetModel { id } => {
                 let _ = id;
@@ -50,18 +49,26 @@ pub async fn chat_loop(
                     message: "model switching requires a restart in Phase 1".to_owned(),
                 })?;
             }
+            crate::host::HostRequest::InstallDeps => {
+                crate::host::write_message(&crate::host::HostResponse::Installed)?;
+            }
             crate::host::HostRequest::Chat { messages, stream } => {
                 let _ = stream;
                 let body = serde_json::json!({ "messages": messages, "stream": true });
                 let url = format!("http://127.0.0.1:{port}/v1/chat/completions");
-                let res = client.post(url).bearer_auth(token).json(&body).send().await?;
+                let res = client
+                    .post(url)
+                    .bearer_auth(token)
+                    .json(&body)
+                    .send()
+                    .await?;
                 if !res.status().is_success() {
                     crate::host::write_message(&crate::host::HostResponse::Error {
                         message: "model error".to_owned(),
                     })?;
                     continue;
                 }
-                super::proxy_stream(res).await?;
+                proxy_stream(res).await?;
             }
         }
     }

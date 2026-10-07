@@ -18,6 +18,8 @@ pub enum HostRequest {
     Models,
     #[serde(rename = "set_model")]
     SetModel { id: String },
+    #[serde(rename = "install_deps")]
+    InstallDeps,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
@@ -35,7 +37,11 @@ pub enum HostResponse {
         model: String,
         port: u16,
         healthy: bool,
+        #[serde(skip_serializing_if = "Vec::is_empty")]
+        missing: Vec<String>,
     },
+    #[serde(rename = "installed")]
+    Installed,
     #[serde(rename = "chunk")]
     Chunk { content: String, done: bool },
     #[serde(rename = "models")]

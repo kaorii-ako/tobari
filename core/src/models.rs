@@ -42,8 +42,13 @@ pub fn model_file_path(m: &ModelEntry) -> PathBuf {
 }
 
 pub fn download_url(m: &ModelEntry) -> String {
-    format!(
-        "https://huggingface.co/{}/resolve/main/{}",
-        m.repo, m.file
-    )
+    format!("https://huggingface.co/{}/resolve/main/{}", m.repo, m.file)
+}
+
+impl ModelEntry {
+    /// A real digest, not empty or a "PENDING" placeholder.
+    pub fn sha256_pinned(&self) -> bool {
+        let s = self.sha256.trim();
+        s.len() == 64 && s.bytes().all(|b| b.is_ascii_hexdigit())
+    }
 }
