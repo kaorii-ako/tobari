@@ -2,7 +2,6 @@
 pub enum Backend {
     Vulkan,
     Cuda,
-    Metal,
     Cpu,
 }
 
@@ -11,7 +10,6 @@ impl Backend {
         match self {
             Backend::Vulkan => "vulkan",
             Backend::Cuda => "cuda",
-            Backend::Metal => "metal",
             Backend::Cpu => "cpu",
         }
     }
@@ -22,23 +20,16 @@ impl Backend {
 }
 
 pub fn detect() -> Backend {
-    #[cfg(target_os = "macos")]
-    {
-        return Backend::Metal;
+    if std::env::var("TOBARI_FORCE_CPU").is_ok() {
+        return Backend::Cpu;
     }
-    #[cfg(not(target_os = "macos"))]
-    {
-        if std::env::var("TOBARI_FORCE_CPU").is_ok() {
-            return Backend::Cpu;
-        }
-        if cuda_toolkit_present() {
-            return Backend::Cuda;
-        }
-        if vulkan_icd_present() {
-            return Backend::Vulkan;
-        }
-        Backend::Cpu
+    if cuda_toolkit_present() {
+        return Backend::Cuda;
     }
+    if vulkan_icd_present() {
+        return Backend::Vulkan;
+    }
+    Backend::Cpu
 }
 
 fn cuda_toolkit_present() -> bool {

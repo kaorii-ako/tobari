@@ -4,13 +4,12 @@ use std::io::Write;
 
 const RELEASES: &str = "https://api.github.com/repos/ggml-org/llama.cpp/releases?per_page=10";
 
-/// Human-readable names of what is missing before `serve` can run.
 pub fn missing() -> Vec<String> {
     let mut out = Vec::new();
     if !crate::paths::llama_bin().is_file() {
         out.push("llama-server".to_owned());
     }
-    if let Ok((_, manifest)) = crate::models::load_manifest() {
+    if let Ok(manifest) = crate::models::load_manifest() {
         if let Ok(m) = crate::models::selected_model(&manifest) {
             if !crate::models::model_file_path(m).is_file() {
                 out.push(format!("model {} (~{} MB)", m.id, m.size_mb));
@@ -20,8 +19,6 @@ pub fn missing() -> Vec<String> {
     out
 }
 
-/// CLI flow: pick a model, list what is missing, ask, install.
-/// `model` skips the menu; `assume_yes` skips both questions.
 pub fn setup_interactive(model: Option<String>, assume_yes: bool) -> anyhow::Result<()> {
     let model = match model {
         Some(id) => Some(id),
@@ -56,10 +53,8 @@ pub fn setup_interactive(model: Option<String>, assume_yes: bool) -> anyhow::Res
         .block_on(install_missing(model.as_deref()))
 }
 
-/// Installs llama-server if needed and downloads `model` (or the current
-/// selection), remembering it as the model `serve` loads.
 pub async fn install_missing(model: Option<&str>) -> anyhow::Result<()> {
-    let (_, manifest) = crate::models::load_manifest()?;
+    let manifest = crate::models::load_manifest()?;
     let m = match model {
         Some(id) => manifest
             .iter()
@@ -70,13 +65,12 @@ pub async fn install_missing(model: Option<&str>) -> anyhow::Result<()> {
     if !crate::paths::llama_bin().is_file() {
         install_llama().await?;
     }
-    crate::download::download_verified(m).await?;
+    crate::download::download_verified(m, &progress_bar).await?;
     crate::models::save_selection(&m.id)
 }
 
-/// Numbered model menu on the terminal; Enter keeps the current pick.
 fn pick_model() -> anyhow::Result<String> {
-    let (_, manifest) = crate::models::load_manifest()?;
+    let manifest = crate::models::load_manifest()?;
     let current = crate::models::selected_model(&manifest)?.id.clone();
     eprintln!("Choose a model:");
     for (i, m) in manifest.iter().enumerate() {
@@ -127,7 +121,6 @@ fn asset_suffix() -> anyhow::Result<String> {
     if cfg!(target_os = "macos") {
         return Ok(format!("bin-macos-{arch}.tar.gz"));
     }
-    // ponytail: CUDA prebuilts need a matching cudart; Vulkan runs on NVIDIA too.
     let flavor = if crate::backend::detect() == crate::backend::Backend::Cpu {
         ""
     } else {
@@ -136,11 +129,9 @@ fn asset_suffix() -> anyhow::Result<String> {
     Ok(format!("bin-ubuntu-{flavor}{arch}.tar.gz"))
 }
 
-async fn install_llama() -> anyhow::Result<()> {
+pub async fn install_llama() -> anyhow::Result<()> {
     let suffix = asset_suffix()?;
-    let client = reqwest::Client::builder()
-        .user_agent("tobari-core")
-        .build()?;
+    let client = reqwest::Client::builder().user_agent("tobari").build()?;
     let releases: serde_json::Value = client.get(RELEASES).send().await?.json().await?;
     let asset = releases
         .as_array()
@@ -190,4 +181,15 @@ async fn install_llama() -> anyhow::Result<()> {
     }
     eprintln!("installed {}", crate::paths::llama_bin().display());
     Ok(())
+}
+
+fn progress_bar(done: u64, total: u64) {
+    if total > 0 {
+        eprint!("\r  {}/{} MB", done / 1_048_576, total / 1_048_576);
+    } else {
+        eprint!("\r  {} MB", done / 1_048_576);
+    }
+    if total > 0 && done >= total {
+        eprintln!();
+    }
 }

@@ -1,0 +1,86 @@
+{
+  "manifest_version": 3,
+  "name": "Tobari",
+  "short_name": "Tobari",
+  "version": "0.2.0",
+  "description": "Local-first AI for your browser: vertical tabs, an agent that asks before it acts, skills and Markdown memory.",
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAi+4mjDejGF3MRDYBDjjz9r7tOimiZC2vkRc9RIPdq/O+nvO5zoprvL3DP2WQlRqYIvduWTeXFQ6ffJPd58GSsJvab/vgH+7gnhyUfI9RlIrsYyX19UgisMsIA8/6VNeEAhc+55IPc6p1eG7J+dcRzavYdNa0VkG2zX4Nqkxt+rFo8XBhXJ5RHT6f83hVqfxjR9iKT9mQgbJqN6hLyJ0DUfI5o61dUt/AxUxGxUlFjE++scjEHQZWkjmW+EclnAuxfJ7/ldJxbtQ9xvz1qOnvWFMwghbgYqog+lG1VEDx4vJUhz8lTuOeHMM63HKk5Lg/bWpPYCh/ic605MG332nWowIDAQAB",
+  "minimum_chrome_version": "121",
+  "icons": {
+    "16": "icons/tobari-16.png",
+    "32": "icons/tobari-32.png",
+    "48": "icons/tobari-48.png",
+    "128": "icons/tobari-128.png"
+  },
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "side_panel": {
+    "default_path": "sidepanel.html"
+  },
+  "chrome_url_overrides": {
+    "newtab": "newtab.html"
+  },
+  "options_page": "settings.html",
+  "action": {
+    "default_title": "Tobari command bar",
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "icons/tobari-16.png",
+      "32": "icons/tobari-32.png"
+    }
+  },
+  "commands": {
+    "_execute_action": {
+      "suggested_key": {
+        "default": "Alt+K"
+      },
+      "description": "Open the command bar"
+    },
+    "toggle-panel": {
+      "suggested_key": {
+        "default": "Alt+J"
+      },
+      "description": "Open the Tobari panel"
+    },
+    "organize-tabs": {
+      "suggested_key": {
+        "default": "Alt+Shift+O"
+      },
+      "description": "Group tabs by task"
+    }
+  },
+  "permissions": [
+    "nativeMessaging",
+    "sidePanel",
+    "tabs",
+    "tabGroups",
+    "storage",
+    "unlimitedStorage",
+    "scripting",
+    "bookmarks",
+    "history",
+    "downloads",
+    "alarms",
+    "contextMenus",
+    "declarativeNetRequestWithHostAccess",
+    "activeTab",
+    "topSites"
+  ],
+  "host_permissions": [
+    "<all_urls>"
+  ],
+  "declarative_net_request": {
+    "rule_resources": [
+      {
+        "id": "trackers",
+        "enabled": true,
+        "path": "rules.json"
+      }
+    ]
+  },
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'none'; base-uri 'none'"
+  }
+}

@@ -1,6 +1,6 @@
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
-fn home() -> PathBuf {
+pub fn home() -> PathBuf {
     std::env::var("HOME")
         .map(PathBuf::from)
         .unwrap_or_else(|_| PathBuf::from("/root"))
@@ -8,65 +8,78 @@ fn home() -> PathBuf {
 
 fn xdg(var: &str, fallback: &str) -> PathBuf {
     std::env::var(var)
+        .ok()
+        .filter(|v| !v.is_empty())
         .map(PathBuf::from)
-        .unwrap_or_else(|_| home().join(fallback))
+        .unwrap_or_else(|| home().join(fallback))
 }
 
-#[cfg(target_os = "macos")]
-pub fn config_dir() -> PathBuf {
-    home().join("Library/Application Support/Tobari")
-}
-
-#[cfg(not(target_os = "macos"))]
 pub fn config_dir() -> PathBuf {
     xdg("XDG_CONFIG_HOME", ".config").join("tobari")
 }
 
-#[cfg(target_os = "macos")]
+pub fn data_dir() -> PathBuf {
+    xdg("XDG_DATA_HOME", ".local/share").join("tobari")
+}
+
+pub fn state_dir() -> PathBuf {
+    xdg("XDG_STATE_HOME", ".local/state").join("tobari")
+}
+
+pub fn runtime_dir() -> PathBuf {
+    match std::env::var("XDG_RUNTIME_DIR") {
+        Ok(d) if !d.is_empty() => PathBuf::from(d).join("tobari"),
+        _ => std::env::temp_dir().join(format!("tobari-{}", unsafe { libc::getuid() })),
+    }
+}
+
+pub fn skills_dir() -> PathBuf {
+    config_dir().join("skills")
+}
+
+pub fn memory_dir() -> PathBuf {
+    data_dir().join("memory")
+}
+
 pub fn models_dir() -> PathBuf {
-    home().join("Library/Application Support/Tobari/models")
+    data_dir().join("models")
 }
 
-#[cfg(not(target_os = "macos"))]
-pub fn models_dir() -> PathBuf {
-    xdg("XDG_DATA_HOME", ".local/share").join("tobari/models")
+pub fn llama_dir() -> PathBuf {
+    data_dir().join("llama")
 }
 
-#[cfg(target_os = "macos")]
-pub fn cache_dir() -> PathBuf {
-    home().join("Library/Caches/dev.tobari.browser")
+pub fn crash_dir() -> PathBuf {
+    state_dir().join("crashes")
 }
 
-#[cfg(not(target_os = "macos"))]
-pub fn cache_dir() -> PathBuf {
-    xdg("XDG_CACHE_HOME", ".cache").join("tobari")
+pub fn providers_path() -> PathBuf {
+    config_dir().join("providers.toml")
 }
 
-#[cfg(target_os = "macos")]
-pub fn log_dir() -> PathBuf {
-    home().join("Library/Logs/Tobari")
-}
-
-#[cfg(not(target_os = "macos"))]
-pub fn log_dir() -> PathBuf {
-    xdg("XDG_STATE_HOME", ".local/state").join("tobari/logs")
-}
-
-pub fn manifest_path() -> PathBuf {
-    models_dir().join("models.toml")
+pub fn settings_path() -> PathBuf {
+    config_dir().join("settings.toml")
 }
 
 pub fn selection_path() -> PathBuf {
     config_dir().join("model")
 }
 
-pub fn llama_dir() -> PathBuf {
-    models_dir().with_file_name("llama")
+pub fn control_socket() -> PathBuf {
+    runtime_dir().join("control.sock")
 }
 
-/// llama-server next to tobari-core wins; else the one `setup` unpacked.
+pub fn ensure_private_dir(dir: &Path) -> std::io::Result<()> {
+    use std::os::unix::fs::PermissionsExt;
+    std::fs::create_dir_all(dir)?;
+    std::fs::set_permissions(dir, std::fs::Permissions::from_mode(0o700))
+}
+
 pub fn llama_bin() -> PathBuf {
-    let exe = std::env::current_exe().unwrap_or_else(|_| PathBuf::from("tobari-core"));
+    if let Ok(p) = std::env::var("TOBARI_LLAMA_SERVER") {
+        return PathBuf::from(p);
+    }
+    let exe = std::env::current_exe().unwrap_or_else(|_| PathBuf::from("tobari"));
     let beside = exe
         .parent()
         .map(|d| d.join("llama-server"))
@@ -77,12 +90,13 @@ pub fn llama_bin() -> PathBuf {
     find_file(&llama_dir(), "llama-server", 3).unwrap_or(beside)
 }
 
-fn find_file(dir: &std::path::Path, name: &str, depth: u32) -> Option<PathBuf> {
+fn find_file(dir: &Path, name: &str, depth: u32) -> Option<PathBuf> {
     let entries: Vec<_> = std::fs::read_dir(dir).ok()?.flatten().collect();
-    for e in &entries {
-        if e.file_name() == name && e.path().is_file() {
-            return Some(e.path());
-        }
+    if let Some(e) = entries
+        .iter()
+        .find(|e| e.file_name() == name && e.path().is_file())
+    {
+        return Some(e.path());
     }
     if depth == 0 {
         return None;
@@ -99,32 +113,33 @@ pub struct BrowserTarget {
 }
 
 pub fn native_manifest_dirs() -> Vec<BrowserTarget> {
-    #[cfg(target_os = "macos")]
-    let base = home().join("Library/Application Support");
-    #[cfg(not(target_os = "macos"))]
-    let base = home().join(".config");
-    let candidates = [
-        ("chrome", "google-chrome", "Google/Chrome"),
-        ("chromium", "chromium", "Chromium"),
+    let cfg = xdg("XDG_CONFIG_HOME", ".config");
+    let var = home().join(".var/app");
+    let candidates: [(&str, PathBuf); 8] = [
+        ("tobari", cfg.join("tobari/browser")),
+        ("chrome", cfg.join("google-chrome")),
+        ("chromium", cfg.join("chromium")),
+        ("brave", cfg.join("BraveSoftware/Brave-Browser")),
+        ("edge", cfg.join("microsoft-edge")),
         (
-            "brave",
-            "BraveSoftware/Brave-Browser",
-            "BraveSoftware/Brave-Browser",
+            "chrome-flatpak",
+            var.join("com.google.Chrome/config/google-chrome"),
+        ),
+        (
+            "chromium-flatpak",
+            var.join("org.chromium.Chromium/config/chromium"),
+        ),
+        (
+            "brave-flatpak",
+            var.join("com.brave.Browser/config/BraveSoftware/Brave-Browser"),
         ),
     ];
-    let mut out = Vec::new();
-    #[allow(unused_variables)]
-    for (name, linux_rel, mac_rel) in candidates {
-        #[cfg(target_os = "macos")]
-        let dir = base.join(mac_rel);
-        #[cfg(not(target_os = "macos"))]
-        let dir = base.join(linux_rel);
-        if dir.is_dir() {
-            out.push(BrowserTarget {
-                name,
-                dir: dir.join("NativeMessagingHosts"),
-            });
-        }
-    }
-    out
+    candidates
+        .into_iter()
+        .filter(|(name, dir)| *name == "tobari" || dir.is_dir())
+        .map(|(name, dir)| BrowserTarget {
+            name,
+            dir: dir.join("NativeMessagingHosts"),
+        })
+        .collect()
 }

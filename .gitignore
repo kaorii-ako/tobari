@@ -7,3 +7,8 @@ models/*.gguf
 AppDir/
 *.AppImage
 .mcp-backups/
+phase0/results/*/
+!phase0/results/container-control/
+phase0/results/container-control/probe-run/strace.log*
+bench/results/raw/
+__pycache__/

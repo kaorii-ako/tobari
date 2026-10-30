@@ -1,0 +1,38 @@
+name: ci
+on:
+  push:
+  pull_request:
+jobs:
+  core:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy, rustfmt
+      - run: cargo fmt --check --manifest-path core/Cargo.toml
+      - run: cargo clippy --manifest-path core/Cargo.toml --all-targets -- -D warnings
+      - run: cargo test --manifest-path core/Cargo.toml
+      - run: cargo build --manifest-path core/Cargo.toml
+      - run: python3 core/tests/e2e.py
+  extension:
+    runs-on: ubuntu-24.04
+    needs: core
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: cargo build --manifest-path core/Cargo.toml
+      - run: npm ci --prefix extension
+      - run: npm run typecheck --prefix extension
+      - run: npm test --prefix extension
+      - run: npm run build --prefix extension
+      - run: npm install --no-save --prefix extension playwright && npx --prefix extension playwright install --with-deps chromium
+      - run: cd extension && SHOTS=/tmp/shots xvfb-run -a node scripts/ui-e2e.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: screenshots
+          path: /tmp/shots

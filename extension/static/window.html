@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tobari window preview</title>
+<link rel="stylesheet" href="tobari.css">
+<link rel="stylesheet" href="window.css">
+</head>
+<body>
+<div class="win" id="win">
+  <iframe class="side" id="side" title="Tabs"></iframe>
+  <main class="stage" id="stage">
+    <div class="pane card"><iframe id="page-a" title="Page"></iframe></div>
+    <div class="pane card" id="pane-b" hidden><iframe id="page-b" title="Second page"></iframe></div>
+  </main>
+  <div class="gutter" id="gutter" title="Drag to resize the assistant"></div>
+  <iframe class="assist card" id="assist" title="Assistant"></iframe>
+</div>
+<script type="module" src="window.js"></script>
+</body>
+</html>

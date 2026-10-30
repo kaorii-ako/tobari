@@ -1,11 +1,14 @@
 {
   "compilerOptions": {
-    "target": "ES2021",
-    "module": "ES2020",
-    "moduleResolution": "bundler",
-    "lib": ["ES2021", "DOM"],
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "types": ["chrome"],
     "strict": true,
-    "types": ["chrome"]
+    "noEmit": true,
+    "skipLibCheck": true,
+    "isolatedModules": true
   },
-  "include": ["src/**/*"]
+  "include": ["src"]
 }

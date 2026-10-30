@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>dev.tobari.Tobari</id>
+  <name>Tobari</name>
+  <summary>Local-first AI browser</summary>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>MPL-2.0</project_license>
+  <description>
+    <p>Tobari is a web browser with an assistant that runs on your own GPU. Prompts stay on your computer unless you add a cloud provider with your own key.</p>
+    <ul>
+      <li>Vertical tabs, workspaces and a command bar</li>
+      <li>An assistant that reads pages, PDFs and your open tabs, and asks before it clicks or types</li>
+      <li>Skills as plain folders, memory as plain Markdown files</li>
+      <li>Imports bookmarks and history from Chrome, Brave, Edge and Firefox</li>
+    </ul>
+  </description>
+  <launchable type="desktop-id">dev.tobari.Tobari.desktop</launchable>
+  <url type="homepage">https://github.com/kaorii-ako/tobari</url>
+  <content_rating type="oars-1.1"/>
+  <releases>
+    <release version="0.2.0" date="2026-10-30"/>
+  </releases>
+</component>

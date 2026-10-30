@@ -1,0 +1,118 @@
+app-id: dev.tobari.Tobari
+runtime: org.freedesktop.Platform
+runtime-version: '24.08'
+sdk: org.freedesktop.Sdk
+sdk-extensions:
+  - org.freedesktop.Sdk.Extension.rust-stable
+  - org.freedesktop.Sdk.Extension.node22
+base: org.chromium.Chromium.BaseApp
+base-version: '24.08'
+command: tobari-launch
+separate-locales: false
+finish-args:
+  - --share=ipc
+  - --share=network
+  - --socket=wayland
+  - --socket=fallback-x11
+  - --socket=pulseaudio
+  - --device=dri
+  - --filesystem=xdg-download
+  - --filesystem=xdg-run/tobari:create
+  - --talk-name=org.freedesktop.secrets
+  - --talk-name=org.freedesktop.Notifications
+  - --talk-name=org.freedesktop.FileManager1
+  - --filesystem=~/.config/google-chrome:ro
+  - --filesystem=~/.config/chromium:ro
+  - --filesystem=~/.config/BraveSoftware:ro
+  - --filesystem=~/.config/microsoft-edge:ro
+  - --filesystem=~/.config/vivaldi:ro
+  - --filesystem=~/.mozilla:ro
+  - --filesystem=~/.zen:ro
+  - --filesystem=~/.var/app/com.google.Chrome:ro
+  - --filesystem=~/.var/app/org.chromium.Chromium:ro
+  - --filesystem=~/.var/app/com.brave.Browser:ro
+  - --filesystem=~/.var/app/org.mozilla.firefox:ro
+  - --filesystem=~/.var/app/app.zen_browser.zen:ro
+  - --env=TOBARI_FLATPAK=1
+modules:
+  - name: libsecret-tools
+    buildsystem: meson
+    config-opts:
+      - -Dmanpage=false
+      - -Dvapi=false
+      - -Dgtk_doc=false
+      - -Dintrospection=false
+      - -Dcrypto=disabled
+    sources:
+      - type: archive
+        url: https://download.gnome.org/sources/libsecret/0.21/libsecret-0.21.4.tar.xz
+        sha256: PIN-BEFORE-BUILD
+
+  - name: shaderc
+    buildsystem: cmake-ninja
+    builddir: true
+    config-opts:
+      - -DSHADERC_SKIP_TESTS=ON
+      - -DSHADERC_SKIP_EXAMPLES=ON
+      - -DCMAKE_BUILD_TYPE=Release
+    cleanup: ['*']
+    sources:
+      - type: git
+        url: https://github.com/google/shaderc
+        tag: PIN-A-RELEASE-TAG
+      - type: shell
+        commands:
+          - ./utils/git-sync-deps
+
+  - name: llama-server
+    buildsystem: cmake-ninja
+    builddir: true
+    config-opts:
+      - -DGGML_VULKAN=ON
+      - -DLLAMA_CURL=OFF
+      - -DLLAMA_BUILD_TESTS=OFF
+      - -DLLAMA_BUILD_EXAMPLES=OFF
+      - -DCMAKE_BUILD_TYPE=Release
+    make-args: [llama-server]
+    no-make-install: true
+    post-install:
+      - install -Dm755 bin/llama-server /app/bin/llama-server
+      - find . -name '*.so*' -path '*bin*' -exec install -Dm644 {} /app/lib/ \;
+    sources:
+      - type: git
+        url: https://github.com/ggml-org/llama.cpp
+        tag: PIN-A-RELEASE-TAG
+
+  - name: tobari-core
+    buildsystem: simple
+    build-options:
+      append-path: /usr/lib/sdk/rust-stable/bin
+      env:
+        CARGO_HOME: /run/build/tobari-core/cargo
+    build-commands:
+      - cargo --offline build --release --manifest-path core/Cargo.toml
+      - install -Dm755 core/target/release/tobari /app/bin/tobari
+    sources:
+      - type: dir
+        path: ../..
+      - cargo-sources.json
+
+  - name: tobari-shell
+    buildsystem: simple
+    build-commands:
+      - cmake -S shell -B shell/build -G Ninja -DCMAKE_BUILD_TYPE=Release -DCEF_ROOT=$PWD/cef
+      - cmake --build shell/build
+      - mkdir -p /app/lib/tobari
+      - cp -a shell/build/Release/. /app/lib/tobari/ 2>/dev/null || cp -a shell/build/. /app/lib/tobari/
+      - install -Dm755 packaging/tobari-launch /app/bin/tobari-launch
+      - install -Dm644 packaging/dev.tobari.Tobari.desktop /app/share/applications/dev.tobari.Tobari.desktop
+      - install -Dm644 packaging/dev.tobari.Tobari.metainfo.xml /app/share/metainfo/dev.tobari.Tobari.metainfo.xml
+      - install -Dm644 extension/static/icons/tobari-256.png /app/share/icons/hicolor/256x256/apps/dev.tobari.Tobari.png
+      - install -Dm644 extension/static/icons/tobari-128.png /app/share/icons/hicolor/128x128/apps/dev.tobari.Tobari.png
+    sources:
+      - type: dir
+        path: ../..
+      - type: archive
+        dest: cef
+        url: https://cef-builds.spotifycdn.com/PIN-FROM-shell/cef.lock
+        sha1: PIN-FROM-shell/cef.lock

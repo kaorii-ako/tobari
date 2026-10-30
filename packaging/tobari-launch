@@ -1,0 +1,21 @@
+#!/bin/sh
+set -e
+here="$(dirname "$(readlink -f "$0")")"
+if [ -n "$APPIMAGE" ]; then
+  stable="${XDG_DATA_HOME:-$HOME/.local/share}/tobari/bin"
+  mkdir -p "$stable"
+  if ! cmp -s "$here/tobari" "$stable/tobari"; then
+    cp "$here/tobari" "$stable/tobari.new" && mv "$stable/tobari.new" "$stable/tobari"
+    cp "$here/llama-server" "$stable/llama-server" 2>/dev/null || true
+    chmod +x "$stable/tobari" "$stable/llama-server" 2>/dev/null || true
+  fi
+  "$stable/tobari" install-host >/dev/null 2>&1 || true
+else
+  "$here/tobari" install-host >/dev/null 2>&1 || true
+fi
+shell="$here/tobari-shell"
+[ -x "$here/../lib/tobari/tobari-shell" ] && shell="$here/../lib/tobari/tobari-shell"
+if command -v zypak-wrapper >/dev/null 2>&1; then
+  exec zypak-wrapper "$shell" "$@"
+fi
+exec "$shell" "$@"

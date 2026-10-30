@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tobari Phase 0 font probe</title>
+<style>
+:root {
+  --bg: #f6f5f2;
+  --card: #ffffff;
+  --ink: #1d1c1a;
+  --muted: #6b6862;
+  --line: #e4e1da;
+  --pass: #1f7a4d;
+  --pass-bg: #e3f3ea;
+  --fail: #b3261e;
+  --fail-bg: #fbe6e4;
+  --wait: #6b6862;
+  --wait-bg: #efede8;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #141413;
+    --card: #1e1d1b;
+    --ink: #ecebe7;
+    --muted: #9b978f;
+    --line: #2f2d2a;
+    --pass: #6fd3a0;
+    --pass-bg: #173226;
+    --fail: #f2948c;
+    --fail-bg: #3a1c1a;
+    --wait: #9b978f;
+    --wait-bg: #26251f;
+  }
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  padding: 32px 16px 64px;
+  background: var(--bg);
+  color: var(--ink);
+  font: 15px/1.5 system-ui, sans-serif;
+}
+main { max-width: 920px; margin: 0 auto; }
+header { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 24px; }
+h1 { font-size: 22px; font-weight: 600; margin: 0; letter-spacing: -0.01em; }
+#summary { font-weight: 600; padding: 4px 12px; border-radius: 999px; background: var(--wait-bg); color: var(--wait); }
+#summary.pass { background: var(--pass-bg); color: var(--pass); }
+#summary.fail { background: var(--fail-bg); color: var(--fail); }
+#ua { color: var(--muted); font: 12px/1.4 ui-monospace, monospace; margin: 0 0 24px; word-break: break-all; }
+.grid { display: grid; gap: 12px; }
+.case { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; display: grid; grid-template-columns: 1fr auto; gap: 4px 16px; align-items: center; }
+.case .label { font: 12px/1.4 ui-monospace, monospace; color: var(--muted); }
+.case .sample { grid-column: 1; font-size: 30px; line-height: 1.35; overflow-wrap: anywhere; }
+.case .verdict { grid-row: 1 / span 2; grid-column: 2; font: 600 12px/1 ui-monospace, monospace; padding: 6px 10px; border-radius: 6px; background: var(--wait-bg); color: var(--wait); }
+.case.pass .verdict { background: var(--pass-bg); color: var(--pass); }
+.case.fail .verdict { background: var(--fail-bg); color: var(--fail); }
+footer { margin-top: 28px; color: var(--muted); font-size: 13px; }
+code { font-family: ui-monospace, monospace; }
+</style>
+</head>
+<body>
+<main>
+<header>
+  <h1>帳 Tobari font probe</h1>
+  <span id="summary">running</span>
+</header>
+<p id="ua"></p>
+<div class="grid" id="cases"></div>
+<footer>
+  Each row draws its sample to a canvas with the row's <code>font-family</code> and compares the pixels against
+  a codepoint no font covers (U+0378) and against blank. A row passes only if every probe character
+  differs from both. The verdicts are also written to <code>&lt;pre id="result"&gt;</code> for <code>--dump-dom</code>.
+</footer>
+<pre id="result" hidden></pre>
+</main>
+<script>
+const CASES = [
+  { id: "ja-stack",   lang: "ja", family: "'Noto Sans CJK JP', 'Noto Sans JP', 'Source Han Sans JP', sans-serif", text: "帳 とばり 日本語の表示テスト", probe: "帳とば日本語" },
+  { id: "ja-generic", lang: "ja", family: "sans-serif", text: "帳 とばり 日本語の表示テスト", probe: "帳とば日本語" },
+  { id: "ja-serif",   lang: "ja", family: "serif", text: "帳 明朝体の確認", probe: "帳明朝体" },
+  { id: "ja-nolang",  lang: "",   family: "sans-serif", text: "帳 言語指定なし", probe: "帳言語" },
+  { id: "ja-noto-only", lang: "ja", family: "'Noto Sans CJK JP'", text: "帳 名前だけ指定", probe: "帳名前" },
+  { id: "zh-hans",    lang: "zh-CN", family: "'Noto Sans CJK SC', sans-serif", text: "帐 简体中文测试", probe: "帐简体" },
+  { id: "ko",         lang: "ko", family: "'Noto Sans CJK KR', sans-serif", text: "한국어 표시 테스트", probe: "한국어" },
+  { id: "th-stack",   lang: "th", family: "'Noto Sans Thai', 'Noto Sans Thai Looped', sans-serif", text: "ภาษาไทย ทดสอบการแสดงผล ก่ำ ญู", probe: "ภาษาไทยก" },
+  { id: "th-generic", lang: "th", family: "sans-serif", text: "ภาษาไทย ทดสอบการแสดงผล ก่ำ ญู", probe: "ภาษาไทยก" },
+  { id: "mixed",      lang: "en", family: "system-ui, sans-serif", text: "Tobari 帳 とばり ภาษาไทย 한국 English", probe: "帳とภา한" },
+  { id: "ui-default", lang: "",   family: "", text: "帳 ภาษาไทย (no font-family set)", probe: "帳ภา" }
+];
+
+const MISSING = "͸";
+const SIZE = 48;
+
+function glyphPixels(ch, family, lang) {
+  const c = document.createElement("canvas");
+  c.width = SIZE * 2; c.height = SIZE * 2;
+  if (lang) c.lang = lang;
+  document.body.appendChild(c);
+  const ctx = c.getContext("2d", { willReadFrequently: true });
+  if (lang && "lang" in ctx) ctx.lang = lang;
+  ctx.font = `${SIZE}px ${family || "sans-serif"}`;
+  ctx.textBaseline = "middle";
+  ctx.fillStyle = "#000";
+  ctx.fillText(ch, 4, SIZE);
+  const d = ctx.getImageData(0, 0, c.width, c.height).data;
+  c.remove();
+  let sig = 0, ink = 0;
+  for (let i = 3; i < d.length; i += 4) { if (d[i]) { ink++; sig = (sig * 31 + i * d[i]) >>> 0; } }
+  return { ink, sig };
+}
+
+function same(a, b) { return a.ink === b.ink && a.sig === b.sig; }
+
+async function run() {
+  document.getElementById("ua").textContent = navigator.userAgent;
+  const root = document.getElementById("cases");
+  for (const k of CASES) {
+    const row = document.createElement("div");
+    row.className = "case";
+    row.innerHTML = `<span class="label"></span><span class="verdict">…</span><span class="sample"></span>`;
+    row.querySelector(".label").textContent = `${k.id}  lang=${k.lang || "(none)"}  font-family: ${k.family || "(unset)"}`;
+    const s = row.querySelector(".sample");
+    if (k.lang) s.lang = k.lang;
+    if (k.family) s.style.fontFamily = k.family;
+    s.textContent = k.text;
+    root.appendChild(row);
+  }
+  if (document.fonts && document.fonts.ready) await document.fonts.ready;
+  const results = [];
+  CASES.forEach((k, idx) => {
+    const missing = glyphPixels(MISSING, k.family, k.lang);
+    const bad = [];
+    for (const ch of k.probe) {
+      const g = glyphPixels(ch, k.family, k.lang);
+      if (g.ink === 0 || same(g, missing)) bad.push(ch);
+    }
+    const ok = bad.length === 0;
+    const row = root.children[idx];
+    row.classList.add(ok ? "pass" : "fail");
+    row.querySelector(".verdict").textContent = ok ? "PASS" : `FAIL ${bad.join("")}`;
+    results.push(`${ok ? "PASS" : "FAIL"} ${k.id}${ok ? "" : " missing=" + bad.join("")}`);
+  });
+  const failed = results.filter(r => r.startsWith("FAIL")).length;
+  const sum = document.getElementById("summary");
+  sum.textContent = failed ? `${failed} of ${CASES.length} failed` : `all ${CASES.length} pass`;
+  sum.className = failed ? "fail" : "pass";
+  document.title = `${failed ? "FAIL" : "PASS"} Tobari font probe`;
+  const pre = document.getElementById("result");
+  const M = "TOBARI-PROBE-";
+  pre.textContent = [M + "BEGIN", ...results, M + "END"].join("\n");
+}
+run();
+</script>
+</body>
+</html>
