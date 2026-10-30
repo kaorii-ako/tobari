@@ -1,0 +1,97 @@
+# Step 1: measure what each engine costs to build on a standard GitHub runner.
+# Each job writes time and disk numbers to its job summary and a JSON artifact.
+name: engine build cost
+on:
+  workflow_dispatch:
+  push:
+    branches: [rewrite]
+    paths: [.github/workflows/engine-build-cost.yml]
+
+jobs:
+  cef:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - name: Download CEF and build cefsimple against it
+        run: |
+          set -euo pipefail
+          t0=$(date +%s)
+          V='cef_binary_156.0.14+g4fa4ab5+chromium-156.0.8078.48_linux64_minimal'
+          curl -sSfL "https://cef-builds.spotifycdn.com/${V//+/%2B}.tar.bz2" | tar xj
+          t1=$(date +%s)
+          sudo apt-get install -y -q ninja-build libgtk-3-dev >/dev/null
+          cmake -S "$V" -B build -G Ninja -DCMAKE_BUILD_TYPE=Release >/dev/null
+          ninja -C build cefsimple >/dev/null
+          t2=$(date +%s)
+          ls -la build/tests/cefsimple/Release/cefsimple
+          echo "{\"engine\":\"cef\",\"download_s\":$((t1-t0)),\"build_s\":$((t2-t1)),\"disk_gib\":\"$(du -sBG . | cut -f1)\"}" | tee result.json >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        with: { name: cost-cef, path: result.json }
+
+  chromium:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 355
+    steps:
+      - name: Free disk
+        run: |
+          df -h / /mnt
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache /usr/local/share/boost
+          df -h / /mnt
+      - name: Fetch Chromium and build chrome until the job limit
+        run: |
+          set -uo pipefail
+          t0=$(date +%s)
+          git clone -q --depth 1 https://chromium.googlesource.com/chromium/tools/depot_tools.git
+          export PATH=$PWD/depot_tools:$PATH
+          mkdir chromium && cd chromium
+          fetch --nohooks --no-history chromium > fetch.log 2>&1; fetch_rc=$?
+          t1=$(date +%s); df -h / | tee -a "$GITHUB_STEP_SUMMARY"
+          ninja_line=none; build_rc=skipped
+          if [ $fetch_rc = 0 ]; then
+            cd src
+            sudo ./build/install-build-deps.sh --no-prompt --no-arm --no-chromeos-fonts > deps.log 2>&1
+            gclient runhooks > hooks.log 2>&1
+            gn gen out/R --args='is_debug=false symbol_level=0 is_component_build=false'
+            # Stop early enough to report; the job limit is 6 hours.
+            timeout 17000 autoninja -C out/R chrome > ninja.log 2>&1; build_rc=$?
+            ninja_line=$(grep -o '\[[0-9]*/[0-9]*\]' ninja.log | tail -1)
+            cd ..
+          fi
+          t2=$(date +%s)
+          echo "{\"engine\":\"chromium\",\"fetch_rc\":$fetch_rc,\"fetch_s\":$((t1-t0)),\"build_rc\":\"$build_rc\",\"build_s\":$((t2-t1)),\"ninja_progress\":\"$ninja_line\",\"disk_gib\":\"$(du -sBG . 2>/dev/null | cut -f1)\"}" | tee ../result.json >> "$GITHUB_STEP_SUMMARY"
+          tail -5 fetch.log src/ninja.log 2>/dev/null || true
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: { name: cost-chromium, path: result.json }
+
+  gecko:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 355
+    strategy:
+      fail-fast: false
+      matrix:
+        mode: [artifact, full]
+    steps:
+      - name: Free disk
+        run: sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache /usr/local/share/boost
+      - name: Clone Firefox and build
+        run: |
+          set -uo pipefail
+          t0=$(date +%s)
+          git clone -q --depth 1 https://github.com/mozilla-firefox/firefox.git ff && cd ff
+          t1=$(date +%s)
+          if [ "${{ matrix.mode }}" = artifact ]; then
+            # Front-end-only patches (JS, CSS, XUL) build against Mozilla's prebuilt C++.
+            printf 'ac_add_options --enable-artifact-builds\nmk_add_options MOZ_OBJDIR=@TOPSRCDIR@/obj\n' > mozconfig
+          else
+            printf 'ac_add_options --enable-release\nac_add_options --disable-debug-symbols\nmk_add_options MOZ_OBJDIR=@TOPSRCDIR@/obj\n' > mozconfig
+          fi
+          ./mach --no-interactive bootstrap --application-choice "browser$([ ${{ matrix.mode }} = artifact ] && echo _artifact_mode)" > bootstrap.log 2>&1
+          t2=$(date +%s)
+          timeout 17000 ./mach build > build.log 2>&1; build_rc=$?
+          t3=$(date +%s)
+          echo "{\"engine\":\"gecko-${{ matrix.mode }}\",\"clone_s\":$((t1-t0)),\"bootstrap_s\":$((t2-t1)),\"build_rc\":$build_rc,\"build_s\":$((t3-t2)),\"disk_gib\":\"$(du -sBG . ~/.mozbuild 2>/dev/null | awk '{s+=$1} END {print s"G"}')\"}" | tee ../result.json >> "$GITHUB_STEP_SUMMARY"
+          tail -5 bootstrap.log build.log
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: { name: "cost-gecko-${{ matrix.mode }}", path: result.json }

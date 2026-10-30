@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<title>Script test: 日本語 ภาษาไทย</title>
+<style>
+  body { font: 16px sans-serif; margin: 24px; }
+  td { padding: 2px 10px; }
+  .pass { color: #0a6b2c; } .fail { color: #b00020; font-weight: bold; }
+  #samples p { font-size: 28px; margin: 4px 0; }
+</style>
+<h1 id="verdict">running…</h1>
+<div id="samples">
+  <p lang="ja">日本語の文章：ひらがな、カタカナ、漢字、ｶﾀｶﾅ、「」。</p>
+  <p lang="th">ภาษาไทย ที่นี่ น้ำ กำลัง ปั่นจักรยาน</p>
+</div>
+<table id="rows"></table>
+<script>
+// Graded with canvas pixels. A missing glyph draws as a box with the same ink bounding box
+// as an unassigned BMP code point: Chromium's .notdef box, or Firefox's hex-digit box.
+const FONT = '40px sans-serif';
+const c = document.createElement('canvas'); c.width = 400; c.height = 80;
+const ctx = c.getContext('2d', { willReadFrequently: true });
+function bbox(s) {
+  ctx.clearRect(0, 0, c.width, c.height); ctx.font = FONT; ctx.fillStyle = '#000';
+  ctx.fillText(s, 10, 55);
+  const d = ctx.getImageData(0, 0, c.width, c.height).data;
+  let x0 = c.width, y0 = c.height, x1 = -1, y1 = -1;
+  for (let y = 0; y < c.height; y++) for (let x = 0; x < c.width; x++)
+    if (d[(y * c.width + x) * 4 + 3] > 0) { x0 = Math.min(x0, x); x1 = Math.max(x1, x); y0 = Math.min(y0, y); y1 = Math.max(y1, y); }
+  return x1 < 0 ? 'blank' : `${x0},${y0},${x1},${y1}`;
+}
+function width(s) { ctx.font = FONT; return ctx.measureText(s).width; }
+const tofu = new Set(['͸', '͹', '΀'].map(bbox));
+const glyph = ch => { const b = bbox(ch); return b !== 'blank' && !tofu.has(b); };
+
+const checks = [];
+for (const [name, chars] of [
+  ['hiragana', 'あいうえおをん'], ['katakana', 'アイウエオヲン'], ['halfwidth kana', 'ｱｲｳｴｵ'],
+  ['kanji', '日本語漢字東京'], ['ja punctuation', '「」。、・'], ['thai consonants', 'กขคงจฉชซญ'],
+  ['thai vowels', 'ะาำิีึืุู'], ['thai tone marks', '่้๊๋'], ['thai digits', '๐๑๒๓'],
+]) for (const ch of chars) checks.push([`${name} ${ch}`, glyph(ch)]);
+// Thai marks have zero advance when shaped; a dotted-circle fallback adds width.
+for (const [base, cluster] of [['ก', 'ก่'], ['ท', 'ที่'], ['น', 'น้']])
+  checks.push([`thai shaping ${cluster}`, Math.abs(width(cluster) - width(base)) < 1]);
+
+const failed = checks.filter(([, ok]) => !ok);
+const result = { userAgent: navigator.userAgent, total: checks.length, failed: failed.map(([n]) => n) };
+document.getElementById('verdict').textContent =
+  failed.length ? `FAIL: ${failed.length} of ${checks.length}` : `PASS: ${checks.length} of ${checks.length}`;
+document.getElementById('verdict').className = failed.length ? 'fail' : 'pass';
+document.getElementById('rows').innerHTML = checks.map(([n, ok]) =>
+  `<tr><td>${n}</td><td class="${ok ? 'pass' : 'fail'}">${ok ? 'ok' : 'FAIL'}</td></tr>`).join('');
+fetch('/result', { method: 'POST', body: JSON.stringify(result) }).catch(() => {});
+</script>
