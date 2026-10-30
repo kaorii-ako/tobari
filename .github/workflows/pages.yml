@@ -5,10 +5,9 @@ name: pages
 # script, no third-party requests, every link and quoted figure resolving)
 # gate the deploy.
 
+# The site now builds from main (site/ there). This branch's copy only runs by hand,
+# so a push here can no longer overwrite the live site.
 on:
-  push:
-    branches: [browser, main]
-    paths: ["site/**", "*.md", "docs/**", "packaging/get-tobari.sh", "packaging/*.metainfo.xml", "shell/provision-cef.sh", "shell/ui/bangs.*", "tobari.pub", ".github/workflows/pages.yml"]
   workflow_dispatch:
 
 permissions:
