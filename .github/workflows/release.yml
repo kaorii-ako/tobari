@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: "Version to build, without the v (the tag must already exist)"
+        description: "Version to build, without the v. If the tag doesn't exist yet, the release creates it on the commit this run was started from."
         required: true
 
 permissions:
@@ -23,8 +23,6 @@ jobs:
           [ -n "$V" ] || V="${GITHUB_REF_NAME#v}"
           echo "version=$V" >> "$GITHUB_OUTPUT"
       - uses: actions/checkout@v4
-        with:
-          ref: v${{ steps.v.outputs.version }}
       - name: Check versions match the tag
         run: |
           V=${{ steps.v.outputs.version }}
@@ -95,6 +93,6 @@ jobs:
           The standalone browser window (CEF shell) isn't built yet, so Tobari runs inside Chromium. Japanese and Thai rendering is not yet confirmed on Bazzite.
           NOTES
           sed -i 's/^          //' notes.md
-          gh release create "v$V" --draft --prerelease --verify-tag \
+          gh release create "v$V" --draft --prerelease --target "$GITHUB_SHA" \
             --title "Tobari $V (v2 preview)" --notes-file notes.md \
             out/tobari-$V-linux-x86_64.tar.gz out/tobari-$V-extension.zip out/install.sh out/SHA256SUMS
