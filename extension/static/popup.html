@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Tobari command bar</title>
+<link rel="stylesheet" href="tobari.css">
+<style>
+body { width: 520px; background: var(--surface); overflow: hidden; }
+html { overflow: hidden; }
+.cb { display: flex; flex-direction: column; height: 460px; }
+.in { display: flex; align-items: center; gap: 10px; padding: 12px 14px; border-bottom: 1px solid var(--line); }
+.in svg { width: 18px; height: 18px; color: var(--ink-3); }
+.in input { flex: 1; border: 0; outline: 0; background: transparent; font-size: 15px; }
+#results { position: static; box-shadow: none; border: 0; border-radius: 0; max-height: none; flex: 1; min-height: 0; padding: 6px; overflow-x: hidden; min-width: 0; }
+.foot { display: flex; gap: 12px; padding: 8px 14px; border-top: 1px solid var(--line); font-size: 11.5px; color: var(--ink-3); }
+</style>
+</head>
+<body>
+<div class="cb">
+  <label class="in"><span id="lead"></span><input id="q" placeholder="Tabs, commands, skills, or ask…" autofocus spellcheck="false"></label>
+  <div class="menu" id="results"></div>
+  <div class="foot"><span><span class="kbd">↑↓</span> move</span><span><span class="kbd">Enter</span> run</span><span><span class="kbd">/</span> skills</span><span><span class="kbd">?</span> ask</span></div>
+</div>
+<script type="module" src="popup.js"></script>
+</body>
+</html>

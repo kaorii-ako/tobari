@@ -38,6 +38,56 @@ pub struct Config {
 pub struct Message {
     pub role: String,
     pub content: String,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub images: Vec<String>,
+}
+
+fn data_url_parts(url: &str) -> Option<(String, String)> {
+    let rest = url.strip_prefix("data:")?;
+    let (mime, data) = rest.split_once(";base64,")?;
+    Some((mime.to_owned(), data.to_owned()))
+}
+
+fn openai_messages(messages: &[Message], with_images: bool) -> Vec<serde_json::Value> {
+    messages
+        .iter()
+        .map(|m| {
+            if m.images.is_empty() || !with_images {
+                serde_json::json!({"role": m.role, "content": m.content})
+            } else {
+                let mut parts = vec![serde_json::json!({"type": "text", "text": m.content})];
+                parts.extend(
+                    m.images
+                        .iter()
+                        .map(|u| serde_json::json!({"type": "image_url", "image_url": {"url": u}})),
+                );
+                serde_json::json!({"role": m.role, "content": parts})
+            }
+        })
+        .collect()
+}
+
+fn anthropic_messages(messages: &[Message]) -> Vec<serde_json::Value> {
+    messages
+        .iter()
+        .map(|m| {
+            if m.images.is_empty() {
+                return serde_json::json!({"role": m.role, "content": m.content});
+            }
+            let mut parts: Vec<serde_json::Value> = m
+                .images
+                .iter()
+                .filter_map(|u| data_url_parts(u))
+                .map(|(mime, data)| serde_json::json!({"type": "image", "source": {"type": "base64", "media_type": mime, "data": data}}))
+                .collect();
+            parts.push(serde_json::json!({"type": "text", "text": m.content}));
+            serde_json::json!({"role": m.role, "content": parts})
+        })
+        .collect()
+}
+
+pub fn accepts_images(kind: Kind) -> bool {
+    !matches!(kind, Kind::Local)
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -47,6 +97,7 @@ pub struct Destination {
     pub host: String,
     pub region: String,
     pub local: bool,
+    pub images: bool,
     pub summary: String,
 }
 
@@ -154,6 +205,7 @@ impl Provider {
             host,
             region: self.region.clone(),
             local,
+            images: accepts_images(self.kind),
             summary,
         }
     }
@@ -238,7 +290,7 @@ pub async fn chat(
             let local = is_loopback_host(&host_of(&base));
             let mut req = client(local)?
                 .post(format!("{base}/chat/completions"))
-                .json(&serde_json::json!({"model": p.model, "messages": messages, "stream": true, "max_tokens": max_tokens}));
+                .json(&serde_json::json!({"model": p.model, "messages": openai_messages(messages, true), "stream": true, "max_tokens": max_tokens}));
             if p.needs_key() {
                 req = req.bearer_auth(key_for(p)?);
             }
@@ -250,7 +302,7 @@ pub async fn chat(
                 "model": p.model,
                 "max_tokens": max_tokens,
                 "stream": true,
-                "messages": rest,
+                "messages": anthropic_messages(&rest),
             });
             if !system.is_empty() {
                 body["system"] = system.into();
@@ -274,9 +326,16 @@ pub async fn chat(
             let contents: Vec<_> = rest
                 .iter()
                 .map(|m| {
+                    let mut parts: Vec<serde_json::Value> = m
+                        .images
+                        .iter()
+                        .filter_map(|u| data_url_parts(u))
+                        .map(|(mime, data)| serde_json::json!({"inline_data": {"mime_type": mime, "data": data}}))
+                        .collect();
+                    parts.push(serde_json::json!({"text": m.content}));
                     serde_json::json!({
                         "role": if m.role == "assistant" { "model" } else { "user" },
-                        "parts": [{"text": m.content}],
+                        "parts": parts,
                     })
                 })
                 .collect();
@@ -500,15 +559,36 @@ mod tests {
     }
 
     #[test]
+    fn images_map_per_provider() {
+        let m = vec![Message {
+            role: "user".into(),
+            content: "what is this".into(),
+            images: vec!["data:image/jpeg;base64,AAAA".into()],
+        }];
+        let o = openai_messages(&m, true);
+        assert_eq!(
+            o[0]["content"][1]["image_url"]["url"],
+            "data:image/jpeg;base64,AAAA"
+        );
+        let local = openai_messages(&m, false);
+        assert_eq!(local[0]["content"], "what is this");
+        let a = anthropic_messages(&m);
+        assert_eq!(a[0]["content"][0]["source"]["media_type"], "image/jpeg");
+        assert_eq!(a[0]["content"][0]["source"]["data"], "AAAA");
+    }
+
+    #[test]
     fn system_messages_are_split() {
         let m = vec![
             Message {
                 role: "system".into(),
                 content: "a".into(),
+                images: vec![],
             },
             Message {
                 role: "user".into(),
                 content: "b".into(),
+                images: vec![],
             },
         ];
         let (s, r) = split_system(&m);

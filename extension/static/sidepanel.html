@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tobari</title>
+<link rel="stylesheet" href="tobari.css">
+<link rel="stylesheet" href="sidepanel.css">
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <div class="brand"><img src="icons/tobari-32.png" alt=""><span>Tobari</span></div>
+    <nav class="seg" role="tablist">
+      <button role="tab" data-view="tabs" aria-selected="false">Tabs</button>
+      <button role="tab" data-view="ask" aria-selected="true">Ask</button>
+    </nav>
+    <button class="icon-btn" id="open-settings" title="Settings"></button>
+  </header>
+
+  <section class="view" id="view-tabs" hidden>
+    <div class="ws-row">
+      <div class="ws-list" id="ws-list"></div>
+      <button class="icon-btn" id="ws-add" title="New workspace"></button>
+    </div>
+    <div class="tab-tools">
+      <label class="search"><span id="tab-search-icon"></span><input id="tab-search" placeholder="Search tabs" autocomplete="off"></label>
+      <button class="icon-btn" id="organize" title="Group tabs by site (Alt+Shift+O). Hold Shift for AI grouping"></button>
+      <button class="icon-btn" id="sleep" title="Put idle tabs to sleep now"></button>
+    </div>
+    <div class="pinned" id="pinned"></div>
+    <div class="tab-list scroll" id="tab-list"></div>
+    <button class="new-tab" id="new-tab"><span id="new-tab-icon"></span>New tab</button>
+  </section>
+
+  <section class="view" id="view-ask">
+    <div class="model-bar">
+      <button class="dest" id="dest" title="Where your prompts go"><span class="dot off" id="dest-dot"></span><span id="dest-text">Connecting…</span><span id="dest-caret"></span></button>
+      <select id="role" class="role" title="Role"></select>
+    </div>
+    <div class="menu" id="provider-menu" hidden></div>
+    <div class="thread scroll" id="thread"></div>
+    <div class="composer-wrap">
+      <div class="site-tools" id="site-tools" hidden></div>
+      <div class="composer card" id="composer">
+        <div class="chips" id="chips"></div>
+        <textarea id="input" rows="1" placeholder="Ask anything · @ add context · / run a skill"></textarea>
+        <div class="composer-foot">
+          <button class="icon-btn" id="at-btn" title="Add context (@)"></button>
+          <button class="icon-btn" id="slash-btn" title="Skills (/)"></button>
+          <button class="icon-btn" id="attach-btn" title="Attach files or PDFs"></button>
+          <span class="skill-pill" id="skill-pill" hidden></span>
+          <span class="grow"></span>
+          <button class="send" id="send" title="Send (Enter)"></button>
+        </div>
+      </div>
+      <div class="menu picker" id="picker" hidden></div>
+      <input type="file" id="file" multiple hidden>
+    </div>
+  </section>
+</div>
+<script type="module" src="sidepanel.js"></script>
+</body>
+</html>

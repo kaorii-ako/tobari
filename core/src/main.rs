@@ -231,10 +231,12 @@ fn run(cli: Cli) -> anyhow::Result<()> {
                 providers::Message {
                     role: "system".into(),
                     content: guard::SYSTEM_RULES.into(),
+                    images: vec![],
                 },
                 providers::Message {
                     role: "user".into(),
                     content: prompt.join(" "),
+                    images: vec![],
                 },
             ];
             stream(provider.as_deref(), msgs)
@@ -440,10 +442,12 @@ fn skill(c: SkillCmd, j: bool) -> anyhow::Result<()> {
                 providers::Message {
                     role: "system".into(),
                     content: format!("{}\n\n{role}\n\nSkill `{}`:\n{}\n\nThis run is headless: no browser tools are available, answer in Markdown only.", guard::SYSTEM_RULES, s.name, s.instructions),
+                    images: vec![],
                 },
                 providers::Message {
                     role: "user".into(),
                     content: format!("{}\n\n{}", if input.is_empty() { "Run this skill." } else { &input }, context),
+                    images: vec![],
                 },
             ];
             stream(provider.as_deref(), msgs)

@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>New tab</title>
+<link rel="stylesheet" href="tobari.css">
+<link rel="stylesheet" href="newtab.css">
+</head>
+<body>
+<main class="nt">
+  <div class="mark"><img src="icons/tobari-128.png" alt=""><span>Tobari</span></div>
+  <form class="bar card" id="bar" autocomplete="off">
+    <span class="lead" id="lead"></span>
+    <input id="q" placeholder="Search, open a URL, or ask Tobari" autofocus spellcheck="false">
+    <div class="modes" role="radiogroup">
+      <button type="button" class="mode on" data-mode="search">Search</button>
+      <button type="button" class="mode" data-mode="ask">Ask</button>
+    </div>
+  </form>
+  <p class="hint muted"><span class="kbd">Tab</span> switches Search and Ask · <span class="kbd">Alt K</span> command bar · <span class="kbd">Alt J</span> panel</p>
+  <section class="tiles" id="tiles"></section>
+  <section class="lower">
+    <div class="col card" id="ws-card"><h3>Workspaces</h3><div id="ws"></div></div>
+    <div class="col card" id="mem-card"><h3>From your memory</h3><div id="mem"><p class="muted small">Notes you save from the panel show up here.</p></div></div>
+  </section>
+</main>
+<script type="module" src="newtab.js"></script>
+</body>
+</html>
