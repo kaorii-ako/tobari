@@ -53,10 +53,10 @@ def pss_kib(pid):
 
 def is_content(pid):
     try:
-        args = open(f"/proc/{pid}/cmdline", "rb").read().split(b"\0")
+        args = open(f"/proc/{pid}/cmdline", "rb").read()  # Chromium rewrites argv into one string
     except OSError:
         return False
-    return b"--type=renderer" in args or b"tab" in args  # Chromium renderer, Firefox web content
+    return b"--type=renderer" in args or b"\0tab" in args or b" tab" in args  # Firefox content: "-contentproc ... tab"
 
 
 def main():

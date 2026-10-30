@@ -3,16 +3,19 @@
 name: engine build cost
 on:
   workflow_dispatch:
+    inputs:
+      only: { description: "cef, chromium or gecko (empty runs all)", default: "" }
   push:
     branches: [rewrite]
     paths: [.github/workflows/engine-build-cost.yml]
 
 jobs:
   cef:
+    if: inputs.only == '' || inputs.only == 'cef'
     runs-on: ubuntu-24.04
     timeout-minutes: 60
     steps:
-      - name: Download CEF and build cefsimple against it
+      - name: Download CEF and build the C++ wrapper an app links against
         run: |
           set -euo pipefail
           t0=$(date +%s)
@@ -21,14 +24,15 @@ jobs:
           t1=$(date +%s)
           sudo apt-get install -y -q ninja-build libgtk-3-dev >/dev/null
           cmake -S "$V" -B build -G Ninja -DCMAKE_BUILD_TYPE=Release >/dev/null
-          ninja -C build cefsimple >/dev/null
+          ninja -C build libcef_dll_wrapper >/dev/null
           t2=$(date +%s)
-          ls -la build/tests/cefsimple/Release/cefsimple
+          ls -la build/libcef_dll_wrapper/libcef_dll_wrapper.a
           echo "{\"engine\":\"cef\",\"download_s\":$((t1-t0)),\"build_s\":$((t2-t1)),\"disk_gib\":\"$(du -sBG . | cut -f1)\"}" | tee result.json >> "$GITHUB_STEP_SUMMARY"
       - uses: actions/upload-artifact@v4
         with: { name: cost-cef, path: result.json }
 
   chromium:
+    if: inputs.only == '' || inputs.only == 'chromium'
     runs-on: ubuntu-24.04
     timeout-minutes: 355
     steps:
@@ -65,6 +69,7 @@ jobs:
         with: { name: cost-chromium, path: result.json }
 
   gecko:
+    if: inputs.only == '' || inputs.only == 'gecko'
     runs-on: ubuntu-24.04
     timeout-minutes: 355
     strategy:
@@ -91,7 +96,7 @@ jobs:
           timeout 17000 ./mach build > build.log 2>&1; build_rc=$?
           t3=$(date +%s)
           echo "{\"engine\":\"gecko-${{ matrix.mode }}\",\"clone_s\":$((t1-t0)),\"bootstrap_s\":$((t2-t1)),\"build_rc\":$build_rc,\"build_s\":$((t3-t2)),\"disk_gib\":\"$(du -sBG . ~/.mozbuild 2>/dev/null | awk '{s+=$1} END {print s"G"}')\"}" | tee ../result.json >> "$GITHUB_STEP_SUMMARY"
-          tail -5 bootstrap.log build.log
+          tail -5 bootstrap.log build.log || true
       - uses: actions/upload-artifact@v4
         if: always()
         with: { name: "cost-gecko-${{ matrix.mode }}", path: result.json }
