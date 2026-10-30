@@ -1,0 +1,17 @@
+[Desktop Entry]
+Type=Application
+Name=Tobari
+GenericName=Web Browser
+Comment=Local-first AI browser
+Exec=tobari-launch %U
+Icon=dev.tobari.Tobari
+Terminal=false
+Categories=Network;WebBrowser;
+MimeType=text/html;x-scheme-handler/http;x-scheme-handler/https;application/pdf;
+StartupWMClass=Tobari
+Keywords=browser;web;ai;internet;
+Actions=new-window;
+
+[Desktop Action new-window]
+Name=New Window
+Exec=tobari-launch
