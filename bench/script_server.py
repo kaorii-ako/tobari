@@ -1,10 +1,10 @@
 """Serve bench/script-test and print the first result the page posts, then exit.
 
-Usage: python3 bench/script_server.py PORT  (prints one JSON line)
+Usage: python3 bench/script_server.py PORT [DIR]  (prints one JSON line)
 """
 import http.server, pathlib, sys
 
-ROOT = pathlib.Path(__file__).parent / "script-test"
+ROOT = pathlib.Path(__file__).parent / (sys.argv[2] if len(sys.argv) > 2 else "script-test")
 
 
 class H(http.server.SimpleHTTPRequestHandler):

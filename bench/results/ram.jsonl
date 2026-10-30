@@ -1,0 +1,14 @@
+{"name": "chromium", "tabs": 0, "pss_mib": 529, "processes": 15, "content_processes": 0, "date": "2026-10-30", "samples_mib": [528, 529, 531]}
+{"name": "firefox", "tabs": 0, "pss_mib": 608, "processes": 12, "content_processes": 0, "date": "2026-10-30", "samples_mib": [603, 608, 609]}
+{"name": "cef", "tabs": 0, "pss_mib": 339, "processes": 9, "content_processes": 0, "date": "2026-10-30", "samples_mib": [337, 339, 339]}
+{"name": "chromium", "tabs": 10, "pss_mib": 2168, "processes": 73, "content_processes": 0, "date": "2026-10-30", "samples_mib": [2142, 2168, 2178]}
+{"name": "firefox", "tabs": 10, "pss_mib": 2313, "processes": 68, "content_processes": 0, "date": "2026-10-30", "samples_mib": [2298, 2313, 2315]}
+{"name": "cef", "tabs": 10, "pss_mib": 2017, "processes": 68, "content_processes": 0, "date": "2026-10-30", "samples_mib": [2008, 2017, 2056]}
+{"name": "chromium", "tabs": 0, "pss_mib": 530, "processes": 15, "content_processes": 0, "date": "2026-10-30", "samples_mib": [525, 530, 531]}
+{"name": "firefox", "tabs": 0, "pss_mib": 609, "processes": 12, "content_processes": 0, "date": "2026-10-30", "samples_mib": [601, 609, 615]}
+{"name": "cef", "tabs": 0, "pss_mib": 508, "processes": 12, "content_processes": 5, "date": "2026-10-30", "samples_mib": [506, 508, 508]}
+{"name": "chromium", "tabs": 10, "pss_mib": 2116, "processes": 76, "content_processes": 67, "date": "2026-10-30", "samples_mib": [2110, 2116, 2142]}
+{"name": "firefox", "tabs": 10, "pss_mib": 1922, "processes": 56, "content_processes": 51, "date": "2026-10-30", "samples_mib": [1913, 1922, 1925]}
+{"name": "cef", "tabs": 10, "pss_mib": 1859, "processes": 56, "content_processes": 48, "date": "2026-10-30", "samples_mib": [1851, 1859, 1900]}
+{"name": "chromium", "tabs": 0, "pss_mib": 523, "processes": 15, "content_processes": 6, "date": "2026-10-30", "samples_mib": [522, 523, 531]}
+{"name": "firefox", "tabs": 0, "pss_mib": 605, "processes": 12, "content_processes": 7, "date": "2026-10-30", "samples_mib": [599, 605, 608]}
