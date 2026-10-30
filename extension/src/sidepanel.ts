@@ -5,6 +5,7 @@ import { Msg, Role, Skill, Step, runTurn, visibleText } from "./lib/agent";
 import { renderMarkdown } from "./lib/markdown";
 import * as mcp from "./lib/mcp";
 import { $, autosize, favicon, h, icon, setIcon, showMenu, toast } from "./lib/ui";
+import { crossfade, enter, enterList, flipFrom, flipState, pop, shake, slideThumb } from "./lib/motion";
 import { applyClusters, clusterByHeuristic, discardIdleTabs, hostOf, listWorkspaces, saveWorkspaces, switchWorkspace, Workspace } from "./lib/tabs";
 
 const GROUP_COLORS: Record<string, string> = {
@@ -25,10 +26,18 @@ setIcon($("#send"), "send");
 
 $("#open-settings").onclick = () => chrome.runtime.openOptionsPage();
 
+let currentView: "tabs" | "ask" | null = null;
+
 function setView(v: "tabs" | "ask") {
+  const first = currentView === null;
+  const changed = currentView !== v;
+  currentView = v;
   document.querySelectorAll<HTMLButtonElement>(".seg button").forEach((b) => b.setAttribute("aria-selected", String(b.dataset.view === v)));
+  const target = document.querySelector<HTMLElement>(`.seg button[data-view="${v}"]`)!;
+  slideThumb($(".seg-thumb"), target, first);
   $("#view-tabs").hidden = v !== "tabs";
   $("#view-ask").hidden = v !== "ask";
+  if (changed && !first) crossfade(null, $(v === "tabs" ? "#view-tabs" : "#view-ask"), v === "tabs" ? -1 : 1);
   chrome.storage.session.set({ view: v }).catch(() => {});
   if (v === "tabs") renderTabs();
   else $("#input").focus();
@@ -61,7 +70,7 @@ function tabRow(t: chrome.tabs.Tab): HTMLElement {
   };
   const row = h(
     "div",
-    { class: `row${t.active ? " on" : ""}${t.discarded ? " sleeping" : ""}`, draggable: "true", title: `${t.title}\n${t.url}` },
+    { class: `row${t.active ? " on" : ""}${t.discarded ? " sleeping" : ""}`, draggable: "true", title: `${t.title}\n${t.url}`, "data-flip-id": `tab-${t.id}` },
     h("span", { class: "fav" }, favicon(t.favIconUrl)),
     h("span", { class: "title" }, t.title || t.url || "New tab"),
     t.audible ? h("span", { class: "badge", title: "Playing audio" }, icon("sound")) : null,
@@ -106,6 +115,8 @@ async function renderTabs() {
   }
 
   const list = $("#tab-list");
+  const firstPaint = !list.querySelector(".row");
+  const state = firstPaint ? null : flipState("#tab-list [data-flip-id]");
   list.innerHTML = "";
   const seen = new Set<number>();
   for (const t of tabs.filter((t) => !t.pinned)) {
@@ -118,7 +129,7 @@ async function renderTabs() {
       const isCollapsed = collapsed.has(t.groupId);
       const head = h(
         "div",
-        { class: "group-head" },
+        { class: "group-head", "data-flip-id": `group-${t.groupId}` },
         icon("down"),
         h("span", { class: "bar", style: `background:${GROUP_COLORS[g?.color ?? "grey"]}` }),
         h("span", {}, g?.title || "Group"),
@@ -135,6 +146,8 @@ async function renderTabs() {
       list.append(tabRow(t));
     }
   }
+  if (firstPaint) enterList(list.querySelectorAll(".row, .group-head"), { y: 4, stagger: 0.02 });
+  else flipFrom(state, "#tab-list [data-flip-id]");
   renderWorkspaces();
 }
 
@@ -255,6 +268,7 @@ function renderHostMissing(e: unknown) {
     h(
       "div",
       { class: "setup" },
+      h("img", { class: "glyph", src: "icons/tobari-128.png", alt: "" }),
       h("h2", {}, missing ? "Connect Tobari core" : "Tobari core stopped"),
       h("p", { class: "muted" }, missing ? "The panel talks to a small local program over native messaging. Install it once:" : String((e as Error)?.message ?? e)),
       missing ? h("pre", {}, "tobari install-host") : null,
@@ -262,6 +276,7 @@ function renderHostMissing(e: unknown) {
       h("div", {}, h("button", { class: "btn", onclick: () => location.reload() }, "Try again")),
     ),
   );
+  enterList(thread.querySelectorAll(".setup > *"));
 }
 
 function renderSetup(st: any) {
@@ -289,6 +304,7 @@ function renderSetup(st: any) {
     h(
       "div",
       { class: "setup" },
+      h("img", { class: "glyph", src: "icons/tobari-128.png", alt: "" }),
       h("h2", {}, "Get the local model"),
       h("p", { class: "muted" }, `Tobari runs ${st.sidecar.model} on your ${st.sidecar.backend === "cpu" ? "CPU" : "GPU (" + st.sidecar.backend + ")"}. It downloads once from Hugging Face and is checked against a pinned SHA-256.`),
       h("div", { class: "progress" }, bar),
@@ -296,6 +312,7 @@ function renderSetup(st: any) {
       h("div", {}, btn, " ", h("button", { class: "btn ghost", onclick: () => chrome.runtime.openOptionsPage() }, "Use a cloud model instead")),
     ),
   );
+  enterList(thread.querySelectorAll(".setup > *"));
 }
 
 async function renderEmpty() {
@@ -313,7 +330,7 @@ async function renderEmpty() {
   ideas.push({ icon: "book", title: "Save this page to memory", d: "A Markdown note you own", skill: "save-to-memory", prompt: "Save the important parts of this page to my memory.", withTab: true });
   const list = h("div", { class: "suggest" });
   for (const it of ideas.slice(0, 4)) {
-    const b = h("button", {}, h("span", { class: "ic" }, icon(it.icon)), h("span", {}, h("b", {}, it.title), h("span", { class: "d" }, it.d)));
+    const b = h("button", {}, h("span", { class: "ic" }, icon(it.icon)), h("span", {}, h("b", {}, it.title), h("span", { class: "d" }, it.d)), h("span", { class: "go" }, icon("send")));
     b.onclick = async () => {
       if (it.skill) pickSkill(it.skill);
       if (it.withTab && tab && !items.some((x) => x.tabId === tab.id)) await addItem(() => tabItem(tab));
@@ -322,7 +339,9 @@ async function renderEmpty() {
     };
     list.append(b);
   }
-  thread.append(h("div", { class: "empty" }, h("h2", {}, `${hello}.`), h("p", {}, "Ask about this page, your tabs, or anything. Add context with @."), list));
+  const empty = h("div", { class: "empty" }, h("img", { class: "glyph", src: "icons/tobari-128.png", alt: "" }), h("h2", {}, `${hello}.`), h("p", {}, "Ask about this page, your tabs, or anything. Add context with @."), list);
+  thread.append(empty);
+  enterList([...empty.querySelectorAll(".glyph, h2, p"), ...list.children], { y: 10, stagger: 0.045 });
 }
 
 function chip(it: ContextItem): HTMLElement {
@@ -334,10 +353,19 @@ function chip(it: ContextItem): HTMLElement {
   return h("span", { class: "chip", title: it.source }, it.favicon ? favicon(it.favicon, it.icon) : icon(it.icon), h("span", {}, it.label), x);
 }
 
+const shownChips = new Set<string>();
+
 function renderChips() {
   const c = $("#chips");
   c.innerHTML = "";
-  items.forEach((it) => c.append(chip(it)));
+  items.forEach((it) => {
+    const el = chip(it);
+    c.append(el);
+    if (!shownChips.has(it.id)) {
+      shownChips.add(it.id);
+      pop(el);
+    }
+  });
   if (items.some((i) => i.image) && dest && !dest.images) {
     c.append(h("span", { class: "chip", style: "color:var(--warn)" }, icon("alert"), h("span", {}, `${prettyModel(dest.model)} reads text only; images will be skipped`)));
   }
@@ -345,7 +373,7 @@ function renderChips() {
 }
 
 async function addItem(make: () => Promise<ContextItem | null>) {
-  const placeholder = h("span", { class: "chip" }, h("span", {}, "Reading…"));
+  const placeholder = h("span", { class: "chip" }, h("span", { class: "skeleton", style: "width:64px;height:8px" }));
   $("#chips").append(placeholder);
   try {
     const it = await make();
@@ -392,6 +420,7 @@ async function openPicker(char: "@" | "/", query: string) {
         { group: "Make", label: "Turn this prompt into a skill…", icon: "plus" as const, run: () => { clearTrigger(); promptToSkill(); } },
       ],
       () => (menuCtl = null),
+      "bottom",
     );
     return;
   }
@@ -411,6 +440,7 @@ async function openPicker(char: "@" | "/", query: string) {
       },
     })),
     () => (menuCtl = null),
+    "bottom",
   );
 }
 
@@ -514,18 +544,19 @@ function updateSend() {
 $("#send").onclick = () => (busy ? busy.abort() : send());
 
 function stepCard(s: Step, resolve?: (a: "allow" | "always" | "reject") => void): HTMLElement {
-  const cls = s.state === "denied" ? "deny" : s.state === "proposed" && resolve ? "confirm" : s.state === "done" ? "done" : "";
+  const cls = s.state === "denied" ? "deny" : s.state === "proposed" && resolve ? "confirm" : s.state === "done" ? "done" : s.state === "running" ? "running" : "";
+  const iconName = s.state === "denied" ? "shield" : s.state === "done" ? "check" : s.state === "failed" || s.state === "rejected" ? "x" : resolve ? "alert" : "pointer";
   const stateText: Record<string, string> = { proposed: resolve ? "needs your OK" : "checking", running: "running…", done: "done", denied: "blocked", rejected: "you said no", failed: "failed" };
   const args = { ...s.action.args };
   delete args.field_type;
   const card = h(
     "div",
     { class: `step ${cls}` },
-    h("div", { class: "head" }, icon(s.state === "denied" ? "shield" : s.state === "done" ? "check" : "pointer"), h("span", { class: "tool" }, s.action.tool), h("span", { class: "state" }, stateText[s.state])),
+    h("div", { class: "head" }, h("span", { class: "ic" }, icon(iconName as any)), h("span", { class: "tool" }, s.action.tool), h("span", { class: "state" }, stateText[s.state])),
     s.action.why ? h("div", { class: "why" }, s.action.why) : null,
     Object.keys(args).length ? h("div", { class: "args" }, JSON.stringify(args, null, 1).replace(/^\{\n|\n\}$/g, "")) : null,
     s.verdict.reasons.length && (s.state === "proposed" || s.state === "denied") ? h("ul", { class: "reasons" }, ...s.verdict.reasons.map((r) => h("li", {}, r))) : null,
-    s.result && s.state !== "proposed" ? h("div", { class: "muted small" }, s.result.slice(0, 200)) : null,
+    s.result && s.state !== "proposed" ? h("div", { class: "result" }, s.result.slice(0, 300)) : null,
   );
   if (resolve) {
     card.append(
@@ -541,9 +572,16 @@ function stepCard(s: Step, resolve?: (a: "allow" | "always" | "reject") => void)
   return card;
 }
 
-function scrollDown() {
-  thread.scrollTop = thread.scrollHeight;
+function scrollDown(smooth = false) {
+  thread.scrollTo({ top: thread.scrollHeight, behavior: smooth ? "smooth" : "auto" });
 }
+
+function withCaret(html: string): string {
+  const m = /<\/(p|li|h\d|td|code)>(?:<\/(?:ul|ol|tr|tbody|table|pre)>)*$/.exec(html);
+  return m ? html.slice(0, m.index) + '<span class="caret"></span>' + html.slice(m.index) : html + '<span class="caret"></span>';
+}
+
+const THINKING = '<div class="thinking"><div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div></div>';
 
 async function send() {
   if (busy) return;
@@ -563,6 +601,8 @@ async function send() {
     userBubble.append(ctx);
   }
   thread.append(userBubble);
+  enter(userBubble, { y: 8 });
+  scrollDown(true);
   busy = new AbortController();
   updateSend();
   let bubble: HTMLElement | null = null;
@@ -570,10 +610,11 @@ async function send() {
   let raw = "";
   const newBubble = () => {
     raw = "";
-    body = h("div", { class: "md" }, h("span", { class: "typing" }, h("i"), h("i"), h("i")));
+    body = h("div", { class: "md", html: THINKING });
     bubble = h("div", { class: "msg bot" }, h("div", { class: "meta" }, h("span", { class: `dot ${dest?.local ? "local" : "cloud"}` }), h("span", {}, prettyModel(dest?.model ?? ""))), body);
     thread.append(bubble);
-    scrollDown();
+    enter(bubble, { y: 6 });
+    scrollDown(true);
   };
   const usedSkill = skill;
   try {
@@ -593,10 +634,11 @@ async function send() {
         onDelta: (d) => {
           raw += d;
           const vis = visibleText(raw);
-          if (body) body.innerHTML = vis ? renderMarkdown(vis) : '<span class="typing"><i></i><i></i><i></i></span>';
+          if (body) body.innerHTML = vis ? withCaret(renderMarkdown(vis)) : THINKING;
           scrollDown();
         },
         onStep: (s) => {
+          thread.querySelectorAll(".caret").forEach((c) => c.remove());
           const vis = visibleText(raw);
           if (bubble && !vis) bubble.remove();
           const id = `step-${s.action.tool}-${history.length}-${thread.children.length}`;
@@ -605,8 +647,11 @@ async function send() {
           const card = stepCard(s);
           card.dataset.step = (s as any)._id;
           if (old) old.replaceWith(card);
-          else thread.append(card);
-          scrollDown();
+          else {
+            thread.append(card);
+            enter(card, { y: 8, scale: 0.98 });
+          }
+          scrollDown(true);
         },
         confirm: (s) =>
           new Promise((resolve) => {
@@ -617,22 +662,28 @@ async function send() {
             const old = thread.querySelector<HTMLElement>(`[data-step="${(s as any)._id}"]`);
             if (old) old.replaceWith(card);
             else thread.append(card);
-            scrollDown();
+            enter(card, { y: 6, scale: 0.98 });
+            scrollDown(true);
             busy?.signal.addEventListener("abort", () => resolve("reject"));
           }),
       },
     });
     history = result.history.slice(-24);
+    thread.querySelectorAll(".caret").forEach((c) => c.remove());
     if (bubble && body) addActions(bubble, visibleText(result.text));
     if (usedSkill?.name === "cluster-tabs") await applyClusterReply(result.text);
   } catch (e: any) {
     (bubble as HTMLElement | null)?.remove();
     if (!busy?.signal.aborted) {
-      thread.append(h("div", { class: "err" }, isHostMissing(e) ? "Tobari core is not installed. Run `tobari install-host`." : e.message ?? String(e)));
+      const err = h("div", { class: "err" }, icon("alert"), h("span", {}, isHostMissing(e) ? "Tobari core is not installed. Run `tobari install-host`." : e.message ?? String(e)));
+      thread.append(err);
+      enter(err);
+      shake(err);
       if (isHostMissing(e)) renderHostMissing(e);
     }
   } finally {
     busy = null;
+    thread.querySelectorAll(".caret").forEach((c) => c.remove());
     pickSkill(null);
     updateSend();
     scrollDown();

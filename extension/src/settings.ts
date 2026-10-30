@@ -1,5 +1,6 @@
 import { core, isHostMissing } from "./lib/core";
 import { $, h, icon, toast } from "./lib/ui";
+import { enterList, followPill } from "./lib/motion";
 
 const main = $("#main");
 type Section = "ai" | "model" | "skills" | "memory" | "import" | "privacy" | "crashes" | "about";
@@ -10,9 +11,13 @@ const sections: Record<Section, () => Promise<void>> = { ai, model, skills, memo
 async function route() {
   const s = (location.hash.slice(1) || "ai") as Section;
   document.querySelectorAll<HTMLAnchorElement>("#nav a").forEach((a) => a.classList.toggle("on", a.dataset.s === s));
+  const on = document.querySelector<HTMLElement>(`#nav a[data-s="${s}"]`);
+  if (on) followPill($("#nav-pill"), on, !navReady);
+  navReady = true;
   main.innerHTML = "";
   try {
     await (sections[s] ?? ai)();
+    enterList(main.children, { y: 8, stagger: 0.04 });
   } catch (e: any) {
     add(
       h("h1", {}, "Tobari core is not connected"),
@@ -21,6 +26,7 @@ async function route() {
     );
   }
 }
+let navReady = false;
 window.addEventListener("hashchange", route);
 route();
 

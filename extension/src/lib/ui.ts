@@ -1,4 +1,5 @@
 import { icons, IconName } from "./icons";
+import { followPill, popover, toastIn } from "./motion";
 
 export const $ = <T extends HTMLElement = HTMLElement>(sel: string, root: ParentNode = document) => root.querySelector(sel) as T;
 
@@ -40,15 +41,25 @@ export function favicon(url?: string, fallback: IconName = "globe"): HTMLElement
 }
 
 export function toast(text: string, ms = 2200) {
+  document.querySelectorAll(".toast").forEach((t) => t.remove());
   const t = h("div", { class: "toast", role: "status" }, text);
   document.body.append(t);
-  setTimeout(() => t.remove(), ms);
+  toastIn(t, ms);
 }
 
 export type MenuItem = { group?: string; label: string; hint?: string; icon?: IconName; img?: string; run: () => void };
 
-export function showMenu(menu: HTMLElement, items: MenuItem[], onClose?: () => void): { move: (d: number) => void; pick: () => void; close: () => void } {
+export function showMenu(
+  menu: HTMLElement,
+  items: MenuItem[],
+  onClose?: () => void,
+  from: "top" | "bottom" = "top",
+): { move: (d: number) => void; pick: () => void; close: () => void } {
+  const wasHidden = menu.hidden;
   menu.innerHTML = "";
+  menu.classList.add("has-pill");
+  const pill = h("div", { class: "pill", style: "opacity:0" });
+  menu.append(pill);
   let idx = 0;
   let lastGroup = "";
   const rows: HTMLElement[] = [];
@@ -70,11 +81,14 @@ export function showMenu(menu: HTMLElement, items: MenuItem[], onClose?: () => v
   });
   if (items.length === 0) menu.append(h("div", { class: "group" }, "Nothing matches"));
   menu.hidden = false;
+  if (wasHidden) popover(menu, from);
+  if (rows[0]) followPill(pill, rows[0], true);
   function setOn(i: number) {
     rows[idx]?.classList.remove("on");
     idx = (i + rows.length) % Math.max(rows.length, 1);
     rows[idx]?.classList.add("on");
     rows[idx]?.scrollIntoView({ block: "nearest" });
+    if (rows[idx]) followPill(pill, rows[idx]);
   }
   function close() {
     menu.hidden = true;

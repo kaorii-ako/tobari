@@ -19,7 +19,7 @@ const { chromium } = (() => {
 const ext = resolve(here, "../dist");
 const repo = resolve(here, "../..");
 const bin = process.env.TOBARI_BIN ?? join(repo, "core/target/debug/tobari");
-const shots = process.env.SHOTS ?? join(repo, "docs/screenshots");
+const shots = process.env.SHOTS ?? join(repo, "docs/screenshots", process.env.SCHEME === "dark" ? "dark" : "");
 mkdirSync(shots, { recursive: true });
 
 const home = mkdtempSync(join(tmpdir(), "tobari-ui-"));
@@ -66,6 +66,7 @@ writeFileSync(
 const server = spawn("python3", [join(here, "fixture", "server.py"), "8765"], { stdio: "ignore" });
 await new Promise((r) => setTimeout(r, 600));
 
+const settle = (p) => p.waitForTimeout(650);
 const checks = [];
 const ok = (name, cond, extra = "") => {
   checks.push([name, !!cond]);
@@ -76,6 +77,7 @@ const ctx = await chromium.launchPersistentContext(userData, {
   headless: false,
   env,
   viewport: { width: 1280, height: 860 },
+  colorScheme: process.env.SCHEME === "dark" ? "dark" : "light",
   args: [`--disable-extensions-except=${ext}`, `--load-extension=${ext}`, "--no-first-run", "--lang=en-US", "--no-proxy-server"],
 });
 let debugPage = null;
@@ -95,6 +97,7 @@ try {
   await nt.setViewportSize({ width: 1280, height: 860 });
   await nt.goto(`chrome-extension://${id}/newtab.html`);
   await nt.waitForTimeout(800);
+  await settle(nt);
   await nt.screenshot({ path: `${shots}/newtab.png` });
   ok("new tab page renders the command bar", await nt.isVisible("#q"));
   await nt.close();
@@ -109,12 +112,14 @@ try {
   await panel.waitForFunction(() => document.querySelector("#dest-text")?.textContent?.includes("on this device"), null, { timeout: 15000 });
   ok("chat header shows model and that prompts stay local", (await panel.textContent("#dest-text")) === "Qwen3 4B Instruct · on this device");
   await panel.waitForSelector(".suggest button");
+  await settle(panel);
   await panel.screenshot({ path: `${shots}/panel-empty.png` });
 
   await panel.click('.seg button[data-view="tabs"]');
   await panel.waitForSelector(".row");
   const titles = await panel.$$eval(".row .title", (els) => els.map((e) => e.textContent));
   ok("vertical tabs list the window's tabs", titles.some((t) => t.includes("帳 Tobari test page")) && titles.some((t) => t.includes("Rust async")), titles.join(" | "));
+  await settle(panel);
   await panel.screenshot({ path: `${shots}/panel-tabs.png` });
   await panel.click('.seg button[data-view="ask"]');
 
@@ -123,6 +128,8 @@ try {
   await panel.waitForSelector("#picker:not([hidden]) .item");
   const pickerText = await panel.textContent("#picker");
   ok("@ picker offers tab, selection, element, screenshot, all tabs", ["Current tab", "Selected text", "Pick an element", "Screenshot", "All open tabs"].every((x) => pickerText.includes(x)));
+  await settle(panel);
+  if (process.env.DEBUG_MOTION) console.log(await panel.evaluate(() => ({ vis: document.visibilityState, op: getComputedStyle(document.querySelector("#picker")).opacity, style: document.querySelector("#picker").getAttribute("style"), sugg: getComputedStyle(document.querySelector(".suggest button:nth-child(2)")).opacity, suggStyle: document.querySelector(".suggest button:nth-child(2)").getAttribute("style") })));
   await panel.screenshot({ path: `${shots}/panel-picker.png` });
   await panel.keyboard.press("Enter");
   await panel.waitForSelector("#chips .chip:not(:has-text('Reading'))");
@@ -132,6 +139,7 @@ try {
   await panel.waitForSelector(".msg.bot table", { timeout: 20000 });
   const answer = await panel.textContent(".msg.bot .md");
   ok("streamed answer renders Markdown with Japanese and Thai", answer.includes("帳") && answer.includes("ภาษาไทย") && answer.includes("Mango"));
+  await settle(panel);
   await panel.screenshot({ path: `${shots}/panel-answer.png` });
 
   await panel.selectOption("#role", "operator");
@@ -140,6 +148,7 @@ try {
   await panel.waitForSelector(".step.confirm", { timeout: 20000 });
   const confirmText = await panel.textContent(".step.confirm");
   ok("state-changing click waits for confirmation", confirmText.includes("needs your OK") && confirmText.includes("click"));
+  await settle(panel);
   await panel.screenshot({ path: `${shots}/panel-confirm.png` });
   await panel.click(".step.confirm .btn.primary");
   await panel.waitForFunction(() => [...document.querySelectorAll(".msg.bot")].some((m) => m.textContent.includes("Clicked")), null, { timeout: 20000 });
@@ -155,6 +164,7 @@ try {
   const denyText = await panel.textContent(".step.deny");
   ok("prompt injection that leaks page data is blocked", denyText.includes("blocked") && denyText.includes("page data"), denyText);
   await panel.waitForFunction(() => [...document.querySelectorAll(".msg.bot")].some((m) => m.textContent.includes("blocked that step")), null, { timeout: 20000 });
+  await settle(panel);
   await panel.screenshot({ path: `${shots}/panel-blocked.png` });
   const attackerTabs = await sw.evaluate(async () => (await chrome.tabs.query({})).filter((t) => (t.url ?? "").includes("attacker")).length);
   ok("no tab ever opened the attacker URL", attackerTabs === 0);
@@ -179,6 +189,7 @@ try {
   await panel.waitForSelector(".step.confirm", { timeout: 20000 });
   ok("site tool call waits for confirmation", (await panel.textContent(".step.confirm")).includes("mcp.get_price"));
   ok("site tools cannot be allowed for the whole site", !(await panel.textContent(".step.confirm")).includes("Always on this site"));
+  await settle(panel);
   await panel.screenshot({ path: `${shots}/panel-site-tools.png` });
   await panel.click(".step.confirm .btn.primary");
   await panel.waitForFunction(() => [...document.querySelectorAll(".msg.bot")].some((m) => m.textContent.includes("120 yen")), null, { timeout: 20000 });
@@ -188,12 +199,14 @@ try {
   await st.setViewportSize({ width: 1180, height: 860 });
   await st.goto(`chrome-extension://${id}/settings.html#ai`);
   await st.waitForSelector(".li");
+  await settle(st);
   await st.screenshot({ path: `${shots}/settings-ai.png` });
   await st.goto(`chrome-extension://${id}/settings.html#import`);
   await st.waitForSelector(".li .btn.primary");
   ok("import finds the Chrome profile", (await st.textContent("main")).includes("Chrome · Kao"));
   await st.click(".li .btn.primary");
   await st.waitForSelector("text=Import selected");
+  await settle(st);
   await st.screenshot({ path: `${shots}/settings-import.png` });
   await st.click("text=Import selected");
   await st.waitForSelector("text=Done", { timeout: 15000 });
@@ -203,6 +216,7 @@ try {
   await st.waitForSelector("main h1");
   await st.goto(`chrome-extension://${id}/settings.html#privacy`);
   await st.waitForSelector(".toggle");
+  await settle(st);
   await st.screenshot({ path: `${shots}/settings-privacy.png` });
 
   const rules = await sw.evaluate(async () => (await chrome.declarativeNetRequest.getEnabledRulesets()));
@@ -216,6 +230,7 @@ try {
   ok("command bar finds tabs by text", (await pop.textContent("#results")).includes("Rust async notes"));
   await pop.fill("#q", "");
   await pop.waitForTimeout(400);
+  await settle(pop);
   await pop.screenshot({ path: `${shots}/command-bar.png` });
 
   const tabsFromCli = await new Promise((res) => {
@@ -228,7 +243,8 @@ try {
 } catch (e) {
   console.error(e);
   if (debugPage) {
-    await debugPage.screenshot({ path: `${shots}/../failure.png` }).catch(() => {});
+    await settle(debugPage);
+  await debugPage.screenshot({ path: `${shots}/../failure.png` }).catch(() => {});
     console.error((await debugPage.textContent("#thread").catch(() => "")).slice(0, 1500));
   }
   checks.push(["no exception", false]);

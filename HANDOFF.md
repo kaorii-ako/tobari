@@ -13,6 +13,26 @@ Updated 2026-10-30. Branch `claude/dreamy-albattani-pl8bw2` on kaorii-ako/tobari
 | 4. Bench | Harness done. One smoke run in the cloud container (Chromium vs Chromium + Tobari only). No Bazzite numbers yet. |
 | 5. Packaging | Flatpak manifest is a draft with `PIN-…` placeholders. AppImage script written, not run. |
 
+## Design pass (second session)
+
+- New design tokens in `extension/static/tobari.css`: a 4 px spacing scale, a type scale, layered
+  shadows, a focus ring, one shared ease-out curve, and dark mode variables checked by screenshot.
+- Motion through GSAP 3.15 (`extension/src/lib/motion.ts`):
+  - Segmented controls and menus use sliding thumbs and highlight pills.
+  - Menus grow from the side they open on.
+  - Tab reorders, opens and closes glide (Flip).
+  - Messages, step cards and context chips enter with short ease-out moves.
+  - Toasts spring in, errors shake once.
+  - Typing and arrow-key navigation never animate. `prefers-reduced-motion` and hidden pages turn
+    everything off.
+  - Every tween has a timer backstop that jumps it to its end state, so content can't stay
+    invisible when the browser stops sending animation frames. The UI test caught exactly that bug.
+- Streaming answers show a block caret inside the last line and skeleton lines while thinking.
+  Step cards have a colored status rail and a spinner while running.
+- GSAP's license is the free "standard" license, not OSI open source. It allows shipping inside
+  Tobari. Flathub accepts it as a bundled dependency, but the manifest's license field must list it.
+- Screenshots: `docs/screenshots/` (light) and `docs/screenshots/dark/`.
+
 ## Tests that pass today
 
 - `cargo test`: 36 unit tests (guard, providers, skills, memory, import, framing).
@@ -44,7 +64,9 @@ not target hardware. Full table in `docs/bench.md`.
    `report.md` and `headless.png`. If Flatpak Chrome and the CEF sample show boxes while Firefox
    doesn't, and strace shows the CJK file never opened, switch the engine to C (Gecko) before more
    shell work. This is the exit condition in `docs/engine-decision.md`.
-2. **Kao: allow `cef-builds.spotifycdn.com` in the cloud environment's network settings** (and
+2. **Kao: allow `cef-builds.spotifycdn.com` in the cloud environment's network settings, then
+   start a new session** (still blocked in the second session; the policy seems to apply at
+   container start) (and
    `download.gnome.org`, `github.com` release assets, `huggingface.co` if Flatpak and model work
    should happen in the cloud). Then compile `shell/`, fix whatever the CEF API disagrees with,
    commit `shell/cef.lock`.

@@ -1,14 +1,19 @@
 import { core } from "./lib/core";
 import { $, favicon, h, setIcon } from "./lib/ui";
 import { listWorkspaces, switchWorkspace } from "./lib/tabs";
+import { enterList, slideThumb } from "./lib/motion";
 
 type Mode = "search" | "ask";
 let mode: Mode = "search";
 const q = $<HTMLInputElement>("#q");
 
+let firstMode = true;
+
 function setMode(m: Mode) {
   mode = m;
   document.querySelectorAll<HTMLButtonElement>(".mode").forEach((b) => b.classList.toggle("on", b.dataset.mode === m));
+  slideThumb($(".mode-thumb"), document.querySelector<HTMLElement>(`.mode[data-mode="${m}"]`)!, firstMode);
+  firstMode = false;
   setIcon($("#lead"), m === "ask" ? "spark" : "search");
   q.placeholder = m === "ask" ? "Ask Tobari anything" : "Search or type a URL";
   q.focus();
@@ -21,6 +26,8 @@ q.addEventListener("keydown", (e) => {
   }
 });
 setMode("search");
+$("#date").textContent = new Date().toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" });
+enterList(document.querySelectorAll(".date, .mark, .bar, .hint"), { y: 10, stagger: 0.06 });
 
 export function toUrl(text: string, engine: string): string {
   const t = text.trim();
@@ -54,7 +61,10 @@ chrome.topSites.get().then((sites) => {
     const fav = `chrome-extension://${chrome.runtime.id}/_favicon/?pageUrl=${encodeURIComponent(s.url)}&size=32`;
     box.append(h("a", { class: "tile", href: s.url, title: s.title }, h("span", { class: "ic" }, favicon(fav)), h("span", {}, s.title || host)));
   }
+  enterList(box.children, { y: 8, stagger: 0.03, delay: 0.18 });
 });
+
+enterList(document.querySelectorAll(".lower .col"), { y: 10, stagger: 0.06, delay: 0.26 });
 
 listWorkspaces().then(({ list, current }) => {
   const box = $("#ws");
