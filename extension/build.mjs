@@ -6,6 +6,8 @@ rmSync(out, { recursive: true, force: true });
 mkdirSync(out, { recursive: true });
 cpSync("static", out, { recursive: true });
 cpSync("node_modules/pdfjs-dist/build/pdf.worker.min.mjs", `${out}/pdf.worker.min.mjs`);
+mkdirSync(`${out}/fonts`, { recursive: true });
+for (const f of ["inter-latin-wght-normal.woff2", "inter-latin-ext-wght-normal.woff2"]) cpSync(`node_modules/@fontsource-variable/inter/files/${f}`, `${out}/fonts/${f}`);
 
 const domains = readFileSync("rules/blocklist.txt", "utf8")
   .split("\n")
@@ -30,6 +32,7 @@ await build({
     newtab: "src/newtab.ts",
     popup: "src/popup.ts",
     settings: "src/settings.ts",
+    window: "src/window.ts",
   },
   bundle: true,
   format: "esm",

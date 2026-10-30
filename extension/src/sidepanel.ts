@@ -12,9 +12,17 @@ const GROUP_COLORS: Record<string, string> = {
   grey: "#8a8c92", blue: "#3b6fd1", red: "#d1493b", yellow: "#d1a23b", green: "#3b9c63", pink: "#d14b8f", purple: "#7b54d1", cyan: "#2fa3b5", orange: "#d67852",
 };
 
+const mode = new URLSearchParams(location.search).get("mode");
+if (mode === "tabs" || mode === "ask") document.body.classList.add(`mode-${mode}`);
+
 setIcon($("#open-settings"), "gear");
+setIcon($("#open-settings-2"), "gear");
+setIcon($("#open-settings-3"), "gear");
+setIcon($("#new-chat"), "edit");
+setIcon($("#nav-back"), "back");
+setIcon($("#nav-fwd"), "fwd");
+setIcon($("#nav-reload"), "reload");
 setIcon($("#ws-add"), "plus");
-setIcon($("#tab-search-icon"), "search");
 setIcon($("#organize"), "wand");
 setIcon($("#sleep"), "sleep");
 setIcon($("#new-tab-icon"), "plus");
@@ -24,7 +32,7 @@ setIcon($("#slash-btn"), "slash");
 setIcon($("#attach-btn"), "file");
 setIcon($("#send"), "send");
 
-$("#open-settings").onclick = () => chrome.runtime.openOptionsPage();
+for (const id of ["#open-settings", "#open-settings-2", "#open-settings-3"]) $(id).onclick = () => chrome.runtime.openOptionsPage();
 
 let currentView: "tabs" | "ask" | null = null;
 
@@ -34,16 +42,17 @@ function setView(v: "tabs" | "ask") {
   currentView = v;
   document.querySelectorAll<HTMLButtonElement>(".seg button").forEach((b) => b.setAttribute("aria-selected", String(b.dataset.view === v)));
   const target = document.querySelector<HTMLElement>(`.seg button[data-view="${v}"]`)!;
-  slideThumb($(".seg-thumb"), target, first);
+  if (!mode) slideThumb($(".seg-thumb"), target, first);
   $("#view-tabs").hidden = v !== "tabs";
   $("#view-ask").hidden = v !== "ask";
   if (changed && !first) crossfade(null, $(v === "tabs" ? "#view-tabs" : "#view-ask"), v === "tabs" ? -1 : 1);
-  chrome.storage.session.set({ view: v }).catch(() => {});
+  if (!mode) chrome.storage.session.set({ view: v }).catch(() => {});
   if (v === "tabs") renderTabs();
   else $("#input").focus();
 }
 document.querySelectorAll<HTMLButtonElement>(".seg button").forEach((b) => (b.onclick = () => setView(b.dataset.view as "tabs" | "ask")));
-(chrome.storage.session.get("view") as Promise<Record<string, any>>).then(({ view }) => setView(view === "tabs" ? "tabs" : "ask")).catch(() => setView("ask"));
+if (mode === "tabs" || mode === "ask") setView(mode);
+else (chrome.storage.session.get("view") as Promise<Record<string, any>>).then(({ view }) => setView(view === "tabs" ? "tabs" : "ask")).catch(() => setView("ask"));
 
 let windowId: number | undefined;
 targetWindowId().then((w) => (windowId = w));
@@ -100,6 +109,7 @@ function tabRow(t: chrome.tabs.Tab): HTMLElement {
 }
 
 async function renderTabs() {
+  syncOmni();
   if (windowId === undefined) windowId = await targetWindowId();
   const tabs = await chrome.tabs.query({ windowId });
   const groups = await chrome.tabGroups.query({ windowId });
@@ -156,7 +166,7 @@ async function renderWorkspaces() {
   const box = $("#ws-list");
   box.innerHTML = "";
   for (const w of list) {
-    const b = h("button", { class: `ws${w.id === current ? " on" : ""}`, title: w.id === current ? "Current workspace · double-click to rename" : `Switch to ${w.name}` }, h("span", { class: "sw", style: `background:${w.color}` }), w.name);
+    const b = h("button", { class: `ws${w.id === current ? " on" : ""}`, title: w.id === current ? `${w.name} · double-click to rename` : `Switch to ${w.name}`, style: `--ws:${w.color}` }, h("span", { class: "ws-ic" }, w.name.trim().charAt(0).toUpperCase() || "•"));
     b.onclick = async () => {
       if (w.id === current || windowId === undefined) return;
       await switchWorkspace(w.id, windowId);
@@ -186,10 +196,51 @@ $("#ws-add").onclick = async () => {
   renderTabs();
 };
 
-$<HTMLInputElement>("#tab-search").oninput = (e) => {
-  tabFilter = (e.target as HTMLInputElement).value;
-  renderTabs();
-};
+$("#nav-back").onclick = async () => chrome.tabs.goBack((await activeTab()).id!).catch(() => {});
+$("#nav-fwd").onclick = async () => chrome.tabs.goForward((await activeTab()).id!).catch(() => {});
+$("#nav-reload").onclick = async () => chrome.tabs.reload((await activeTab()).id!);
+
+const omni = $<HTMLInputElement>("#omni-input");
+let omniUrl = "";
+
+function prettyUrl(url: string): string {
+  try {
+    const u = new URL(url);
+    if (u.protocol === "chrome-extension:" || url.startsWith("chrome://newtab")) return "";
+    return (u.hostname.replace(/^www\./, "") + (u.pathname === "/" ? "" : u.pathname)).slice(0, 80);
+  } catch {
+    return url;
+  }
+}
+
+async function syncOmni() {
+  const t = await activeTab();
+  omniUrl = t?.url ?? "";
+  const secure = omniUrl.startsWith("https:");
+  setIcon($("#omni-ic"), secure ? "lock" : omniUrl.startsWith("http:") ? "alert" : "search");
+  $("#omni").classList.toggle("insecure", omniUrl.startsWith("http:"));
+  if (document.activeElement !== omni) omni.value = prettyUrl(omniUrl);
+}
+
+omni.addEventListener("focus", () => {
+  omni.value = /^https?:|^file:/.test(omniUrl) ? omniUrl : "";
+  requestAnimationFrame(() => omni.select());
+});
+omni.addEventListener("blur", () => (omni.value = prettyUrl(omniUrl)));
+omni.addEventListener("keydown", (e) => {
+  if (e.key === "Escape") omni.blur();
+});
+$("#omni").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const text = omni.value.trim();
+  if (!text) return;
+  const { settings } = (await chrome.storage.local.get("settings")) as Record<string, any>;
+  const engine: string = settings?.searchEngine ?? "https://duckduckgo.com/?q=%s";
+  const url = /^[a-z][a-z0-9+.-]*:\/\//i.test(text) ? text : /^(localhost|[\w-]+(\.[\w-]+)+)(:\d+)?(\/\S*)?$/i.test(text) ? `https://${text}` : engine.replace("%s", encodeURIComponent(text));
+  const t = await activeTab();
+  await chrome.tabs.update(t.id!, { url });
+  omni.blur();
+});
 $("#new-tab").onclick = () => chrome.tabs.create({ windowId });
 $("#sleep").onclick = async () => {
   const n = await discardIdleTabs(0);
@@ -209,7 +260,10 @@ $("#organize").onclick = async (e) => {
 };
 
 onCoreEvent((m) => {
-  if (m.event === "tabs") queueRender();
+  if (m.event === "tabs") {
+    queueRender();
+    syncOmni();
+  }
   if (m.event === "pending-context") takePendingContext();
   if (m.event === "core-down") setDest(null, m.message);
 });
@@ -542,6 +596,15 @@ function updateSend() {
 }
 
 $("#send").onclick = () => (busy ? busy.abort() : send());
+
+$("#new-chat").onclick = () => {
+  if (busy) busy.abort();
+  history = [];
+  items = [];
+  renderChips();
+  renderEmpty();
+  input.focus();
+};
 
 function stepCard(s: Step, resolve?: (a: "allow" | "always" | "reject") => void): HTMLElement {
   const cls = s.state === "denied" ? "deny" : s.state === "proposed" && resolve ? "confirm" : s.state === "done" ? "done" : s.state === "running" ? "running" : "";

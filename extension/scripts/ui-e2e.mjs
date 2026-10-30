@@ -195,6 +195,31 @@ try {
   await panel.waitForFunction(() => [...document.querySelectorAll(".msg.bot")].some((m) => m.textContent.includes("120 yen")), null, { timeout: 20000 });
   ok("site tool result comes back into the answer", true);
 
+  await page.bringToFront();
+  const openWin = async (extra) => {
+    const url = `chrome-extension://${id}/window.html?window=${winId}&url=${encodeURIComponent("http://127.0.0.1:8765/index.html")}${extra}`;
+    const [p] = await Promise.all([ctx.waitForEvent("page"), sw.evaluate((u) => chrome.windows.create({ url: u, width: 1440, height: 900 }), url)]);
+    await p.setViewportSize({ width: 1440, height: 900 });
+    await p.waitForLoadState();
+    return p;
+  };
+  let winPage = await openWin("");
+  const sideFrame = winPage.frameLocator("#side");
+  await sideFrame.locator(".row").first().waitFor({ timeout: 15000 });
+  await winPage.waitForTimeout(500);
+  ok("window layout: sidebar shows tabs with an address bar", (await sideFrame.locator("#omni-input").inputValue()).includes("127.0.0.1"), await sideFrame.locator("#omni-input").inputValue());
+  const assistFrame = winPage.frameLocator("#assist");
+  await assistFrame.locator("#dest-text").filter({ hasText: "on this device" }).waitFor({ timeout: 15000 });
+  ok("window layout: assistant panel is connected", true);
+  await settle(winPage);
+  await winPage.screenshot({ path: `${shots}/window-layout.png` });
+  await winPage.close();
+  winPage = await openWin(`&split=${encodeURIComponent("http://127.0.0.1:8765/other.html")}`);
+  await winPage.frameLocator("#side").locator(".row").first().waitFor({ timeout: 15000 });
+  await settle(winPage);
+  await winPage.screenshot({ path: `${shots}/window-split.png` });
+  await winPage.close();
+
   const st = await ctx.newPage();
   await st.setViewportSize({ width: 1180, height: 860 });
   await st.goto(`chrome-extension://${id}/settings.html#ai`);

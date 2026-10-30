@@ -33,6 +33,18 @@ Updated 2026-10-30. Branch `claude/dreamy-albattani-pl8bw2` on kaorii-ako/tobari
   Tobari. Flathub accepts it as a bundled dependency, but the manifest's license field must list it.
 - Screenshots: `docs/screenshots/` (light) and `docs/screenshots/dark/`.
 
+## Tabbit-style layout (second session)
+
+- The panel now has two dedicated modes the shell mounts on each side of the page:
+  `sidepanel.html?mode=tabs` (back, forward, reload, address bar, pinned sites, tabs, workspace
+  dock) and `sidepanel.html?mode=ask` (the assistant with New chat). Without a mode it stays the
+  combined Tabs/Ask panel for stock Chromium's single side panel.
+- `window.html` composes sidebar, page card(s) and assistant card into the full window, with split
+  view and a resizable assistant. It's a preview and the spec for the shell (`docs/shell-layout.md`).
+- Inter Variable (OFL) is bundled for Latin, 132 KB. Japanese and Thai fall through to the system's
+  Noto fonts.
+- UI test: 24 checks, run in light and dark.
+
 ## Tests that pass today
 
 - `cargo test`: 36 unit tests (guard, providers, skills, memory, import, framing).
@@ -70,14 +82,16 @@ not target hardware. Full table in `docs/bench.md`.
    `download.gnome.org`, `github.com` release assets, `huggingface.co` if Flatpak and model work
    should happen in the cloud). Then compile `shell/`, fix whatever the CEF API disagrees with,
    commit `shell/cef.lock`.
-3. Try Tobari today on Bazzite with `scripts/dev-run.sh` inside distrobox (see `docs/DEV.md`), then
+3. First job once CEF downloads: answer the Plan A / Plan B question in `docs/shell-layout.md`,
+   then build the three-column window and real split view (Kao's priority).
+4. Try Tobari today on Bazzite with `scripts/dev-run.sh` inside distrobox (see `docs/DEV.md`), then
    `tobari setup` for the real Vulkan llama-server and Qwen3-4B. Check actual VRAM and that the
    unload frees it (`nvtop` or `radeontop`).
-4. Run `bench/run.py` on the desktop with Firefox, Zen, Brave, Chrome and Tobari, using
+5. Run `bench/run.py` on the desktop with Firefox, Zen, Brave, Chrome and Tobari, using
    `bench/pages.txt` (real sites) and `--discard`. Only these numbers count against the "at or below
    Brave" target.
-5. Fill the Flatpak pins, build it, then run the probe against the Flatpak build.
-6. Linear: only Phase 0 to 2 exist as KAO-62, KAO-63 and KAO-64. Creating Phase 3 to 5 was
+6. Fill the Flatpak pins, build it, then run the probe against the Flatpak build.
+7. Linear: only Phase 0 to 2 exist as KAO-62, KAO-63 and KAO-64. Creating Phase 3 to 5 was
    cancelled mid-call. Create them, or say if you'd rather track in HANDOFF only.
 
 ## Open risks

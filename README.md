@@ -7,6 +7,8 @@ a local model (Qwen3 4B Instruct on llama.cpp, Vulkan). Prompts stay on your com
 add a cloud provider with your own API key, and the header of every chat says which one is in use.
 There is no Tobari server anywhere in between.
 
+<img src="docs/screenshots/window-layout.png" alt="Tobari window: tabs on the left, the page in the middle, the assistant on the right">
+
 <p>
 <img src="docs/screenshots/panel-answer.png" width="280" alt="Panel answering about a page in Japanese and Thai">
 <img src="docs/screenshots/panel-confirm.png" width="280" alt="The assistant asking before it clicks">

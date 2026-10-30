@@ -19,21 +19,36 @@
   </header>
 
   <section class="view" id="view-tabs" hidden>
-    <div class="ws-row">
-      <div class="ws-list" id="ws-list"></div>
-      <button class="icon-btn" id="ws-add" title="New workspace"></button>
-    </div>
-    <div class="tab-tools">
-      <label class="search"><span id="tab-search-icon"></span><input id="tab-search" placeholder="Search tabs" autocomplete="off"></label>
-      <button class="icon-btn" id="organize" title="Group tabs by site (Alt+Shift+O). Hold Shift for AI grouping"></button>
+    <div class="nav-row">
+      <button class="icon-btn" id="nav-back" title="Back (Alt+Left)"></button>
+      <button class="icon-btn" id="nav-fwd" title="Forward (Alt+Right)"></button>
+      <button class="icon-btn" id="nav-reload" title="Reload"></button>
+      <span class="grow"></span>
+      <button class="icon-btn" id="organize" title="Group tabs by site (Alt+Shift+O). Shift-click for AI grouping"></button>
       <button class="icon-btn" id="sleep" title="Put idle tabs to sleep now"></button>
     </div>
+    <form class="omni" id="omni" autocomplete="off">
+      <span class="omni-ic" id="omni-ic"></span>
+      <input id="omni-input" spellcheck="false" placeholder="Search or enter address">
+    </form>
     <div class="pinned" id="pinned"></div>
+    <button class="new-tab" id="new-tab"><span id="new-tab-icon"></span>New tab<span class="kbd">Ctrl T</span></button>
     <div class="tab-list scroll" id="tab-list"></div>
-    <button class="new-tab" id="new-tab"><span id="new-tab-icon"></span>New tab</button>
+    <footer class="dock">
+      <div class="ws-list" id="ws-list"></div>
+      <button class="icon-btn" id="ws-add" title="New workspace"></button>
+      <span class="grow"></span>
+      <button class="icon-btn" id="open-settings-2" title="Settings"></button>
+    </footer>
   </section>
 
   <section class="view" id="view-ask">
+    <div class="ask-head">
+      <span class="ask-title">Assistant</span>
+      <span class="grow"></span>
+      <button class="icon-btn" id="new-chat" title="New chat"></button>
+      <button class="icon-btn" id="open-settings-3" title="Settings"></button>
+    </div>
     <div class="model-bar">
       <button class="dest" id="dest" title="Where your prompts go"><span class="dot off" id="dest-dot"></span><span id="dest-text">Connecting…</span><span id="dest-caret"></span></button>
       <select id="role" class="role" title="Role"></select>
