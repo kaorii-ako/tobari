@@ -45,6 +45,21 @@ Updated 2026-10-30. Branch `claude/dreamy-albattani-pl8bw2` on kaorii-ako/tobari
   Noto fonts.
 - UI test: 24 checks, run in light and dark.
 
+## Website and releases (third session)
+
+- The website now builds from `main` (`site/`), in the v2 look: overview, a downloads page generated
+  from GitHub Releases (files, sizes, SHA-256), an install guide and docs rendered from the repo.
+  GitHub Pages deploys on pushes to `main` and on every release event. The `browser` branch's
+  Pages workflow is now manual-only, so it can't overwrite the site.
+- Vercel: import the repo in the Vercel dashboard with Root Directory `site` (vercel.json holds
+  the rest). The old `tobari-pi.vercel.app` deployment was gone (404).
+- v2 is 0.5.0. `release.yml` builds a draft release on a `v0.5+` tag; `packaging/sign-release.sh`
+  signs and publishes it with the offline key (`docs/RELEASING.md`). `install-v2.sh` was tested end
+  to end with a throwaway key as a normal user: it installs a correctly signed release, refuses a
+  tampered archive and a foreign signature, and uninstalls.
+- CI's UI test failed on `main` because Chromium on the runner sometimes refuses a screenshot.
+  Screenshots now retry and only warn; the 24 checks still decide pass or fail.
+
 ## Tests that pass today
 
 - `cargo test`: 36 unit tests (guard, providers, skills, memory, import, framing).

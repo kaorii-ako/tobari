@@ -1,0 +1,64 @@
+name: pages
+
+on:
+  push:
+    branches: [main]
+    paths: ["site/**", "docs/**", "phase0/README.md", "packaging/get-tobari.sh", "packaging/v2/install.sh", "packaging/flatpak/README.md", "extension/static/manifest.json", ".github/workflows/pages.yml"]
+  release:
+    types: [published, edited, deleted]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: actions/configure-pages@v5
+      - name: Build site
+        working-directory: site
+        env:
+          SITE_BASE: /tobari/
+          SITE_URL: https://kaorii-ako.github.io/tobari
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REQUIRE_LIVE_RELEASES: "1"
+        run: npm ci && node scripts/build.mjs
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site/dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-24.04
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - id: deploy
+        uses: actions/deploy-pages@v4
+
+  vercel-hook:
+    needs: build
+    if: github.event_name == 'release'
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Rebuild Vercel so its downloads page lists the new release
+        env:
+          HOOK: ${{ secrets.VERCEL_DEPLOY_HOOK }}
+        run: |
+          if [ -z "$HOOK" ]; then echo "VERCEL_DEPLOY_HOOK not set; Vercel rebuilds on the next push instead"; exit 0; fi
+          curl -fsS -X POST "$HOOK"

@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+set -euo pipefail
+here="$(cd "$(dirname "$(readlink -f "$0")")/.." && pwd)"
+profile="${XDG_CONFIG_HOME:-$HOME/.config}/tobari/browser"
+browser=""
+for c in chromium-browser chromium brave-browser brave; do
+  if command -v "$c" >/dev/null 2>&1; then browser="$(command -v "$c")"; break; fi
+done
+if [ -z "$browser" ]; then
+  echo "Tobari needs Chromium (not the Flatpak). In a distrobox container: sudo dnf install -y chromium" >&2
+  exit 1
+fi
+"$here/bin/tobari" install-host >/dev/null 2>&1 || true
+mkdir -p "$profile"
+exec "$browser" \
+  --user-data-dir="$profile" \
+  --load-extension="$here/extension" \
+  --no-first-run --no-default-browser-check \
+  --ozone-platform-hint=auto --enable-wayland-ime \
+  "$@"

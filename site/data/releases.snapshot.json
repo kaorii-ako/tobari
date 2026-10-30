@@ -1,0 +1,205 @@
+{
+ "fetched_at": "2026-10-30T09:00:00Z",
+ "releases": [
+  {
+   "tag_name": "v0.4.0",
+   "name": "Tobari 0.4.0",
+   "body": "### Install\n```sh\ncurl -fsSL https://kaorii-ako.github.io/tobari/install.sh | bash\n```\nOn Linux it installs the Flatpak, or the per-user build; add `--appimage` for the AppImage. On an Apple-silicon Mac it installs `Tobari.app`; run `brew install minisign` first. The release signature is checked before anything is installed.\n\n### New in 0.4.0\n- **Import from another browser.** Tobari button \u2192 Import brings over cookies (so you stay signed in), bookmarks, history and a list of your extensions with links to install them, from Chrome, Chromium, Brave, Edge, Vivaldi (native or Flatpak) or Firefox. The other browser's files are only read. Passwords move through that browser's CSV export; the import page shows how.\n- **Tab groups.** Group tabs by site as you open them (a switch in the Tobari button), or once with *Group now*. *Ungroup* removes only the groups Tobari made.\n- **Local AI.** *Ask AI about this page* opens a side panel that summarizes the page or answers questions about it. *Organize with AI* sorts your tabs into groups by topic. Both run a Qwen3 model **on your computer** through llama.cpp (Vulkan on Linux, Metal on macOS). Nothing is downloaded until you pick a model in `tobari://ai`. The 0.6B model is about 400 MB, the recommended 4B model about 2.5 GB, and the 30B-A3B model about 14.7 GB. Each download is checked against a pinned SHA-256. Small models make mistakes. The threat model is in [SECURITY.md](https://github.com/kaorii-ako/tobari/blob/browser/SECURITY.md#local-ai).\n\n### Verify by hand\n```sh\nminisign -Vm SHA256SUMS -P RWRo6aS4M8MND+s3tkrSD2POK8Donu5pWez8QI5+Pf6KZike67q2L6iB\nsha256sum -c --ignore-missing SHA256SUMS      # shasum -a 256 -c on macOS\n```\n\n**Engine:** CEF 154.0.33, Chromium 154.0.8037.94; llama.cpp b11053. macOS is a preview: it's tested on GitHub's Macs and isn't notarized. This is a development release.\n",
+   "html_url": "https://github.com/kaorii-ako/tobari/releases/tag/v0.4.0",
+   "published_at": "2026-10-07T11:41:06Z",
+   "prerelease": true,
+   "draft": false,
+   "assets": [
+    {
+     "name": "install.sh",
+     "size": 13139,
+     "browser_download_url": "https://github.com/kaorii-ako/tobari/releases/download/v0.4.0/install.sh",
+     "digest": "sha256:7e82615931aa15466d69c9f87820dabd0f714a5db9e5ab9d64444012a7c7cce7"
+    },
+    {
+     "name": "SHA256SUMS",
+     "size": 453,
+     "browser_download_url": "https://github.com/kaorii-ako/tobari/releases/download/v0.4.0/SHA256SUMS",
+     "digest": "sha256:071b795644a25de7d413b4080e1c9cfb4576e91858b58732047982c3b1279258"
+    },
+    {
+     "name": "SHA256SUMS.minisig",
+     "size": 292,
+     "browser_download_url": "https://github.com/kaorii-ako/tobari/releases/download/v0.4.0/SHA256SUMS.minisig",
+     "digest": "sha256:5fb4a5061d0f6393cc65aaacdfe035adb8bf745885e1bfcbbaa3bc9d5fc57a79"
+    },
+    {
+     "name": "tobari-0.4.0-linux-x86_64.tar.gz",
+     "size": 401234411,
+     "browser_download_url": "https://github.com/kaorii-ako/tobari/releases/download/v0.4.0/tobari-0.4.0-linux-x86_64.tar.gz",
+     "digest": "sha256:3ce59dd06dd6601527f7526e85972fbcabec0a005b21af356892326df7eff67c"
+    },
+    {
+     "name": "Tobari-0.4.0-macos-arm64.dmg",
+     "size": 176767312,
+     "browser_download_url": "https://github.com/kaorii-ako/tobari/releases/download/v0.4.0/Tobari-0.4.0-macos-arm64.dmg",
+     "digest": "sha256:8901b5e6f7f0e703434e829e8623ef73af8a7b04f0593f55d4b397e850c9bb20"
+    },
+    {
+     "name": "Tobari-0.4.0-x86_64.AppImage",
+     "size": 363235832,
+     "browser_download_url": "https://github.com/kaorii-ako/tobari/releases/download/v0.4.0/Tobari-0.4.0-x86_64.AppImage",
+     "digest": "sha256:f0ce0f24b523fb728326a5a8de2f6825f1b9308e492a98be898482b24589cba5"
+    },
+    {
+     "name": "tobari-0.4.0.flatpak",
+     "size": 131090504,
+     "browser_download_url": "https://github.com/kaorii-ako/tobari/releases/download/v0.4.0/tobari-0.4.0.flatpak",
+     "digest": "sha256:00cac45b1ee59e03da040a071402c8e337557da75bca022dcfbc62a0ec69e7e2"
+    }
+   ]
+  },
+  {
+   "tag_name": "v0.3.0",
+   "name": "Tobari 0.3.0 (development)",
+   "body": "### Install\n```sh\ncurl -fsSL https://kaorii-ako.github.io/tobari/install.sh | bash\n```\nOn Linux it installs the Flatpak, or the per-user build; add `--appimage` for the AppImage. On an Apple-silicon Mac it installs `Tobari.app`; run `brew install minisign` first. The release signature is checked before anything is installed.\n\n### New in 0.3.0\n- **Setup opens in its own window.** It appears over the browser, with its own title bar and close button, and behaves the same on GNOME, KDE and macOS. Closing it keeps what you chose. Reopen it from the Tobari toolbar button, from the new tab, or by typing `tobari://welcome`.\n- **Search engine logos** on the engine step. They ship inside the browser, so nothing is fetched to show them.\n- **`tobari://` pages**, Tobari's equivalent of `chrome://`:\n  - `tobari://about`: versions and where your data lives.\n  - `tobari://blocking`: counts, filter lists with an update button, and the sites where you turned blocking off, with a button to turn it back on.\n  - `tobari://bangs`: every bang.\n  - `tobari://welcome`: setup.\n\n  Type them into the address bar. Websites can't open, frame or fetch them.\n\n### Verify by hand\n```sh\nminisign -Vm SHA256SUMS -P RWRo6aS4M8MND+s3tkrSD2POK8Donu5pWez8QI5+Pf6KZike67q2L6iB\nsha256sum -c --ignore-missing SHA256SUMS      # shasum -a 256 -c on macOS\n```\n\n**Engine:** CEF 154.0.33, Chromium 154.0.8037.94. macOS is a preview: it's tested on GitHub's Macs and isn't notarized. This is a development release.\n",
+   "html_url": "https://github.com/kaorii-ako/tobari/releases/tag/v0.3.0",
+   "published_at": "2026-10-04T02:19:03Z",
+   "prerelease": true,
+   "draft": false,
+   "assets": [
+    {
+     "name": "install.sh",
+     "size": 13139,
+     "browser_download_url": "https://github.com/kaorii-ako/tobari/releases/download/v0.3.0/install.sh",
+     "digest": "sha256:5e5f36b1e5500e97856cd0e20d33c014657ec3e6eb2fa2fffd06924bbe93a29a"
+    },
+    {
+     "name": "SHA256SUMS",
+     "size": 453,
+     "browser_download_url": "https://github.com/kaorii-ako/tobari/releases/download/v0.3.0/SHA256SUMS",
+     "digest": "sha256:9fa0ab844afc3d7ddcffeeb459ac0a035214f99f3f37fe4c391d33bf0ff16723"
+    },
+    {
+     "name": "SHA256SUMS.minisig",
+     "size": 313,
+     "browser_download_url": "https://github.com/kaorii-ako/tobari/releases/download/v0.3.0/SHA256SUMS.minisig",
+     "digest": "sha256:f02443109d3135b3472d6601437032bb81355c4a8c2cb57c2b7caed136e0f498"
+    },
+    {
+     "name": "tobari-0.3.0-linux-x86_64.tar.gz",
+     "size": 369466021,
+     "browser_download_url": "https://github.com/kaorii-ako/tobari/releases/download/v0.3.0/tobari-0.3.0-linux-x86_64.tar.gz",
+     "digest": "sha256:5956dcf432c7edfa03cbd9250d79ceda85176afe236bf49e7f14770213744940"
+    },
+    {
+     "name": "Tobari-0.3.0-macos-arm64.dmg",
+     "size": 165052359,
+     "browser_download_url": "https://github.com/kaorii-ako/tobari/releases/download/v0.3.0/Tobari-0.3.0-macos-arm64.dmg",
+     "digest": "sha256:c73c13ec30a8e5ea8b9a350580af282f9bac2c4bc12dd5e2f64d69b55e798703"
+    },
+    {
+     "name": "Tobari-0.3.0-x86_64.AppImage",
+     "size": 336693752,
+     "browser_download_url": "https://github.com/kaorii-ako/tobari/releases/download/v0.3.0/Tobari-0.3.0-x86_64.AppImage",
+     "digest": "sha256:4b4e2a0032d256cfe642434537faabfb82c5202ede53e48e9d5950efa776a109"
+    },
+    {
+     "name": "tobari-0.3.0.flatpak",
+     "size": 114249096,
+     "browser_download_url": "https://github.com/kaorii-ako/tobari/releases/download/v0.3.0/tobari-0.3.0.flatpak",
+     "digest": "sha256:9bee5fb646680a845d95ebdcb16c3df820ae6bfea693bae7e8b81cb85a3ece90"
+    }
+   ]
+  },
+  {
+   "tag_name": "v0.2.0",
+   "name": "Tobari 0.2.0 (development)",
+   "body": "### Install\n```sh\ncurl -fsSL https://kaorii-ako.github.io/tobari/install.sh | bash\n```\nOn Linux the command installs the Flatpak if you have Flatpak, and a per-user build otherwise. Add `--appimage` to get the AppImage instead. On an Apple-silicon Mac it installs `Tobari.app` into `~/Applications`; run `brew install minisign` first. Everything installs for your user only, and the release signature is checked before anything is installed.\n\n### New in 0.2.0\n- **Welcome flow** on first launch. Choose your search engine: DuckDuckGo, Brave Search, Startpage, Kagi, Ecosia, Google or Bing. Then set the appearance (system, light or dark, plus six accents with a live preview) and the privacy options. Every choice is a real Chromium setting and takes effect immediately. You can reopen setup from the Tobari toolbar button or from the new tab.\n- **AppImage.** One portable file. It adds itself to your app menu so the dock shows its icon, and it refuses to run without its sandbox.\n- **macOS for Apple silicon (preview).** Built, ad-hoc signed and smoke-tested on GitHub's macOS machines. It isn't notarized, so if you open the `.dmg` from a browser download you need right-click \u2192 Open the first time; the command-line install doesn't need this. It hasn't been used day to day on a Mac yet.\n- **Fixes:**\n  - The new tab's search box always used DuckDuckGo; it now uses your chosen engine.\n  - Choosing an engine that Chromium also ships could leave the browser with no default search engine.\n\n### Verify by hand\n```sh\nminisign -Vm SHA256SUMS -P RWRo6aS4M8MND+s3tkrSD2POK8Donu5pWez8QI5+Pf6KZike67q2L6iB\nsha256sum -c --ignore-missing SHA256SUMS      # shasum -a 256 -c on macOS\n```\n\n**Engine:** CEF 154.0.33, Chromium 154.0.8037.94. Every tradeoff is listed in SECURITY.md. This is a development release.\n",
+   "html_url": "https://github.com/kaorii-ako/tobari/releases/tag/v0.2.0",
+   "published_at": "2026-10-04T01:32:46Z",
+   "prerelease": true,
+   "draft": false,
+   "assets": [
+    {
+     "name": "install.sh",
+     "size": 13139,
+     "browser_download_url": "https://github.com/kaorii-ako/tobari/releases/download/v0.2.0/install.sh",
+     "digest": "sha256:45714d7ea506acda8dd7c01f4a88d949a620289e3fa0a49b2b64be139188aa7c"
+    },
+    {
+     "name": "SHA256SUMS",
+     "size": 453,
+     "browser_download_url": "https://github.com/kaorii-ako/tobari/releases/download/v0.2.0/SHA256SUMS",
+     "digest": "sha256:46a452420320e0b119d829f780a3db2a0e8861199669367ef87fe4183bc2c8a8"
+    },
+    {
+     "name": "SHA256SUMS.minisig",
+     "size": 313,
+     "browser_download_url": "https://github.com/kaorii-ako/tobari/releases/download/v0.2.0/SHA256SUMS.minisig",
+     "digest": "sha256:6313df5f0364dba7cddff3cba110c7475c08cdc46f264d59eecead782e423028"
+    },
+    {
+     "name": "tobari-0.2.0-linux-x86_64.tar.gz",
+     "size": 369245452,
+     "browser_download_url": "https://github.com/kaorii-ako/tobari/releases/download/v0.2.0/tobari-0.2.0-linux-x86_64.tar.gz",
+     "digest": "sha256:df92dbb7cfa0d49a774168957639c59f8f9d92c56a2d8b348068c7cbf551caa2"
+    },
+    {
+     "name": "Tobari-0.2.0-macos-arm64.dmg",
+     "size": 164944418,
+     "browser_download_url": "https://github.com/kaorii-ako/tobari/releases/download/v0.2.0/Tobari-0.2.0-macos-arm64.dmg",
+     "digest": "sha256:1ef173fd5966cc149f6506f2a926e3f49222349305281a91da85f126e8de7c26"
+    },
+    {
+     "name": "Tobari-0.2.0-x86_64.AppImage",
+     "size": 336591352,
+     "browser_download_url": "https://github.com/kaorii-ako/tobari/releases/download/v0.2.0/Tobari-0.2.0-x86_64.AppImage",
+     "digest": "sha256:cbb29c9ae3c0daf42569716d6e6e89f865cfe3c787487fb6df2183effa9e0b9d"
+    },
+    {
+     "name": "tobari-0.2.0.flatpak",
+     "size": 114165096,
+     "browser_download_url": "https://github.com/kaorii-ako/tobari/releases/download/v0.2.0/tobari-0.2.0.flatpak",
+     "digest": "sha256:19d7bf56862b7d6e0780f6e142c70e533a16f98c0a4cca76cad18bde506e48fd"
+    }
+   ]
+  },
+  {
+   "tag_name": "v0.1.0",
+   "name": "Tobari 0.1.0 (development)",
+   "body": "First development build of Tobari, a privacy-first Chromium browser for Linux.\n\n### Install\n```sh\ncurl -fsSL https://kaorii-ako.github.io/tobari/install.sh | bash\n```\nThe script installs the Flatpak if you have Flatpak, and a per-user build in `~/.local` otherwise. It installs for your user only. Before installing anything, it checks this release's minisign signature and the artifact's checksum.\n\nYou can also install by hand. Download `SHA256SUMS`, `SHA256SUMS.minisig` and one artifact, then run:\n```sh\nminisign -Vm SHA256SUMS -P RWRo6aS4M8MND+s3tkrSD2POK8Donu5pWez8QI5+Pf6KZike67q2L6iB\nsha256sum -c --ignore-missing SHA256SUMS\nflatpak install --user tobari-0.1.0.flatpak        # or: tar xzf \u2026; tobari-0.1.0/install.sh tobari-0.1.0/app\n```\n\n### What's in it\n- **Engine:** CEF 154.0.33, Chromium 154.0.8037.94. It includes the 32 security fixes from Chrome 154.0.8037.92.\n- **Interface:** Chromium's own window and tabs.\n- **Extensions:** they install from the Chrome Web Store and keep updating.\n- **Blocking:** adblock-rust with about 142,000 rules. Requests are cancelled before they load, including requests from service workers.\n- **Bangs:** resolved on your machine before the request leaves.\n- **Defaults:** DuckDuckGo, no suggestions or prediction, third-party cookies blocked, HTTPS-Only mode.\n- **Hardening:** the V8 optimizing compilers are off. You can turn them back on per site with \"Fast JavaScript\" in the toolbar popup. Device APIs are blocked, and so are extensions pushed system-wide by Linux packages.\n- **Network:** on an idle profile, nothing leaves the machine except the four filter-list downloads.\n- **Memory:** a median of 861 MB against Chrome's 1,220 MB (29.4% less), and 20 processes against 69, at 10 identical tabs.\n\n### Tradeoffs\n- Safe Browsing is off, so there are no phishing warnings.\n- Heavy JavaScript runs about 2\u00d7 slower until you allow it for that site.\n- Certificate-revocation (CRLSet) and Certificate Transparency data come only from the engine build.\n- The Web Store shows a \"Switch to Chrome\" banner. \"Add to Chrome\" still works.\n\nAll of these are documented in SECURITY.md. This is a development release.\n",
+   "html_url": "https://github.com/kaorii-ako/tobari/releases/tag/v0.1.0",
+   "published_at": "2026-10-02T13:42:58Z",
+   "prerelease": true,
+   "draft": false,
+   "assets": [
+    {
+     "name": "install.sh",
+     "size": 10303,
+     "browser_download_url": "https://github.com/kaorii-ako/tobari/releases/download/v0.1.0/install.sh",
+     "digest": "sha256:d4a3528400317397075a4c8a10625ce5cd666d54f8107c5e4e4c4f6e1079d483"
+    },
+    {
+     "name": "SHA256SUMS",
+     "size": 263,
+     "browser_download_url": "https://github.com/kaorii-ako/tobari/releases/download/v0.1.0/SHA256SUMS",
+     "digest": "sha256:7bd08122ee27eb14cacc087b7666c9b8317382f7b3c1741121afa7f662509ea1"
+    },
+    {
+     "name": "SHA256SUMS.minisig",
+     "size": 313,
+     "browser_download_url": "https://github.com/kaorii-ako/tobari/releases/download/v0.1.0/SHA256SUMS.minisig",
+     "digest": "sha256:98653860fc901908fcefb6c945f94ad20c1edeaadbeebfab3a68db78138af46e"
+    },
+    {
+     "name": "tobari-0.1.0-linux-x86_64.tar.gz",
+     "size": 369235736,
+     "browser_download_url": "https://github.com/kaorii-ako/tobari/releases/download/v0.1.0/tobari-0.1.0-linux-x86_64.tar.gz",
+     "digest": "sha256:e4e92386ac94c57fe4a40d54953f0378a4b2af65734aa505e09078d8e319340a"
+    },
+    {
+     "name": "tobari-0.1.0.flatpak",
+     "size": 114240472,
+     "browser_download_url": "https://github.com/kaorii-ako/tobari/releases/download/v0.1.0/tobari-0.1.0.flatpak",
+     "digest": "sha256:67f84c316e7227f2036fc21dba67259869287722753cf0954f958eefe62d69b3"
+    }
+   ]
+  }
+ ]
+}

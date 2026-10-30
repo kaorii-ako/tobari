@@ -1,0 +1,57 @@
+<section class="wrap page-head reveal">
+  <p class="eyebrow">Install</p>
+  <h1>Run Tobari on Linux</h1>
+<!--if:v2-->
+  <p class="lead">Tobari {{v2_version}} (v2 preview) runs as the Tobari extension plus the <code>tobari</code> core inside Chromium. One command installs it for your user only, after checking the release signature and checksum.</p>
+  <pre><code>curl -fsSL https://kaorii-ako.github.io/tobari/install-v2.sh | bash</code></pre>
+  <p>Then <code>tobari-browser</code> starts it, or pick Tobari from your app menu. <code>tobari setup</code> downloads the local model.</p>
+  <div class="note"><strong>On Bazzite or another atomic system,</strong> run the command inside a distrobox container with Chromium: <code>distrobox create --name tobari --image registry.fedoraproject.org/fedora-toolbox:42</code>, <code>distrobox enter tobari</code>, <code>sudo dnf install -y chromium</code>. The Flatpak Chromium and Brave can't run the Tobari core.</div>
+  <p class="muted small">Remove it with <code>curl -fsSL https://kaorii-ako.github.io/tobari/install-v2.sh | bash -s -- --uninstall</code>. <a href="/install-v2.sh">Read the script first</a>.</p>
+  <h2>Or build from source</h2>
+<!--else:v2-->
+  <p class="lead">Tobari v2 has no published release yet. Today it runs as the Tobari extension plus the <code>tobari</code> core inside Chromium, built from source in a distrobox container. Nothing touches your host system. Once the 0.5.0 preview is published, a one-line installer appears here.</p>
+<!--end:v2-->
+</section>
+
+<section class="wrap steps">
+  <ol class="step-list">
+    <li class="reveal">
+      <h3>Create a container</h3>
+      <p>On Bazzite, Silverblue or any Fedora Atomic system, build tools go in a container.</p>
+      <pre><code>distrobox create --name tobari --image registry.fedoraproject.org/fedora-toolbox:42
+distrobox enter tobari</code></pre>
+    </li>
+    <li class="reveal">
+      <h3>Install the toolchain</h3>
+      <pre><code>sudo dnf install -y git gcc gcc-c++ cmake ninja-build nodejs npm python3 chromium libsecret
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y</code></pre>
+      <p class="muted small">This <code>sudo</code> runs inside the container, not on your host.</p>
+    </li>
+    <li class="reveal">
+      <h3>Get the code and start it</h3>
+      <pre><code>git clone https://github.com/kaorii-ako/tobari
+cd tobari
+scripts/dev-run.sh</code></pre>
+      <p>This builds the core and the extension, registers the core with Chromium, and opens Chromium with Tobari loaded and its own profile in <code>~/.config/tobari/browser</code>.</p>
+    </li>
+    <li class="reveal">
+      <h3>Download the local model</h3>
+      <pre><code>core/target/release/tobari setup</code></pre>
+      <p>Asks first, then fetches llama.cpp's Vulkan build and Qwen3 4B Instruct (about 2.4 GB), each checked against a pinned SHA-256. Skip it if you'd rather use a cloud provider with your own key in Settings.</p>
+    </li>
+    <li class="reveal">
+      <h3>Use it</h3>
+      <p><span class="kbd">Alt</span> <span class="kbd">J</span> opens the panel, <span class="kbd">Alt</span> <span class="kbd">K</span> the command bar. Type <code>@</code> to add context and <code>/</code> for skills.</p>
+    </li>
+  </ol>
+  <div class="note reveal">
+    <strong>Why not Flatpak Chrome or Brave?</strong> Their sandbox can't start a program outside it, so the assistant can't reach the core. Use the container's Chromium until the Tobari Flatpak exists.
+  </div>
+</section>
+
+<section class="wrap page-head reveal">
+  <h2>The earlier Tobari (0.4.0)</h2>
+  <p>The previous line, a privacy-focused Chromium browser without the assistant, has signed packages on the <a href="/download/">downloads page</a>. Its installer:</p>
+  <pre><code>curl -fsSL https://kaorii-ako.github.io/tobari/install.sh | bash</code></pre>
+  <p class="muted small">If that command fails for you, <a href="https://github.com/kaorii-ako/tobari/issues/new" rel="noreferrer">open an issue</a> with the full output.</p>
+</section>

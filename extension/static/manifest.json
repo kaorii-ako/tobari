@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Tobari",
   "short_name": "Tobari",
-  "version": "0.2.0",
+  "version": "0.5.0",
   "description": "Local-first AI for your browser: vertical tabs, an agent that asks before it acts, skills and Markdown memory.",
   "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAi+4mjDejGF3MRDYBDjjz9r7tOimiZC2vkRc9RIPdq/O+nvO5zoprvL3DP2WQlRqYIvduWTeXFQ6ffJPd58GSsJvab/vgH+7gnhyUfI9RlIrsYyX19UgisMsIA8/6VNeEAhc+55IPc6p1eG7J+dcRzavYdNa0VkG2zX4Nqkxt+rFo8XBhXJ5RHT6f83hVqfxjR9iKT9mQgbJqN6hLyJ0DUfI5o61dUt/AxUxGxUlFjE++scjEHQZWkjmW+EclnAuxfJ7/ldJxbtQ9xvz1qOnvWFMwghbgYqog+lG1VEDx4vJUhz8lTuOeHMM63HKk5Lg/bWpPYCh/ic605MG332nWowIDAQAB",
   "minimum_chrome_version": "121",

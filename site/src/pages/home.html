@@ -1,0 +1,107 @@
+<section class="hero wrap">
+  <p class="eyebrow reveal"><span class="dot"></span>v2 preview · {{version}} · Linux</p>
+  <h1 class="reveal">A browser with an assistant that runs on <em>your</em> GPU.</h1>
+  <p class="lead reveal">Tobari reads the page you're on, your open tabs and your PDFs, and answers with a model running on your own computer. When it acts for you, it shows each step and waits for your OK.</p>
+  <div class="cta reveal">
+    <a class="btn btn-primary" href="/install/">Run it today</a>
+    <a class="btn" href="/download/">All releases</a>
+  </div>
+  <p class="small muted reveal">No account. No Tobari server. Cloud models only if you add your own key.</p>
+</section>
+
+<section class="stage-shot wrap">
+  <div class="frame" data-tilt>
+    <!-- picture:window 1440x900 "Tobari's window: tabs on the left, a page in the middle, and the assistant on the right with the local Qwen3 4B model selected" -->
+  </div>
+  <p class="caption muted small">Tabs on the left, the page in the middle, the assistant on the right. Real screenshot from the UI test, light or dark to match your system.</p>
+</section>
+
+<section class="wrap features">
+  <h2 class="section-title reveal">What it does</h2>
+  <div class="grid3">
+    <article class="feature reveal">
+      <span class="f-ic f-local"></span>
+      <h3>Local by default</h3>
+      <p>Qwen3 4B on llama.cpp, Vulkan. It loads when you ask and unloads after five idle minutes so your VRAM comes back. The header always says where your prompt goes.</p>
+    </article>
+    <article class="feature reveal">
+      <span class="f-ic f-ask"></span>
+      <h3>Asks before it acts</h3>
+      <p>The agent can read, click, type and navigate. Anything that changes a page shows a preview card first. Buying, sending and deleting always ask, even on sites you trust.</p>
+    </article>
+    <article class="feature reveal">
+      <span class="f-ic f-shield"></span>
+      <h3>Pages can't give orders</h3>
+      <p>Page text is wrapped as untrusted data and can never trigger a tool. Steps that would leak a page's contents to another site are blocked outright.</p>
+    </article>
+    <article class="feature reveal">
+      <span class="f-ic f-at"></span>
+      <h3>@ anything</h3>
+      <p>Add the current tab, every tab, a selection, a picked element, a screenshot, a PDF, a file, bookmarks or history to a question.</p>
+    </article>
+    <article class="feature reveal">
+      <span class="f-ic f-slash"></span>
+      <h3>Skills you can read</h3>
+      <p>A skill is a folder with a <code>SKILL.md</code>. Ten ship with Tobari, from explaining a pull request to translating Japanese and Thai. Any prompt can become one.</p>
+    </article>
+    <article class="feature reveal">
+      <span class="f-ic f-book"></span>
+      <h3>Memory in Markdown</h3>
+      <p>Notes live as plain files in <code>~/.local/share/tobari/memory</code>. Search them, edit them in any editor, export them. They are never uploaded.</p>
+    </article>
+  </div>
+</section>
+
+<section class="wrap duo">
+  <div class="duo-text reveal">
+    <p class="eyebrow">The safety check, working</p>
+    <h2>A page tried to make it leak a code. It didn't.</h2>
+    <p>The test page hides an instruction telling the assistant to send a secret to another site. In the test, a stand-in model is scripted to obey it. Tobari's rules found the page's own text inside the proposed URL and refused the step before it ran.</p>
+    <p class="muted small">From <code>extension/scripts/ui-e2e.mjs</code>, one of 24 checks that run in real Chromium on every change.</p>
+  </div>
+  <div class="duo-shot reveal">
+    <!-- picture:blocked 400x820 "The assistant panel showing a navigate step marked blocked because the URL carries page data the user never typed" class="phone" -->
+    <!-- picture:confirm 400x820 "The assistant asking 'needs your OK' before clicking a button, with Allow once, Always on this site and Don't" class="phone phone-back" -->
+  </div>
+</section>
+
+<section class="wrap split-shot">
+  <h2 class="section-title reveal">Split view, workspaces, a command bar</h2>
+  <p class="lead reveal">Two pages side by side, named workspaces in the dock, Alt+K for everything, and tabs that go to sleep when idle to free memory.</p>
+  <div class="frame reveal">
+    <img src="/assets/shots/split-light.webp" alt="Split view: two pages side by side between the tab sidebar and the assistant" width="1440" height="900" loading="lazy" decoding="async">
+  </div>
+</section>
+
+<section class="wrap honest">
+  <h2 class="section-title reveal">Where it stands</h2>
+  <div class="grid2">
+    <div class="card reveal">
+      <h3>Works now</h3>
+      <ul class="ticks">
+        <li>Assistant, agent, skills, memory and import, as a Chromium extension plus the <code>tobari</code> core</li>
+        <li>Local model sidecar with checksummed downloads</li>
+        <li>Ollama, OpenAI-compatible, Anthropic and Google with your own keys, stored in the keyring</li>
+        <li>The <code>tobari</code> CLI: tabs, skills, memory, chat</li>
+      </ul>
+    </div>
+    <div class="card reveal">
+      <h3>Not yet</h3>
+      <ul class="crosses">
+        <li>The standalone browser window (the CEF shell) has not been compiled</li>
+        <li>No v2 release to download; it runs from source</li>
+        <li>Japanese and Thai rendering not yet confirmed on Bazzite</li>
+        <li>No memory figures from target hardware yet, so none are claimed</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section class="wrap closing reveal">
+  <h2>Draw the curtain.</h2>
+  <p class="lead">Free and open source. Linux first.</p>
+  <div class="cta">
+    <a class="btn btn-primary" href="/install/">Run it today</a>
+    <a class="btn" href="/docs/">Read how it's built</a>
+  </div>
+</section>

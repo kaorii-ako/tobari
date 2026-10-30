@@ -30,5 +30,5 @@ chmod +x "$appdir/AppRun"
 
 tool="${APPIMAGETOOL:-appimagetool}"
 UPDATE="gh-releases-zsync|kaorii-ako|tobari|latest|Tobari-*x86_64.AppImage.zsync"
-ARCH=x86_64 "$tool" -u "$UPDATE" "$appdir" "$out/Tobari-0.2.0-x86_64.AppImage"
-echo "built $out/Tobari-0.2.0-x86_64.AppImage"
+ARCH=x86_64 "$tool" -u "$UPDATE" "$appdir" "$out/Tobari-0.5.0-x86_64.AppImage"
+echo "built $out/Tobari-0.5.0-x86_64.AppImage"

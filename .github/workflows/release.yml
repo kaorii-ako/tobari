@@ -1,0 +1,102 @@
+name: release
+
+on:
+  push:
+    tags: ["v0.[5-9]*", "v[1-9]*"]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version to build, without the v. If the tag doesn't exist yet, the release creates it on the commit this run was started from."
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Resolve version
+        id: v
+        run: |
+          V="${{ github.event.inputs.version }}"
+          [ -n "$V" ] || V="${GITHUB_REF_NAME#v}"
+          echo "version=$V" >> "$GITHUB_OUTPUT"
+      - uses: actions/checkout@v4
+      - name: Check versions match the tag
+        run: |
+          V=${{ steps.v.outputs.version }}
+          grep -q "^version = \"$V\"" core/Cargo.toml || { echo "core/Cargo.toml is not $V"; exit 1; }
+          grep -q "\"version\": \"$V\"" extension/static/manifest.json || { echo "manifest.json is not $V"; exit 1; }
+          grep -q "^VERSION=\"\${TOBARI_VERSION:-$V}\"" packaging/v2/install.sh || { echo "install.sh does not pin $V"; exit 1; }
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Test core
+        run: |
+          cargo test --manifest-path core/Cargo.toml
+          cargo build --manifest-path core/Cargo.toml
+          python3 core/tests/e2e.py
+      - name: Build core
+        run: cargo build --release --manifest-path core/Cargo.toml
+      - name: Build and test extension
+        run: |
+          npm ci --prefix extension
+          npm run typecheck --prefix extension
+          npm test --prefix extension
+          npm run build --prefix extension -- --minify
+      - name: Assemble
+        run: |
+          V=${{ steps.v.outputs.version }}
+          D=out/tobari-$V
+          mkdir -p $D/bin $D/share/icons
+          install -m755 core/target/release/tobari $D/bin/tobari
+          install -m755 packaging/v2/tobari-browser $D/bin/tobari-browser
+          cp -a extension/dist $D/extension
+          install -m644 packaging/v2/dev.tobari.Tobari.desktop $D/share/dev.tobari.Tobari.desktop
+          for s in 32 48 128 256; do install -m644 extension/static/icons/tobari-$s.png $D/share/icons/tobari-$s.png; done
+          cp README.md $D/
+          tar -C out -czf out/tobari-$V-linux-x86_64.tar.gz tobari-$V
+          (cd extension/dist && zip -qr ../../out/tobari-$V-extension.zip .)
+          cp packaging/v2/install.sh out/install.sh
+          cd out && sha256sum tobari-$V-linux-x86_64.tar.gz tobari-$V-extension.zip install.sh > SHA256SUMS && cat SHA256SUMS
+      - name: Smoke test the archive
+        run: |
+          V=${{ steps.v.outputs.version }}
+          mkdir -p /tmp/t && tar -xzf out/tobari-$V-linux-x86_64.tar.gz -C /tmp/t
+          /tmp/t/tobari-$V/bin/tobari --version | grep -q "$V"
+          /tmp/t/tobari-$V/bin/tobari skill list | grep -q summarize-page
+      - name: Create the draft release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          V=${{ steps.v.outputs.version }}
+          if gh release view "v$V" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo "release v$V already exists (this run is the tag created when it was published); nothing to do"
+            exit 0
+          fi
+          cat > notes.md <<NOTES
+          ### Tobari $V, v2 preview
+
+          The assistant version of Tobari: a local model on your GPU, an agent that asks before it acts, @ context, skills, Markdown memory and import, running inside Chromium.
+
+          ### Install (Linux x86_64)
+          \`\`\`sh
+          curl -fsSL https://kaorii-ako.github.io/tobari/install-v2.sh | bash
+          \`\`\`
+          On Bazzite or another atomic system, run it inside a distrobox container that has Chromium (\`sudo dnf install -y chromium\`). Then \`tobari-browser\` starts it and \`tobari setup\` fetches the local model.
+
+          ### Verify by hand
+          \`\`\`sh
+          minisign -Vm SHA256SUMS -P RWRo6aS4M8MND+s3tkrSD2POK8Donu5pWez8QI5+Pf6KZike67q2L6iB
+          sha256sum -c --ignore-missing SHA256SUMS
+          \`\`\`
+
+          ### Not in this preview
+          The standalone browser window (CEF shell) isn't built yet, so Tobari runs inside Chromium. Japanese and Thai rendering is not yet confirmed on Bazzite.
+          NOTES
+          sed -i 's/^          //' notes.md
+          gh release create "v$V" --draft --prerelease --target "$GITHUB_SHA" \
+            --title "Tobari $V (v2 preview)" --notes-file notes.md \
+            out/tobari-$V-linux-x86_64.tar.gz out/tobari-$V-extension.zip out/install.sh out/SHA256SUMS
