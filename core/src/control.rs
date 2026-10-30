@@ -6,7 +6,13 @@ use tokio::net::{UnixListener, UnixStream};
 
 use crate::host::Host;
 
-const FORWARDED: &[&str] = &["tabs.list", "tabs.open", "tabs.focus", "ping"];
+const FORWARDED: &[&str] = &[
+    "tabs.list",
+    "tabs.open",
+    "tabs.focus",
+    "tabs.discard",
+    "ping",
+];
 
 pub async fn serve(host: Arc<Host>) -> anyhow::Result<()> {
     let dir = crate::paths::runtime_dir();

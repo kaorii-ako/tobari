@@ -93,6 +93,9 @@ async function handleBrowserOp(op: string, args: any): Promise<unknown> {
     }
     return { opened };
   }
+  if (op === "tabs.discard") {
+    return { discarded: await discardIdleTabs(Number(args.minutes ?? 0)) };
+  }
   if (op === "tabs.focus") {
     const t = await chrome.tabs.update(Number(args.id), { active: true });
     if (t?.windowId) await chrome.windows.update(t.windowId, { focused: true });
@@ -156,3 +159,7 @@ chrome.tabs.onUpdated.addListener((_id, info) => {
 chrome.tabs.onActivated.addListener(() => broadcast({ type: "event", event: "tabs" }));
 chrome.tabs.onMoved.addListener(() => broadcast({ type: "event", event: "tabs" }));
 chrome.tabGroups.onUpdated.addListener(() => broadcast({ type: "event", event: "tabs" }));
+
+try {
+  connectNative();
+} catch {}

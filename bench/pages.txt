@@ -1,0 +1,26 @@
+# Real-world pages for bench/run.py. Fixed list; results depend on the sites' current versions.
+https://en.wikipedia.org/wiki/Linux
+https://ja.wikipedia.org/wiki/%E5%B8%B3
+https://th.wikipedia.org/wiki/%E0%B8%A0%E0%B8%B2%E0%B8%A9%E0%B8%B2%E0%B9%84%E0%B8%97%E0%B8%A2
+https://developer.mozilla.org/en-US/docs/Web/JavaScript
+https://github.com/ggml-org/llama.cpp
+https://doc.rust-lang.org/book/
+https://docs.python.org/3/library/asyncio.html
+https://wiki.archlinux.org/title/Wayland
+https://news.ycombinator.com/
+https://www.bbc.com/news
+https://www.theguardian.com/international
+https://www.reddit.com/r/linux/
+https://www.youtube.com/
+https://stackoverflow.com/questions
+https://www.nytimes.com/
+https://www.amazon.com/
+https://www.nhk.or.jp/
+https://www.sanook.com/
+https://kde.org/
+https://www.gnome.org/
+https://fedoraproject.org/
+https://bazzite.gg/
+https://arxiv.org/list/cs.AI/recent
+https://huggingface.co/models
+https://www.openstreetmap.org/

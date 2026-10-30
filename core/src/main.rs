@@ -38,6 +38,10 @@ enum Cmd {
         urls: Vec<String>,
     },
     Tabs,
+    Sleep {
+        #[arg(long, default_value_t = 0)]
+        idle_minutes: u32,
+    },
     Chat {
         prompt: Vec<String>,
         #[arg(long)]
@@ -223,6 +227,16 @@ fn run(cli: Cli) -> anyhow::Result<()> {
                         t["url"].as_str().unwrap_or("")
                     );
                 }
+            });
+            Ok(())
+        }
+        Cmd::Sleep { idle_minutes } => {
+            let r = runtime()?.block_on(control::call(
+                "tabs.discard",
+                json!({"minutes": idle_minutes}),
+            ))?;
+            print(j, r.clone(), |v| {
+                println!("{} tabs put to sleep", v["discarded"])
             });
             Ok(())
         }
