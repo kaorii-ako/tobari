@@ -63,7 +63,7 @@ writeFileSync(
   JSON.stringify({ name: "dev.tobari.core", description: "test", path: bin, type: "stdio", allowed_origins: ["chrome-extension://dbpaojilndlchffoodnamfgjccblnpoe/"] }),
 );
 
-const server = spawn("python3", ["-m", "http.server", "8765", "--bind", "127.0.0.1", "--directory", join(here, "fixture")], { stdio: "ignore" });
+const server = spawn("python3", [join(here, "fixture", "server.py"), "8765"], { stdio: "ignore" });
 await new Promise((r) => setTimeout(r, 600));
 
 const checks = [];
@@ -164,6 +164,25 @@ try {
   ok("/ lists the 10 bundled skills", (await panel.$$eval("#picker .item", (els) => els.filter((e) => e.textContent.startsWith("/")).length)) === 10);
   await panel.keyboard.press("Escape");
   await panel.fill("#input", "");
+
+  const shop = await ctx.newPage();
+  await shop.goto("http://127.0.0.1:8765/shop.html");
+  await shop.bringToFront();
+  panel.on("dialog", (d) => d.accept());
+  await panel.waitForSelector("#site-tools:not([hidden])", { timeout: 15000 });
+  ok("site advertising MCP is detected and needs approval", (await panel.textContent("#site-tools")).includes("offers tools"));
+  await panel.click("#site-tools .btn");
+  await panel.waitForFunction(() => document.querySelector("#site-tools")?.textContent?.includes("get_price"), null, { timeout: 15000 });
+  ok("after approval the site's tools are listed", true);
+  await panel.fill("#input", "MCP_TEST how much is a mango?");
+  await panel.keyboard.press("Enter");
+  await panel.waitForSelector(".step.confirm", { timeout: 20000 });
+  ok("site tool call waits for confirmation", (await panel.textContent(".step.confirm")).includes("mcp.get_price"));
+  ok("site tools cannot be allowed for the whole site", !(await panel.textContent(".step.confirm")).includes("Always on this site"));
+  await panel.screenshot({ path: `${shots}/panel-site-tools.png` });
+  await panel.click(".step.confirm .btn.primary");
+  await panel.waitForFunction(() => [...document.querySelectorAll(".msg.bot")].some((m) => m.textContent.includes("120 yen")), null, { timeout: 20000 });
+  ok("site tool result comes back into the answer", true);
 
   const st = await ctx.newPage();
   await st.setViewportSize({ width: 1180, height: 860 });

@@ -72,6 +72,11 @@ def script(msgs):
             ref = int(m.group(1)) if m else 1
             return ['I will press it.\n', json.dumps({"tool": "click", "args": {"ref": ref, "label": "Press me"}, "why": "You asked me to press the button."})]
         return [json.dumps({"tool": "read_page", "args": {}, "why": "I need to see the page first."})]
+    if "MCP_TEST" in convo:
+        if "Result of mcp.get_price" in convo:
+            m = re.search(r"mango: [^\n(]*", convo)
+            return [f"The shop says {m.group(0).strip() if m else 'nothing'}."]
+        return [json.dumps({"tool": "mcp.get_price", "args": {"fruit": "mango"}, "why": "You asked for the mango price."})]
     if "INJECT_TEST" in convo:
         if "BLOCKED" in convo:
             return ["The page told me to send a code to another site. Tobari blocked that step, and I did not do it."]

@@ -762,7 +762,7 @@ async function detectSiteTools() {
   const box = $("#site-tools");
   box.hidden = true;
   const tab = await activeTab();
-  if (!tab?.id || !/^https:/.test(tab.url ?? "")) return;
+  if (!tab?.id || !/^(https:|http:\/\/(localhost|127\.0\.0\.1)[:/])/.test(tab.url ?? "")) return;
   let endpoint: string | null = null;
   try {
     endpoint = (await readTab(tab)).mcp;
