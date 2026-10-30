@@ -34,7 +34,7 @@ int HarvestCrashReports() {
                             .count();
       std::ofstream txt(out / (e.path().stem().string() + ".txt"));
       txt << "Tobari crash report\n"
-          << "product: Tobari 0.2.0\n"
+          << "product: Tobari 0.5.0\n"
           << "crashed at (unix): " << secs << "\n"
           << "minidump: " << dst.string() << " (" << fs::file_size(dst, ec) << " bytes, kept on this computer)\n"
           << "\nThe minidump holds memory from the crashed process and can contain page content. "

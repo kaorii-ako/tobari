@@ -67,6 +67,17 @@ const server = spawn("python3", [join(here, "fixture", "server.py"), "8765"], { 
 await new Promise((r) => setTimeout(r, 600));
 
 const settle = (p) => p.waitForTimeout(650);
+const shot = async (p, path) => {
+  for (let i = 0; i < 2; i++) {
+    try {
+      await settle(p);
+      await p.screenshot({ path, timeout: 15000 });
+      return;
+    } catch (e) {
+      if (i === 1) console.warn(`screenshot skipped (${path}): ${String(e.message).split("\n")[0]}`);
+    }
+  }
+};
 const checks = [];
 const ok = (name, cond, extra = "") => {
   checks.push([name, !!cond]);
@@ -98,7 +109,7 @@ try {
   await nt.goto(`chrome-extension://${id}/newtab.html`);
   await nt.waitForTimeout(800);
   await settle(nt);
-  await nt.screenshot({ path: `${shots}/newtab.png` });
+  await shot(nt, `${shots}/newtab.png`);
   ok("new tab page renders the command bar", await nt.isVisible("#q"));
   await nt.close();
   await page.bringToFront();
@@ -113,14 +124,14 @@ try {
   ok("chat header shows model and that prompts stay local", (await panel.textContent("#dest-text")) === "Qwen3 4B Instruct · on this device");
   await panel.waitForSelector(".suggest button");
   await settle(panel);
-  await panel.screenshot({ path: `${shots}/panel-empty.png` });
+  await shot(panel, `${shots}/panel-empty.png`);
 
   await panel.click('.seg button[data-view="tabs"]');
   await panel.waitForSelector(".row");
   const titles = await panel.$$eval(".row .title", (els) => els.map((e) => e.textContent));
   ok("vertical tabs list the window's tabs", titles.some((t) => t.includes("帳 Tobari test page")) && titles.some((t) => t.includes("Rust async")), titles.join(" | "));
   await settle(panel);
-  await panel.screenshot({ path: `${shots}/panel-tabs.png` });
+  await shot(panel, `${shots}/panel-tabs.png`);
   await panel.click('.seg button[data-view="ask"]');
 
   await panel.click("#input");
@@ -130,7 +141,7 @@ try {
   ok("@ picker offers tab, selection, element, screenshot, all tabs", ["Current tab", "Selected text", "Pick an element", "Screenshot", "All open tabs"].every((x) => pickerText.includes(x)));
   await settle(panel);
   if (process.env.DEBUG_MOTION) console.log(await panel.evaluate(() => ({ vis: document.visibilityState, op: getComputedStyle(document.querySelector("#picker")).opacity, style: document.querySelector("#picker").getAttribute("style"), sugg: getComputedStyle(document.querySelector(".suggest button:nth-child(2)")).opacity, suggStyle: document.querySelector(".suggest button:nth-child(2)").getAttribute("style") })));
-  await panel.screenshot({ path: `${shots}/panel-picker.png` });
+  await shot(panel, `${shots}/panel-picker.png`);
   await panel.keyboard.press("Enter");
   await panel.waitForSelector("#chips .chip:not(:has-text('Reading'))");
   ok("current tab added as a context chip", (await panel.textContent("#chips")).includes("帳 Tobari test page"));
@@ -140,7 +151,7 @@ try {
   const answer = await panel.textContent(".msg.bot .md");
   ok("streamed answer renders Markdown with Japanese and Thai", answer.includes("帳") && answer.includes("ภาษาไทย") && answer.includes("Mango"));
   await settle(panel);
-  await panel.screenshot({ path: `${shots}/panel-answer.png` });
+  await shot(panel, `${shots}/panel-answer.png`);
 
   await panel.selectOption("#role", "operator");
   await panel.fill("#input", "CLICK_TEST press the button on this page");
@@ -149,7 +160,7 @@ try {
   const confirmText = await panel.textContent(".step.confirm");
   ok("state-changing click waits for confirmation", confirmText.includes("needs your OK") && confirmText.includes("click"));
   await settle(panel);
-  await panel.screenshot({ path: `${shots}/panel-confirm.png` });
+  await shot(panel, `${shots}/panel-confirm.png`);
   await panel.click(".step.confirm .btn.primary");
   await panel.waitForFunction(() => [...document.querySelectorAll(".msg.bot")].some((m) => m.textContent.includes("Clicked")), null, { timeout: 20000 });
   ok("approved click ran on the page", (await page.textContent("#s")) === "pressed");
@@ -165,7 +176,7 @@ try {
   ok("prompt injection that leaks page data is blocked", denyText.includes("blocked") && denyText.includes("page data"), denyText);
   await panel.waitForFunction(() => [...document.querySelectorAll(".msg.bot")].some((m) => m.textContent.includes("blocked that step")), null, { timeout: 20000 });
   await settle(panel);
-  await panel.screenshot({ path: `${shots}/panel-blocked.png` });
+  await shot(panel, `${shots}/panel-blocked.png`);
   const attackerTabs = await sw.evaluate(async () => (await chrome.tabs.query({})).filter((t) => (t.url ?? "").includes("attacker")).length);
   ok("no tab ever opened the attacker URL", attackerTabs === 0);
 
@@ -190,7 +201,7 @@ try {
   ok("site tool call waits for confirmation", (await panel.textContent(".step.confirm")).includes("mcp.get_price"));
   ok("site tools cannot be allowed for the whole site", !(await panel.textContent(".step.confirm")).includes("Always on this site"));
   await settle(panel);
-  await panel.screenshot({ path: `${shots}/panel-site-tools.png` });
+  await shot(panel, `${shots}/panel-site-tools.png`);
   await panel.click(".step.confirm .btn.primary");
   await panel.waitForFunction(() => [...document.querySelectorAll(".msg.bot")].some((m) => m.textContent.includes("120 yen")), null, { timeout: 20000 });
   ok("site tool result comes back into the answer", true);
@@ -212,12 +223,12 @@ try {
   await assistFrame.locator("#dest-text").filter({ hasText: "on this device" }).waitFor({ timeout: 15000 });
   ok("window layout: assistant panel is connected", true);
   await settle(winPage);
-  await winPage.screenshot({ path: `${shots}/window-layout.png` });
+  await shot(winPage, `${shots}/window-layout.png`);
   await winPage.close();
   winPage = await openWin(`&split=${encodeURIComponent("http://127.0.0.1:8765/other.html")}`);
   await winPage.frameLocator("#side").locator(".row").first().waitFor({ timeout: 15000 });
   await settle(winPage);
-  await winPage.screenshot({ path: `${shots}/window-split.png` });
+  await shot(winPage, `${shots}/window-split.png`);
   await winPage.close();
 
   const st = await ctx.newPage();
@@ -225,14 +236,14 @@ try {
   await st.goto(`chrome-extension://${id}/settings.html#ai`);
   await st.waitForSelector(".li");
   await settle(st);
-  await st.screenshot({ path: `${shots}/settings-ai.png` });
+  await shot(st, `${shots}/settings-ai.png`);
   await st.goto(`chrome-extension://${id}/settings.html#import`);
   await st.waitForSelector(".li .btn.primary");
   ok("import finds the Chrome profile", (await st.textContent("main")).includes("Chrome · Kao"));
   await st.click(".li .btn.primary");
   await st.waitForSelector("text=Import selected");
   await settle(st);
-  await st.screenshot({ path: `${shots}/settings-import.png` });
+  await shot(st, `${shots}/settings-import.png`);
   await st.click("text=Import selected");
   await st.waitForSelector("text=Done", { timeout: 15000 });
   const bms = await sw.evaluate(async () => (await chrome.bookmarks.search("Wiktionary")).map((b) => b.title));
@@ -242,7 +253,7 @@ try {
   await st.goto(`chrome-extension://${id}/settings.html#privacy`);
   await st.waitForSelector(".toggle");
   await settle(st);
-  await st.screenshot({ path: `${shots}/settings-privacy.png` });
+  await shot(st, `${shots}/settings-privacy.png`);
 
   const rules = await sw.evaluate(async () => (await chrome.declarativeNetRequest.getEnabledRulesets()));
   ok("tracker blocklist ruleset is enabled", rules.includes("trackers"));
@@ -256,7 +267,7 @@ try {
   await pop.fill("#q", "");
   await pop.waitForTimeout(400);
   await settle(pop);
-  await pop.screenshot({ path: `${shots}/command-bar.png` });
+  await shot(pop, `${shots}/command-bar.png`);
 
   const tabsFromCli = await new Promise((res) => {
     const p = spawn(bin, ["--json", "tabs"], { env });

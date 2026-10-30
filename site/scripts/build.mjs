@@ -191,16 +191,21 @@ function releaseCard(r, latest) {
 </article>`;
 }
 
+function isV2(r) {
+  const m = /^v?(\d+)\.(\d+)/.exec(r.tag_name);
+  return !!m && (Number(m[1]) > 0 || Number(m[2]) >= 5);
+}
+
 function downloadPage(list) {
   const latest = list[0];
-  const v2 = list.find((r) => /^v?(0\.[5-9]|[1-9])/.test(r.tag_name) || /assistant|v2/i.test(r.name ?? ""));
+  const v2 = list.find(isV2);
   return `<section class="wrap page-head reveal">
   <p class="eyebrow">Download</p>
   <h1>Every Tobari release</h1>
   <p class="lead">Read straight from <a href="${GH}/releases" rel="noreferrer">GitHub Releases</a> ${snapshotDate ? `as of ${fmtDate(snapshotDate)} (GitHub's API was unavailable for this build)` : "when this page was built"}. Checksums are the SHA-256 GitHub computed for each file.</p>
   ${
     v2
-      ? ""
+      ? `<div class="install-line"><p class="label">Install ${esc(v2.tag_name)} (v2 preview)</p><pre><code>curl -fsSL ${SITE_URL}/install-v2.sh | bash</code></pre><p class="muted small">Checks the release signature and checksum before installing. <a href="/install/">Details</a>.</p></div>`
       : `<div class="note">
     <strong>The assistant version (v2) has no release yet.</strong> Everything below is the earlier Tobari line: a privacy-focused Chromium browser without the AI agent. Its installer still works for that version. v2 runs today from source; see <a href="/install/">Install</a>.
   </div>`
@@ -245,9 +250,8 @@ async function copyAssets() {
   for (const f of ["inter-latin-wght-normal.woff2", "inter-latin-ext-wght-normal.woff2"]) {
     await cp(path.join(SITE, "node_modules/@fontsource-variable/inter/files", f), path.join(DIST, "assets/fonts", f));
   }
-  try {
-    await cp(path.join(REPO, "packaging/get-tobari.sh"), path.join(DIST, "install.sh"));
-  } catch {}
+  await cp(path.join(REPO, "packaging/get-tobari.sh"), path.join(DIST, "install.sh"));
+  await cp(path.join(REPO, "packaging/v2/install.sh"), path.join(DIST, "install-v2.sh"));
 }
 
 async function build() {
@@ -261,12 +265,16 @@ async function build() {
     if (!(k in facts)) throw new Error(`unknown placeholder ${m}`);
     return esc(facts[k]);
   });
-  const page = async (name) => fill(await readFile(path.join(SITE, "src/pages", name), "utf8")).replace(/<!--\s*picture:(\S+)\s+(\d+)x(\d+)\s+"([^"]+)"(?:\s+class="([^"]*)")?\s*-->/g, (m, n, w, h, alt, cls) => picture(n, alt, w, h, cls ?? ""));
+  const list = await releases();
+  const v2 = list.find(isV2) ?? null;
+  facts.v2_version = v2 ? v2.tag_name.replace(/^v/, "") : "";
+  const cond = (html) =>
+    html.replace(/<!--if:v2-->([\s\S]*?)<!--else:v2-->([\s\S]*?)<!--end:v2-->/g, (m, yes, no) => (v2 ? yes : no));
+  const page = async (name) => fill(cond(await readFile(path.join(SITE, "src/pages", name), "utf8"))).replace(/<!--\s*picture:(\S+)\s+(\d+)x(\d+)\s+"([^"]+)"(?:\s+class="([^"]*)")?\s*-->/g, (m, n, w, h, alt, cls) => picture(n, alt, w, h, cls ?? ""));
 
   await emit("/", layout({ title: "", url: "/", page: "home", description: "Tobari is a web browser for Linux with an assistant that runs on your own GPU and asks before it acts.", body: await page("home.html") }));
   await emit("/install/", layout({ title: "Install", url: "/install/", description: "How to run Tobari on Linux today.", body: await page("install.html") }));
 
-  const list = await releases();
   await emit("/download/", layout({ title: "Download", url: "/download/", page: "download", description: "Every Tobari release with files, sizes and SHA-256 checksums.", body: downloadPage(list) }));
   await writeFile(path.join(DIST, "releases.json"), JSON.stringify(list.map((r) => ({ tag: r.tag_name, name: r.name, published: r.published_at, prerelease: r.prerelease, assets: r.assets.map((a) => ({ name: a.name, size: a.size, url: a.browser_download_url, digest: a.digest ?? null })) })), null, 1));
 

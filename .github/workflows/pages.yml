@@ -3,7 +3,7 @@ name: pages
 on:
   push:
     branches: [main]
-    paths: ["site/**", "docs/**", "phase0/README.md", "packaging/get-tobari.sh", "packaging/flatpak/README.md", "extension/static/manifest.json", ".github/workflows/pages.yml"]
+    paths: ["site/**", "docs/**", "phase0/README.md", "packaging/get-tobari.sh", "packaging/v2/install.sh", "packaging/flatpak/README.md", "extension/static/manifest.json", ".github/workflows/pages.yml"]
   release:
     types: [published, edited, deleted]
   workflow_dispatch:

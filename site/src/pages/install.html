@@ -1,7 +1,16 @@
 <section class="wrap page-head reveal">
   <p class="eyebrow">Install</p>
   <h1>Run Tobari on Linux</h1>
-  <p class="lead">Tobari v2 has no packaged release yet. Today it runs as the Tobari extension plus the <code>tobari</code> core inside Chromium, built from source in a distrobox container. Nothing touches your host system.</p>
+<!--if:v2-->
+  <p class="lead">Tobari {{v2_version}} (v2 preview) runs as the Tobari extension plus the <code>tobari</code> core inside Chromium. One command installs it for your user only, after checking the release signature and checksum.</p>
+  <pre><code>curl -fsSL https://kaorii-ako.github.io/tobari/install-v2.sh | bash</code></pre>
+  <p>Then <code>tobari-browser</code> starts it, or pick Tobari from your app menu. <code>tobari setup</code> downloads the local model.</p>
+  <div class="note"><strong>On Bazzite or another atomic system,</strong> run the command inside a distrobox container with Chromium: <code>distrobox create --name tobari --image registry.fedoraproject.org/fedora-toolbox:42</code>, <code>distrobox enter tobari</code>, <code>sudo dnf install -y chromium</code>. The Flatpak Chromium and Brave can't run the Tobari core.</div>
+  <p class="muted small">Remove it with <code>curl -fsSL https://kaorii-ako.github.io/tobari/install-v2.sh | bash -s -- --uninstall</code>. <a href="/install-v2.sh">Read the script first</a>.</p>
+  <h2>Or build from source</h2>
+<!--else:v2-->
+  <p class="lead">Tobari v2 has no published release yet. Today it runs as the Tobari extension plus the <code>tobari</code> core inside Chromium, built from source in a distrobox container. Nothing touches your host system. Once the 0.5.0 preview is published, a one-line installer appears here.</p>
+<!--end:v2-->
 </section>
 
 <section class="wrap steps">

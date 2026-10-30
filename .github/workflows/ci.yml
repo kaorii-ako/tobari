@@ -36,3 +36,18 @@ jobs:
         with:
           name: screenshots
           path: /tmp/shots
+  site:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Build the site and run its link and CSP checks
+        working-directory: site
+        env:
+          SITE_BASE: /tobari/
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: npm ci && node scripts/build.mjs
+      - name: Installer scripts parse
+        run: bash -n packaging/v2/install.sh && bash -n packaging/v2/tobari-browser && bash -n packaging/sign-release.sh

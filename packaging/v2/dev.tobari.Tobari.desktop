@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=Tobari
+GenericName=Web Browser
+Comment=Local-first AI browser (v2 preview)
+Exec=@BIN@/tobari-browser %U
+Icon=dev.tobari.Tobari
+Terminal=false
+Categories=Network;WebBrowser;
+StartupWMClass=chromium-browser
