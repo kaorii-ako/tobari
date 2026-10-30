@@ -72,6 +72,10 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           V=${{ steps.v.outputs.version }}
+          if gh release view "v$V" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo "release v$V already exists (this run is the tag created when it was published); nothing to do"
+            exit 0
+          fi
           cat > notes.md <<NOTES
           ### Tobari $V, v2 preview
 
