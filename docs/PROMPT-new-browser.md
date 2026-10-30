@@ -1,4 +1,4 @@
-# Tobari: a new browser from scratch
+# Tobari: a new AI browser from scratch, modeled on Tabbit
 
 You are the lead engineer on a new Tobari. Tawin (Kao) is the product owner. Read this whole prompt, then start at Step 0. Stop at every gate marked **ASK** and wait for an answer.
 
@@ -31,34 +31,53 @@ You may read the old code and docs for **lessons only**. These are the ones that
 
 ## What to build
 
-A desktop web browser for Linux first (Bazzite: Fedora Atomic, KDE and GNOME, Wayland). It must be **private**, **look good**, and **use little RAM when the AI isn't in use**. Kao downloads it as an **AppImage**.
+An AI browser **modeled on Tabbit (tabbit.ai)**, built for Linux first (Bazzite: Fedora Atomic, KDE and GNOME, Wayland). It must be **private**, **look good**, and **use little RAM when the AI isn't in use**. Kao downloads it as an **AppImage**.
+
+Use Tabbit's feature list and window layout as the reference. Do not copy its name, logo, colours, wording, screenshots or other assets. Tobari keeps its own name (帳, the curtain), icon and design system. Read tabbit.ai at Step 0 and write `docs/tabbit-parity.md`, a checklist of every Tabbit feature that says built, not built, or deliberately different (and why). Keep it current.
 
 Target machines: a Ryzen 5 9600X desktop with an RX 6800 XT (Vulkan, no ROCm) and 32 GB of RAM, and a Legion Pro 5 laptop with an RTX 5060.
 
-Required features. Each one needs a test or a recorded real run before it counts as done:
+### Tabbit parity
 
-1. **Browsing basics:** tabs, the address bar, history, bookmarks, downloads, find in page, zoom, full screen, and the Chrome Web Store (or the engine's own extension store) with password managers working.
-2. **Layout:** vertical tabs and a horizontal tab strip (user's choice), workspaces, split view (two pages in one window), and a command bar (Alt+K).
-3. **Blocking:** ads and trackers blocked at the network layer before they load, from EasyList, EasyPrivacy and uBlock Origin lists, with a per-site switch and a count. Lists update weekly, and that update is the only traffic the browser starts by itself.
-4. **Private defaults:**
-   - a privacy-friendly search engine and no search suggestions;
-   - third-party cookies blocked, HTTPS-Only on, WebRTC IP leaks limited;
-   - no telemetry, crash uploads or sync unless the user turns them on;
-   - device APIs blocked unless allowed per site.
-   Prove the "nothing sent home" claim with a network capture of an idle profile.
-5. **`!bangs`:** resolved on the machine before the request leaves.
-6. **First-run setup:** search engine, theme, privacy options, and import from Chrome, Chromium, Brave, Edge, Vivaldi and Firefox (native and Flatpak installs): bookmarks, history, cookies, and the extension list. Read-only on the other browser's files.
-7. **Tab management:** tab groups (by site, or AI-clustered), and sleeping tabs that unload after idle to free RAM.
-8. **Assistant (optional, off until opened):**
-   - a side panel chat that defaults to a local model on llama.cpp (Vulkan, Qwen3 4B Instruct Q4_K_M), downloaded only when the user asks and verified against a pinned SHA-256;
-   - cloud providers only with the user's own key, stored in the OS keyring;
-   - the panel header always shows the model and where prompts go;
-   - `@` context (tab, all tabs, selection, element, screenshot, PDF, file), `/` skills stored as `SKILL.md` folders, and Markdown memory the user owns;
-   - an agent that can read, click, type and navigate, with tools **off by default**, a confirm step for every action that changes something, and a prompt-injection defense where page text can never trigger a tool;
-   - the model loads on first use and unloads after idle.
-9. **Built-in pages,** like `chrome://`: about, blocking, bangs, AI, setup.
-10. **CLI:** `tobari` to open URLs, list tabs, and run a skill.
-11. **Crash reports:** written locally, sent only after the user sees and approves them.
+Each one needs a test or a recorded real run before it counts as done.
+
+1. **Layout like Tabbit:**
+   - vertical tabs on the left, with back, forward, reload and the address bar at the top of the sidebar;
+   - the page in the middle as a rounded card on a tinted window background;
+   - the AI panel on the right as its own card, resizable and toggled with one shortcut;
+   - workspaces in the sidebar, split view (two pages in one window), and a command bar (Alt+K);
+   - a compact mode that hides the sidebar until hovered.
+2. **Context:** the AI can take the current page, all tabs, screenshots, highlighted text, a picked element, local files, PDFs and bookmarks. `@` in the chat box adds any of them.
+3. **Skills:** reusable recipes bound to sites or tasks, run with `/name` or `@name`. A skill is a folder with `SKILL.md` and optional scripts in `~/.config/tobari/skills`. Ship at least 10 first-party skills: summarize page, extract PDF tables, explain a GitHub PR, triage a feed, save to memory, search across tabs, cluster tabs, translate a page (including Japanese and Thai), daily digest, and find a free PDF of a paper. Any prompt can be turned into a skill.
+4. **Agent roles:** Research, Operator, Writer and Analyst, each a preset of skills and tool permissions. The agent can read, click, type, navigate, extract tables and save files. Every action that changes something shows a preview and needs a confirm, with a per-site allowlist. Page text is untrusted and can never trigger a tool, and each proposed action is checked against the user's original request.
+5. **Site MCP:** sites can expose tools to the agent, with an explicit permission prompt per site and per call.
+6. **Memory:** plain Markdown files the user owns in `~/.local/share/tobari/memory`. Searchable, exportable, never uploaded.
+7. **Multi-model chat:**
+   - local by default: llama.cpp on Vulkan with Qwen3 4B Instruct Q4_K_M, downloaded only when asked and checked against a pinned SHA-256;
+   - Ollama, any OpenAI-compatible endpoint, Anthropic and Google, each with the user's own key stored in the OS keyring;
+   - the chat header always shows the active model and where the prompt goes (this device, or a host and region).
+8. **Tab management:** AI tab grouping and clustering, tab groups, and sleeping tabs that unload when idle.
+9. **Import:** history, bookmarks, cookies, passwords (through CSV export) and the extension list, from Chrome, Chromium, Brave, Edge, Vivaldi and Firefox, native and Flatpak installs. Read-only on the other browser's files.
+10. **CLI:** `tobari` opens URLs, lists tabs, runs a skill headless, and queries memory.
+11. **Updates, crashes, data:**
+    - AppImage updates through AppImageUpdate or zsync, and Flatpak updates through Flatpak;
+    - crash reports written locally and sent only after the user sees and approves them;
+    - history and chats stored encrypted at rest;
+    - sync optional and off by default.
+
+### Where Tobari beats Tabbit
+
+Tabbit ships only for macOS and Windows, sends prompts to cloud providers, and has no local-only mode. Tobari must have:
+
+12. **Native Linux:** Wayland first, KDE and GNOME, AppImage first with Flatpak next.
+13. **Local-first AI:** works fully offline with the local model. No Tobari server between the user and any provider.
+14. **Privacy:**
+    - ads and trackers blocked at the network layer before they load (EasyList, EasyPrivacy and uBlock Origin lists, per-site switch and count);
+    - no telemetry, HTTPS-Only, third-party cookies blocked, WebRTC IP leaks limited, device APIs blocked unless allowed;
+    - `!bangs` resolved on the machine.
+    Prove "nothing sent home" with a network capture of an idle profile, where only the weekly filter-list update may appear.
+15. **Low RAM:** with the AI never opened, no AI process runs and no model is loaded. The model loads on first use and unloads after idle.
+16. **Built-in pages,** like `chrome://`: about, blocking, bangs, AI, setup.
 
 ## Targets
 
@@ -85,11 +104,11 @@ Required features. Each one needs a test or a recorded real run before it counts
 
 Write `docs/engine-decision.md` with a recommendation and stop.
 
-**Step 2: browser shell.** Window, tabs, layout options, address bar, built-in pages, setup and import. CI builds an AppImage on every push to `rewrite`. ASK with screenshots.
+**Step 2: browser shell.** The Tabbit-style window (sidebar, page card, AI panel card), workspaces, split view, command bar, built-in pages, setup and import. CI builds an AppImage on every push to `rewrite`. **ASK** with screenshots in light and dark, next to the matching Tabbit view, so Kao can compare the layout. Tobari's own look must stay its own.
 
 **Step 3: privacy and blocking.** Blocking, defaults, bangs, and the idle network capture. ASK with the capture summary.
 
-**Step 4: assistant.** Sidecar, providers, panel, agent, skills, memory, CLI. Then prove that RAM with the assistant closed matches Step 3's. ASK.
+**Step 4: assistant.** Sidecar, providers, `@` context, skills, roles, agent, site MCP, memory, CLI. Then prove that RAM with the assistant closed matches Step 3's, and update `docs/tabbit-parity.md`. ASK.
 
 **Step 5: benchmark.** Run the harness on Kao's desktop and publish the table. If Tobari is above Brave, find out why before changing anything.
 
