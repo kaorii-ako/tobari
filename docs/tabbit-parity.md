@@ -9,7 +9,7 @@ Nothing is built yet. This file changes only when a test or a real run backs the
 | Tabbit feature | Status | Note |
 | --- | --- | --- |
 | Vertical tabs on the left, nav and address bar at the top of the sidebar | not built | |
-| Page shown as a rounded card on a tinted background | not built | Tobari uses its own tokens and colours |
+| Page shown as a rounded card on a tinted background | not built | Different: square corners, because CEF overlays can't clip to a radius (see docs/engine-decision.md). Tobari uses its own tokens and colours |
 | AI panel on the right as its own card, resizable, one shortcut | not built | |
 | Workspaces | not built | |
 | Split view | not built | |
