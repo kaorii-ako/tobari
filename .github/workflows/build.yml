@@ -19,7 +19,7 @@ jobs:
       - name: Tools
         run: |
           sudo apt-get update -q
-          sudo apt-get install -y -q ninja-build g++-12 libgtk-3-dev libnss3 cage fonts-noto-cjk fonts-noto-core >/dev/null
+          sudo apt-get install -y -q ninja-build g++-12 libgtk-3-dev libnss3 cage fonts-noto-cjk fonts-noto-core minisign >/dev/null
           # shortcut: appimagetool only publishes a moving "continuous" build; pin by checksum once it is stable.
           sudo curl -sSfLo /usr/local/bin/appimagetool https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-x86_64.AppImage
           sudo chmod +x /usr/local/bin/appimagetool
@@ -52,12 +52,16 @@ jobs:
           export XDG_DATA_HOME=$(mktemp -d)
           bash bench/script_test.sh tobari dist/Tobari-*.AppImage --ozone-platform=wayland | tee -a "$GITHUB_STEP_SUMMARY"
 
-      - name: Privacy and HTTPS-Only checks
+      - name: Privacy, HTTPS-Only, assistant, import and CLI checks
         env: { APPIMAGE_EXTRACT_AND_RUN: 1 }
         run: |
           export XDG_DATA_HOME=$(mktemp -d)
           TEST=privacy-test bash bench/script_test.sh tobari dist/Tobari-*.AppImage --ozone-platform=wayland | tee -a "$GITHUB_STEP_SUMMARY"
           bash bench/https_test.sh "$(ls dist/Tobari-*.AppImage)" | tee -a "$GITHUB_STEP_SUMMARY"
+          bash bench/ai_test.sh "$(ls dist/Tobari-*.AppImage)" | tee -a "$GITHUB_STEP_SUMMARY"
+          bash bench/import_test.sh "$(ls dist/Tobari-*.AppImage)" | tee -a "$GITHUB_STEP_SUMMARY"
+          bash bench/cli_test.sh "$(ls dist/Tobari-*.AppImage)" | tee -a "$GITHUB_STEP_SUMMARY"
+          bash bench/install_test.sh | tee -a "$GITHUB_STEP_SUMMARY"
 
       - name: Idle network capture (first start fetches only the filter lists; idle contacts nothing)
         env: { APPIMAGE_EXTRACT_AND_RUN: 1 }

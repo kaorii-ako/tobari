@@ -1,6 +1,6 @@
 # Tobari rewrite: handoff
 
-Updated 2026-10-31. Current step: **Step 3 (privacy) is done. Next is Step 4 (assistant).**
+Updated 2026-10-31. Current step: **Step 4 (assistant, import, CLI) is done. Next is Step 5 (benchmark), then Step 6 (0.5.0 release).**
 
 ## Done
 - **Step 0:** the archive tags `archive/browser-0.4.0` (893ad36) and `archive/v2-extension` (c44e407) are pushed. The orphan branch `rewrite` is created, and `docs/tabbit-parity.md` is written.
@@ -34,6 +34,18 @@ Updated 2026-10-31. Current step: **Step 3 (privacy) is done. Next is Step 4 (as
     - Safe Browsing list refresh (`safebrowsing.googleapis.com`, every ~30 min): off by default, per Kao's choice. A switch on `tobari://blocking/` turns it on.
     - These prefs have to be in place before profile setup starts downloading, so `main.cc` writes them into a new profile's `Preferences` before `CefInitialize`.
 
+- **Step 4:** the assistant, import and the CLI.
+  - `shell/src/ai.cc`: chat over any OpenAI-compatible endpoint (Ollama, llama.cpp, LM Studio locally; OpenAI, OpenRouter and others with your key), streamed through an SSE parser tested in `util_test`. Settings live in `ai.json` (0600). Nothing is bundled or started; no request leaves until you send one.
+  - `ui/ai.js`: the Alt+J panel, loaded the first time it opens. It attaches the current page's text on request and has 10 skills on `/`.
+  - `shell/src/import.cc` and `tobari://import/`: bookmarks and history from Chrome, Chromium, Brave, Edge, Vivaldi and Firefox (native and Flatpak), read from a copy so a running browser isn't disturbed. Imports merge into `history.jsonl`; bookmarks rank first in the command bar.
+  - `shell/src/ctl.cc`: `tobari tabs | open URL | text [ID] | close ID` for outside agents, over `~/.local/share/tobari/ctl.sock` (0600). `open` only takes http(s) pages.
+  - `packaging/install.sh`: the old v2 installer moved to the AppImage. It checks the minisign signature on `SHA256SUMS` against the pinned key (minisign, or OpenSSL 3 without it), then the AppImage's checksum, and deletes anything that fails.
+  - Decided: no own encryption for history and session. They're 0600 files in a 0700 folder like Chrome's and Firefox's; a key on the same disk adds little, so disk encryption covers rest (`docs/tabbit-parity.md`).
+
+## Step 4 results (2026-10-31, Kao's desktop)
+- RAM with the assistant never opened (`bench/ram.py`, median of 3, PSS): Step 3 build 482 MiB at 0 tabs and 1443 MiB at 10; Step 4 build 476 and 1442. Unchanged. A first try showed +14–18 MiB; the per-process split put it in the UI renderer (+9) and GPU (+6), so the assistant panel now loads on first open. The Step 3 baseline was also rebuilt, since building only the `tobari` target had left its UI folder out.
+- `bench/ai_test.sh` 5/5 against `bench/ai_fake.py` (streamed request, chosen model, page attached and marked untrusted, the question). `bench/import_test.sh` 7/7 on fake Chromium and Firefox profiles. `bench/cli_test.sh` 8/8. `bench/install_test.sh` 9/9 (a good release installs; a bad checksum, bad or missing signature, or another key is refused and nothing is installed; minisign and OpenSSL paths; uninstall). All four pass from the AppImage too and run in CI.
+
 ## Step 3 results (2026-10-31, Kao's desktop)
 - `build/block_test` → `block_test: all checks passed`
 - `TEST=privacy-test bench/script_test.sh tobari build/out/tobari ...` → `tobari: PASS 7 / 7`. The negative control, stock cefsimple 156, scores `FAIL 4 / 7 ['webrtc_ip', 'third_party_cookie', 'blocks_ads']`: its WebRTC candidates included the public IPv4 and IPv6 addresses. The three device checks pass on stock CEF too in a headless cage, so they only prove that no prompt is granted.
@@ -58,8 +70,8 @@ Updated 2026-10-31. Current step: **Step 3 (privacy) is done. Next is Step 4 (as
 - The command bar never opened. Chromium's pop-up blocker rejected the UI's `window.open` from a shortcut, since shortcuts carry no user gesture. The browser now runs with `--disable-popup-blocking`, and `Shell::OnBeforePopup` blocks web pop-ups without a user gesture itself.
 
 ## Next
-1. Step 4: the assistant (local llama.cpp and BYOK), skills, memory, and a CLI. Prove that RAM is unchanged while the assistant is never opened.
-2. Encrypt `session.json` and `history.jsonl` before 0.5.0. Both are plaintext with mode 0600 today, marked with a `shortcut:` comment.
+1. Step 5: `bench/compare.sh BIN` then `python3 bench/report.py` writes `docs/benchmark.md` (Tobari, Chromium, Firefox: RAM at 0 and 10 tabs, start time).
+2. Step 6: tag `v0.5.0`, let CI build it, sign `SHA256SUMS` locally with `~/.minisign/tobari.key`, attach `install.sh`.
 
 ## Open risks
 - Blocking uses host rules only, so path rules, `$domain=` rules and cosmetic filters are skipped. YouTube-style in-page ads aren't blocked.
@@ -67,7 +79,8 @@ Updated 2026-10-31. Current step: **Step 3 (privacy) is done. Next is Step 4 (as
 - The privacy, HTTPS and idle checks in CI hit real sites (example.org, badssl, neverssl, googlesyndication and the list hosts), so a network hiccup can fail a run.
 - The idle capture only covers what Chromium's net log sees. It doesn't watch the network from outside. Spellcheck is off until dictionaries are bundled or fetched on request.
 - Resizing a frameless window on GNOME Wayland is untested. The headless cage can't test it. Kao should try dragging the window edges.
-- Manual tab groups aren't built. They come with AI grouping in Step 4.
+- Manual tab groups, agent mode, memory and user skill folders aren't built (cut from 0.5.0).
+- The API key in `ai.json` is plain text, readable only by this user.
 - Sleeping tabs ignore audio: a tab playing media sleeps after 30 minutes in the background.
 - The CI image is Ubuntu 22.04. Ubuntu 24.04 users need `kernel.apparmor_restrict_unprivileged_userns=0` or an AppArmor profile, because the sandbox needs user namespaces.
 - `appimagetool` in CI comes from the moving "continuous" release, not a pinned one.
@@ -80,6 +93,8 @@ distrobox enter tobari -- sh -c "cmake -G Ninja -S shell -B build -DCEF_ROOT=$CE
 build/util_test && build/block_test && python3 tools/contrast.py
 TEST=privacy-test bash bench/script_test.sh tobari build/out/tobari --ozone-platform=wayland
 bash bench/https_test.sh build/out/tobari
+for t in ai import cli; do bash bench/${t}_test.sh build/out/tobari; done
+PATH=~/.local/opt/minisign:$PATH bash bench/install_test.sh
 XDG_DATA_HOME=$(mktemp -d) bash bench/idle_net.sh tobari-first-start 75 build/out/tobari --ozone-platform=wayland   # then again as tobari-idle
 build/out/tobari --ozone-platform=wayland            # run it; data lives in ~/.local/share/tobari
 distrobox enter tobari -- sh packaging/appimage.sh build/out 0.5.0-dev

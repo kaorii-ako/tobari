@@ -6,6 +6,8 @@
 #include <string>
 #include <vector>
 
+#include <functional>
+
 #include "include/cef_client.h"
 #include "include/cef_command_line.h"
 #include "include/views/cef_browser_view.h"
@@ -26,6 +28,7 @@ struct Visit {
   std::string url, title;
   int64_t last = 0;
   int count = 0;
+  bool bookmark = false;
 };
 
 class Shell : public CefClient,
@@ -47,6 +50,8 @@ class Shell : public CefClient,
   std::string Api(CefRefPtr<CefBrowser> caller, const std::string& cmd, CefRefPtr<CefDictionaryValue> arg);
   bool IsUi(CefRefPtr<CefBrowser> b);
   void Relaunch(CefRefPtr<CefCommandLine> cl);
+  // One CLI request (ctl.h). done(ok, body) runs on the UI thread, maybe later.
+  void Ctl(const std::string& cmd, const std::string& arg, std::function<void(bool, const std::string&)> done);
   // The privacy handler blocked a request for this browser.
   void Blocked(int browser_id);
 
@@ -138,6 +143,10 @@ class Shell : public CefClient,
   void SaveSession();
   void LoadSession();
   void Visited(const Tab& t);
+  // Applies one history.jsonl record {u, t, s, n?, b?} to history_ (n visits, b bookmarked).
+  void Merge(CefRefPtr<CefDictionaryValue> d);
+  // Appends records to history.jsonl (mode 0600).
+  void AppendHistory(const std::string& lines);
   std::string SearchHistory(const std::string& q);
   void Tick();
 

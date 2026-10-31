@@ -148,6 +148,33 @@ svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width:
   padding: var(--s2) var(--s3); outline: 0;
 }
 .ai-input textarea:focus { border-color: var(--focus); }
+button.model { text-align: left; border-radius: var(--r1); padding: 2px var(--s1); }
+@media (hover: hover) and (pointer: fine) { button.model:hover { color: var(--text); background: var(--surface-2); } }
+.ai-body { justify-content: flex-start; }
+.ai-body > .ai-hint:first-child { margin-top: auto; }
+.msg { margin: 0; padding: var(--s2) var(--s3); border-radius: var(--r2); white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.55; user-select: text; }
+.msg.user { align-self: flex-end; max-width: 85%; background: var(--accent-soft); }
+.msg.assistant { background: var(--surface-2); }
+.msg.error { color: var(--danger); background: none; border: 1px solid var(--danger); }
+.msg.pending::after { content: '…'; color: var(--text-3); }
+.ai-setup { display: flex; flex-direction: column; gap: var(--s2); padding: var(--s3) var(--s4); border-bottom: 1px solid var(--border); }
+.ai-setup label { display: flex; flex-direction: column; gap: var(--s1); font-size: var(--t-sm); color: var(--text-2); }
+.ai-setup input { font: inherit; color: var(--text); background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--r1); padding: var(--s1) var(--s2); outline: 0; }
+.ai-setup input:focus { border-color: var(--focus); }
+.ai-note { margin: 0; font-size: var(--t-sm); color: var(--text-2); }
+.ai-err { margin: 0; font-size: var(--t-sm); color: var(--danger); }
+.ai-err:empty { display: none; }
+.ai-actions { display: flex; justify-content: flex-end; gap: var(--s2); }
+.ai-actions button, .ai-stop { padding: var(--s1) var(--s3); border-radius: var(--r1); border: 1px solid var(--border); }
+.ai-actions .primary { background: var(--accent); color: var(--on-accent); border-color: var(--accent); }
+.ai-actions button:active, .ai-stop:active, button.model:active { transform: scale(0.97); }
+.ai-skills { list-style: none; margin: 0 var(--s2); padding: var(--s1); border: 1px solid var(--border); border-radius: var(--r2); background: var(--surface); max-height: 240px; overflow-y: auto; }
+.ai-skills li { padding: var(--s1) var(--s2); border-radius: var(--r1); display: flex; gap: var(--s2); }
+.ai-skills li small { color: var(--text-3); }
+.ai-skills li[aria-selected="true"] { background: var(--accent-soft); }
+.ai-input { display: flex; flex-direction: column; gap: var(--s1); }
+.ai-page { font-size: var(--t-sm); color: var(--text-2); display: flex; gap: var(--s1); align-items: center; }
+.ai-stop { align-self: flex-end; }
 
 /* Toasts: enter from below, leave faster than they came. They sit over the sidebar because page overlays
    are native views drawn above this document, so anything over the card would be hidden.

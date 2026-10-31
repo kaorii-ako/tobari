@@ -25,8 +25,15 @@ std::string FreeName(const std::string& dir, std::string name,
 // $XDG_DATA_HOME/tobari, or ~/.local/share/tobari.
 std::string DataDir();
 
+// $HOME, or "" when unset.
+std::string Home();
+
 // The XDG download directory from ~/.config/user-dirs.dirs, or ~/Downloads.
 std::string DownloadDir();
 
 // Writes through a temporary file (mode 0600) so a crash mid-write can't leave a truncated file.
 void WriteFile(const std::string& path, const std::string& data);
+
+// OpenAI-compatible streaming: takes the complete lines out of buf (a partial last line stays) and returns
+// the choices[0].delta.content text of each "data:" event. Sets done on "data: [DONE]".
+std::vector<std::string> SseDeltas(std::string& buf, bool& done);

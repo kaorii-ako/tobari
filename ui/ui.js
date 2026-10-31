@@ -85,6 +85,9 @@ function render() {
   app.style.setProperty('--ai-w', T.ui.aiW + 'px');
   $('#ai').hidden = !T.ui.ai;
   $('#ai-btn').setAttribute('aria-pressed', !!T.ui.ai);
+  // The assistant's code loads on first open, so a browser that never uses it pays nothing for it.
+  if (T.ui.ai && !T.aiLoaded) { T.aiLoaded = true; document.body.append(Object.assign(document.createElement('script'), { src: 'ai.js' })); }
+  if (T.aiRender) T.aiRender();
   $('#split-btn').setAttribute('aria-pressed', !!T.s.split);
   $('#pane-split').hidden = !T.s.split;
   $('[data-act="win-max"]').setAttribute('aria-label', T.s.maximized ? 'Restore' : 'Maximize');
@@ -410,6 +413,7 @@ function applyDemo() {
     if (demo.includes('toast')) toast('Saved report.pdf to Downloads', 0); // stays up for the screenshot
     if (demo.includes('cmd')) openCmd('cmd');
     if (demo.includes('peek')) app.classList.add('peek');
+    if (p.get('ask')) setTimeout(() => T.aiSend(p.get('ask')), 500);
   }, 1500);
 }
 

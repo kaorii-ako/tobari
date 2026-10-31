@@ -82,14 +82,37 @@
     <div id="ai-resize" role="separator" aria-orientation="vertical" aria-label="Resize assistant" tabindex="0"></div>
     <header class="ai-head">
       <span class="ai-title">Assistant</span>
-      <span class="model" title="Where prompts go">No model · nothing leaves this device</span>
+      <button class="model" id="ai-model" title="Choose where prompts go">No model</button>
+      <button class="icon" id="ai-new" aria-label="New chat" title="New chat"><svg><use href="#i-plus"/></svg></button>
       <button class="icon" data-act="ai" aria-label="Close assistant"><svg><use href="#i-close"/></svg></button>
     </header>
-    <div class="ai-body">
-      <p class="ai-hint">The assistant starts no process and loads no model until you use it.</p>
-      <p class="ai-hint">Type <kbd>@</kbd> to add the page, tabs or files, or <kbd>/</kbd> for a skill.</p>
+    <form id="ai-setup" class="ai-setup" hidden>
+      <label>Server <input id="ai-url" list="ai-urls" spellcheck="false" autocomplete="off"></label>
+      <datalist id="ai-urls">
+        <option value="http://127.0.0.1:11434/v1">Ollama on this computer</option>
+        <option value="http://127.0.0.1:8080/v1">llama.cpp server on this computer</option>
+        <option value="http://127.0.0.1:1234/v1">LM Studio on this computer</option>
+        <option value="https://api.openai.com/v1">OpenAI</option>
+        <option value="https://api.anthropic.com/v1">Anthropic</option>
+        <option value="https://openrouter.ai/api/v1">OpenRouter</option>
+      </datalist>
+      <label>API key <input id="ai-key" type="password" autocomplete="off" placeholder="Not needed on this computer"></label>
+      <label>Model <input id="ai-m" list="ai-ms" spellcheck="false" autocomplete="off"></label>
+      <datalist id="ai-ms"></datalist>
+      <p class="ai-note" id="ai-where"></p>
+      <p class="ai-err" id="ai-err" role="alert"></p>
+      <div class="ai-actions"><button type="button" id="ai-cancel">Cancel</button><button class="primary">Save</button></div>
+    </form>
+    <div class="ai-body" id="ai-log" aria-live="polite">
+      <p class="ai-hint">The assistant starts no process and loads no model until you send a message. Chats aren't saved.</p>
+      <p class="ai-hint">Type <kbd>/</kbd> for a skill.</p>
     </div>
-    <form class="ai-input"><textarea rows="2" placeholder="Ask about this page" aria-label="Message" disabled></textarea></form>
+    <ul class="ai-skills" id="ai-skills" role="listbox" aria-label="Skills" hidden></ul>
+    <form class="ai-input" id="ai-form">
+      <label class="ai-page"><input type="checkbox" id="ai-page" checked> Use this page</label>
+      <textarea rows="2" placeholder="Ask about this page" aria-label="Message"></textarea>
+      <button type="button" id="ai-stop" class="ai-stop" hidden>Stop</button>
+    </form>
   </aside>
 </div>
 

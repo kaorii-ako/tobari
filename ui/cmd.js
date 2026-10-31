@@ -22,6 +22,7 @@ const COMMANDS = [
   ['Theme: follow system', '', () => T.run('theme', 'system')],
   ['Blocking and privacy', '', () => T.api('tab.new', { url: 'tobari://blocking/' })],
   ['Bangs', '', () => T.api('tab.new', { url: 'tobari://bangs/' })],
+  ['Import bookmarks and history', '', () => T.api('tab.new', { url: 'tobari://import/' })],
   ['About Tobari', '', () => T.api('tab.new', { url: 'tobari://about/' })],
 ];
 
@@ -78,7 +79,7 @@ async function update() {
   const history = mode === 'cmd' && !text ? [] : await T.api('history', { q: text }).catch(() => []);
   if (my !== seq) return;
   const open = new Set(T.s.tabs.map((t) => t.url));
-  out.push(...history.filter((h) => !open.has(h.url)).map((h) => ({ group: 'History', label: h.title || h.url, hint: hostOf(h.url), url: h.url, run: () => go(h.url) })));
+  out.push(...history.filter((h) => !open.has(h.url)).map((h) => ({ group: h.bookmark ? 'Bookmarks' : 'History', label: h.title || h.url, hint: hostOf(h.url), url: h.url, run: () => go(h.url) })));
   if (mode === 'cmd' && text) out.push(...cmds);
   items = out;
   sel = 0;

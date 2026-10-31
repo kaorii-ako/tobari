@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Import</title>
+<link rel="stylesheet" href="tokens.css">
+<link rel="stylesheet" href="page.css">
+</head>
+<body>
+<main>
+  <h1>Import bookmarks and history</h1>
+  <p class="lead">Tobari reads a copy of another browser's data on this computer. Nothing is sent anywhere, and the
+    other browser is left untouched, even while it's running. Bookmarks show first in the command bar.</p>
+  <p id="none" hidden>No other browser profiles were found. Tobari looks for Chrome, Chromium, Brave, Edge, Vivaldi and
+    Firefox, installed natively or as a Flatpak.</p>
+  <ul class="plain" id="profiles"></ul>
+  <p id="status" role="status"></p>
+</main>
+<script src="import.js"></script>
+</body>
+</html>

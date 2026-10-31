@@ -38,5 +38,16 @@ int main() {
   assert(FreeName("/d", "README", exists) == "/d/README (1)");
   assert(FreeName("/d", "../../.bashrc", exists) == "/d/bashrc");
   assert(FreeName("/d", "", exists) == "/d/download");
+  {  // SseDeltas: split chunks, escapes, Thai, surrogate pairs, [DONE], partial line kept
+    bool done = false;
+    std::string buf = "data: {\"choices\":[{\"delta\":{\"role\":\"assistant\",\"content\":\"Hi \\\"x\\\"\\n\"}}]}\n\n"
+                      ": ping\ndata: {\"choices\":[{\"delta\":{\"content\":\"\u0e2a\u0e27\u0e31\\ud83d\\ude00\"}}]}\ndata: {\"choi";
+    auto d = SseDeltas(buf, done);
+    assert(d.size() == 2 && d[0] == "Hi \"x\"\n" && !done);
+    assert(d[1] == "\u0e2a\u0e27\u0e31\U0001F600");
+    assert(buf == "data: {\"choi");
+    buf += "ces\":[{\"delta\":{}}]}\ndata: [DONE]\n";
+    assert(SseDeltas(buf, done).empty() && done && buf.empty());
+  }
   puts("util_test: all checks passed");
 }

@@ -4,6 +4,7 @@
 #include <filesystem>
 
 #include "include/cef_app.h"
+#include "ctl.h"
 #include "shell.h"
 #include "util.h"
 
@@ -42,6 +43,7 @@ class App : public CefApp, public CefBrowserProcessHandler {
 // Zygote children get a fresh stack canary after fork and then return through main, so main must not
 // check one (Chromium marks its own main the same way).
 __attribute__((no_stack_protector)) int main(int argc, char* argv[]) {
+  if (int code = CtlClient(argc, argv); code >= 0) return code;
   CefMainArgs args(argc, argv);
   CefRefPtr<App> app = new App;
   int code = CefExecuteProcess(args, app, nullptr);

@@ -7,12 +7,12 @@
 
 #include <sys/stat.h>
 
-namespace {
-
 std::string Home() {
   const char* h = getenv("HOME");
   return h ? h : "";
 }
+
+namespace {
 
 std::string Trim(const std::string& s) {
   size_t a = s.find_first_not_of(" \t\r\n"), b = s.find_last_not_of(" \t\r\n");
@@ -176,4 +176,68 @@ void WriteFile(const std::string& path, const std::string& data) {
   }
   chmod(tmp.c_str(), 0600);
   rename(tmp.c_str(), path.c_str());
+}
+
+namespace {
+// Decodes the JSON string starting just after its opening quote. Returns false on a malformed escape.
+bool JsonString(const std::string& s, size_t i, std::string& out) {
+  auto put = [&](unsigned c) {  // UTF-8 encode
+    if (c < 0x80) out += char(c);
+    else if (c < 0x800) out += char(0xC0 | c >> 6), out += char(0x80 | (c & 63));
+    else if (c < 0x10000) out += char(0xE0 | c >> 12), out += char(0x80 | (c >> 6 & 63)), out += char(0x80 | (c & 63));
+    else out += char(0xF0 | c >> 18), out += char(0x80 | (c >> 12 & 63)), out += char(0x80 | (c >> 6 & 63)), out += char(0x80 | (c & 63));
+  };
+  auto hex4 = [&](size_t at, unsigned& v) {
+    if (at + 4 > s.size()) return false;
+    v = std::stoul(s.substr(at, 4), nullptr, 16);
+    return std::isxdigit(static_cast<unsigned char>(s[at + 3])) != 0;
+  };
+  for (; i < s.size(); ++i) {
+    char c = s[i];
+    if (c == '"') return true;
+    if (c != '\\') { out += c; continue; }
+    if (++i >= s.size()) return false;
+    switch (s[i]) {
+      case 'n': out += '\n'; break;
+      case 't': out += '\t'; break;
+      case 'r': out += '\r'; break;
+      case 'b': out += '\b'; break;
+      case 'f': out += '\f'; break;
+      case 'u': {
+        unsigned v, lo;
+        if (!hex4(i + 1, v)) return false;
+        i += 4;
+        if (v >= 0xD800 && v < 0xDC00 && s.compare(i + 1, 2, "\\u") == 0 && hex4(i + 3, lo)) {
+          v = 0x10000 + ((v - 0xD800) << 10) + (lo - 0xDC00);
+          i += 6;
+        }
+        put(v);
+        break;
+      }
+      default: out += s[i];  // \" \\ \/
+    }
+  }
+  return false;
+}
+}  // namespace
+
+std::vector<std::string> SseDeltas(std::string& buf, bool& done) {
+  std::vector<std::string> out;
+  size_t start = 0, nl;
+  while ((nl = buf.find('\n', start)) != std::string::npos) {
+    std::string line = buf.substr(start, nl - start);
+    start = nl + 1;
+    if (line.rfind("data:", 0) != 0) continue;
+    if (line.find("[DONE]") != std::string::npos) { done = true; continue; }
+    // shortcut: finds the first "content" key after "delta" instead of parsing the event, fine for the
+    // flat chunks OpenAI-compatible servers send; parse with CefParseJSON if a provider nests content.
+    size_t d = line.find("\"delta\"");
+    size_t k = d == std::string::npos ? d : line.find("\"content\"", d);
+    if (k == std::string::npos) continue;
+    size_t q = line.find_first_not_of(" :", k + 9);
+    std::string text;
+    if (q != std::string::npos && line[q] == '"' && JsonString(line, q + 1, text) && !text.empty()) out.push_back(text);
+  }
+  buf.erase(0, start);
+  return out;
 }

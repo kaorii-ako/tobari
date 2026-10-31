@@ -16,3 +16,15 @@
 {"name": "chromium", "tabs": 10, "pss_mib": 1995, "processes": 72, "content_processes": 63, "date": "2026-10-30", "samples_mib": [1974, 1995, 2003]}
 {"name": "firefox", "tabs": 10, "pss_mib": 2464, "processes": 76, "content_processes": 71, "date": "2026-10-30", "samples_mib": [2291, 2464, 2467]}
 {"name": "cef", "tabs": 10, "pss_mib": 1852, "processes": 60, "content_processes": 52, "date": "2026-10-30", "samples_mib": [1838, 1852, 1856]}
+{"name": "tobari-step3", "tabs": 0, "pss_mib": 478, "processes": 10, "content_processes": 3, "date": "2026-10-31", "samples_mib": [478, 478, 478]}
+{"name": "tobari-step3", "tabs": 10, "pss_mib": 1443, "processes": 22, "content_processes": 14, "date": "2026-10-31", "samples_mib": [1434, 1443, 1447]}
+{"name": "tobari-step4", "tabs": 0, "pss_mib": 476, "processes": 10, "content_processes": 3, "date": "2026-10-31", "samples_mib": [475, 476, 476]}
+{"name": "tobari-step4", "tabs": 10, "pss_mib": 1454, "processes": 22, "content_processes": 14, "date": "2026-10-31", "samples_mib": [1446, 1454, 1455]}
+{"name": "tobari-step3", "tabs": 0, "pss_mib": 482, "processes": 10, "content_processes": 3, "date": "2026-10-31", "samples_mib": [482, 482, 482]}
+{"name": "tobari-step3", "tabs": 10, "pss_mib": 1450, "processes": 22, "content_processes": 14, "date": "2026-10-31", "samples_mib": [1441, 1450, 1453]}
+{"name": "tobari-step4", "tabs": 0, "pss_mib": 479, "processes": 10, "content_processes": 3, "date": "2026-10-31", "samples_mib": [478, 479, 479]}
+{"name": "tobari-step4", "tabs": 10, "pss_mib": 1442, "processes": 22, "content_processes": 14, "date": "2026-10-31", "samples_mib": [1436, 1442, 1446]}
+{"name": "tobari-step3", "tabs": 0, "pss_mib": 483, "processes": 10, "content_processes": 3, "date": "2026-10-31", "samples_mib": [482, 483, 483]}
+{"name": "tobari-step3", "tabs": 10, "pss_mib": 1425, "processes": 22, "content_processes": 14, "date": "2026-10-31", "samples_mib": [1414, 1425, 1429]}
+{"name": "tobari-step4", "tabs": 0, "pss_mib": 380, "processes": 10, "content_processes": 3, "date": "2026-10-31", "samples_mib": [379, 380, 480]}
+{"name": "tobari-step4", "tabs": 10, "pss_mib": 1441, "processes": 22, "content_processes": 14, "date": "2026-10-31", "samples_mib": [1430, 1441, 1442]}
