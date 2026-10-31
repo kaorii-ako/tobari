@@ -7,7 +7,7 @@ port=$((20000 + RANDOM % 20000)); d=$(mktemp -d); req=$d/request.json
 python3 "$here/ai_fake.py" "$port" "$req" & srv=$!
 mkdir -p "$d/tobari"
 printf '{"url":"http://127.0.0.1:%s/v1","model":"fake-1"}' "$port" > "$d/tobari/ai.json"
-args=(--ozone-platform=wayland "--tobari-demo=demo=ai&ask=Can kiwis fly?" "http://127.0.0.1:$port/page.html")
+args=(--ozone-platform=wayland "--tobari-demo=theme=${THEME:-light}&demo=ai&ask=Can kiwis fly?" "http://127.0.0.1:$port/page.html")
 if [ -n "$shot" ]; then XDG_DATA_HOME=$d "$here/shot.sh" "$shot" 10 "$bin" "${args[@]}" >/dev/null 2>&1
 else XDG_DATA_HOME=$d WLR_BACKENDS=headless WLR_RENDERER=pixman WLR_LIBINPUT_NO_DEVICES=1 timeout -s INT 15 cage -- "$bin" "${args[@]}" >/dev/null 2>&1; fi
 kill $srv 2>/dev/null

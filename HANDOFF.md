@@ -1,6 +1,6 @@
 # Tobari rewrite: handoff
 
-Updated 2026-10-31. Current step: **Step 4 (assistant, import, CLI) is done. Next is Step 5 (benchmark), then Step 6 (0.5.0 release).**
+Updated 2026-10-31. Current step: **All steps (0–6) are done. 0.5.0 is released.**
 
 ## Done
 - **Step 0:** the archive tags `archive/browser-0.4.0` (893ad36) and `archive/v2-extension` (c44e407) are pushed. The orphan branch `rewrite` is created, and `docs/tabbit-parity.md` is written.
@@ -42,6 +42,18 @@ Updated 2026-10-31. Current step: **Step 4 (assistant, import, CLI) is done. Nex
   - `packaging/install.sh`: the old v2 installer moved to the AppImage. It checks the minisign signature on `SHA256SUMS` against the pinned key (minisign, or OpenSSL 3 without it), then the AppImage's checksum, and deletes anything that fails.
   - Decided: no own encryption for history and session. They're 0600 files in a 0700 folder like Chrome's and Firefox's; a key on the same disk adds little, so disk encryption covers rest (`docs/tabbit-parity.md`).
 
+- **Step 5:** `bench/compare.sh BIN` (RAM through `bench/ram.py`, start time through `bench/startup.sh`) and `bench/report.py` write `docs/benchmark.md`.
+- **Step 6:** v* tags build the release AppImage in CI; `packaging/release.sh VERSION NOTES.md` downloads that build, signs `SHA256SUMS` locally with `~/.minisign/tobari.key`, checks it against `tobari.pub` and publishes it with `install.sh`.
+
+## Step 5 results (2026-10-31, Kao's desktop: Ryzen 5 9600X, Bazzite 44)
+| Browser | RAM, 1 blank tab | RAM, 10 real pages | Start to first rendered page |
+| --- | --- | --- | --- |
+| Tobari | 479 MiB | 1516 MiB | 329 ms |
+| Chromium | 522 MiB | 2031 MiB | 352 ms |
+| Firefox | 609 MiB | 2216 MiB | 798 ms |
+
+Part of the 10-page gap is blocking: Tobari doesn't load the ads and trackers the stock browsers do. Method in `docs/benchmark.md`.
+
 ## Step 4 results (2026-10-31, Kao's desktop)
 - RAM with the assistant never opened (`bench/ram.py`, median of 3, PSS): Step 3 build 482 MiB at 0 tabs and 1443 MiB at 10; Step 4 build 476 and 1442. Unchanged. A first try showed +14–18 MiB; the per-process split put it in the UI renderer (+9) and GPU (+6), so the assistant panel now loads on first open. The Step 3 baseline was also rebuilt, since building only the `tobari` target had left its UI folder out.
 - `bench/ai_test.sh` 5/5 against `bench/ai_fake.py` (streamed request, chosen model, page attached and marked untrusted, the question). `bench/import_test.sh` 7/7 on fake Chromium and Firefox profiles. `bench/cli_test.sh` 8/8. `bench/install_test.sh` 9/9 (a good release installs; a bad checksum, bad or missing signature, or another key is refused and nothing is installed; minisign and OpenSSL paths; uninstall). All four pass from the AppImage too and run in CI.
@@ -70,8 +82,7 @@ Updated 2026-10-31. Current step: **Step 4 (assistant, import, CLI) is done. Nex
 - The command bar never opened. Chromium's pop-up blocker rejected the UI's `window.open` from a shortcut, since shortcuts carry no user gesture. The browser now runs with `--disable-popup-blocking`, and `Shell::OnBeforePopup` blocks web pop-ups without a user gesture itself.
 
 ## Next
-1. Step 5: `bench/compare.sh BIN` then `python3 bench/report.py` writes `docs/benchmark.md` (Tobari, Chromium, Firefox: RAM at 0 and 10 tabs, start time).
-2. Step 6: tag `v0.5.0`, let CI build it, sign `SHA256SUMS` locally with `~/.minisign/tobari.key`, attach `install.sh`.
+After 0.5.0 (cut from its scope): sync, site MCP, cookie import, Flatpak, tab groups, agent mode, memory, user skill folders, a bookmark button. Next release: bump the default `VERSION` in `packaging/install.sh`, tag, wait for the tag's build, then `packaging/release.sh`.
 
 ## Open risks
 - Blocking uses host rules only, so path rules, `$domain=` rules and cosmetic filters are skipped. YouTube-style in-page ads aren't blocked.
