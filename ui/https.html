@@ -1,0 +1,17 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Site without https</title>
+<link rel="stylesheet" href="tokens.css">
+<link rel="stylesheet" href="page.css">
+</head>
+<body>
+<main>
+  <h1>This site didn't answer over https</h1>
+  <p class="lead">Tobari tried a secure connection to <strong id="host"></strong> and it failed. Over plain http, anyone on your network can read and change what you send and see.</p>
+  <p class="actions"><button id="back" class="primary">Go back</button> <button id="go">Continue over http</button></p>
+</main>
+<script src="https.js"></script>
+</body>
+</html>

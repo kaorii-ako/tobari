@@ -1,0 +1,56 @@
+/* Design tokens. Every colour is light-dark(light, dark); tools/contrast.py checks the pairs listed there. */
+:root {
+  color-scheme: light dark;
+
+  --bg: light-dark(#E7E6EE, #14131A);
+  --surface: light-dark(#FFFFFF, #1D1C25);
+  --surface-2: light-dark(#F3F2F7, #272632);
+  --surface-3: light-dark(#E0DEE9, #302E3B);
+  --text: light-dark(#1B1925, #EDEBF4);
+  --text-2: light-dark(#575466, #ABA8BA);
+  --text-3: light-dark(#5F5C6C, #A09DAF);
+  --border: light-dark(#D3D1DC, #312F3C);
+  --accent: light-dark(#4A43C4, #ABA6FF);
+  --on-accent: light-dark(#FFFFFF, #14131A);
+  --accent-soft: light-dark(#E3E1FA, #2C2A4A);
+  --danger: light-dark(#B3261E, #FF8F86);
+  --focus: light-dark(#4A43C4, #ABA6FF);
+  --shadow: light-dark(0 1px 2px rgb(27 25 37 / 0.06), 0 1px 2px rgb(0 0 0 / 0.4));
+  --shadow-pop: light-dark(0 8px 24px rgb(27 25 37 / 0.14), 0 8px 24px rgb(0 0 0 / 0.5));
+
+  --font: system-ui, "Noto Sans", "Noto Sans CJK JP", "Noto Sans Thai", sans-serif;
+  --mono: ui-monospace, "Noto Sans Mono", monospace;
+  --t-xs: 11px;
+  --t-sm: 12px;
+  --t-md: 13px;
+  --t-lg: 15px;
+  --t-xl: 20px;
+  --t-2xl: 28px;
+
+  --s1: 4px;
+  --s2: 8px;
+  --s3: 12px;
+  --s4: 16px;
+  --s5: 24px;
+  --s6: 32px;
+
+  --r1: 6px;
+  --r2: 10px;
+  --r3: 14px;
+
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+  --d1: 150ms;
+  --d2: 200ms;
+  --d3: 250ms;
+}
+:root[data-theme="light"] { color-scheme: light; }
+:root[data-theme="dark"] { color-scheme: dark; }
+
+@media (prefers-reduced-motion: reduce) {
+  :root { --d1: 0ms; --d2: 0ms; --d3: 0ms; }
+}
+
+html { background: var(--bg); color: var(--text); font: 400 var(--t-md)/1.45 var(--font); }
+body { margin: 0; }
+:focus-visible { outline: 2px solid var(--focus); outline-offset: 1px; }

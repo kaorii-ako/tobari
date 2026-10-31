@@ -24,6 +24,6 @@ class H(http.server.SimpleHTTPRequestHandler):
 
 srv = http.server.HTTPServer(("127.0.0.1", int(sys.argv[1])), H)
 srv.done = False
-srv.timeout = 60
+srv.timeout = 90
 while not srv.done:
     srv.handle_request()

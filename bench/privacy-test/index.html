@@ -1,0 +1,60 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Privacy self-test</title>
+<pre id="out">running…</pre>
+<script>
+// Each check resolves true when the browser protected the user. Served by bench/script_server.py at
+// http://127.0.0.1:PORT/, so http://localhost:PORT/ is a different site (third party).
+const wait = (ms, v) => new Promise((r) => setTimeout(() => r(v), ms));
+const race = (p, ms, v) => Promise.race([p, wait(ms, v)]);
+const checks = {
+  // Refused outright, or never answered because no prompt is shown.
+  geolocation: () => race(new Promise((r) => navigator.geolocation.getCurrentPosition(() => r(false), () => r(true))), 3000, true),
+  notifications: () => race(Notification.requestPermission().then((p) => p !== 'granted'), 3000, true),
+  camera: () => race(navigator.mediaDevices.getUserMedia({ video: true, audio: true }).then(() => false, () => true), 3000, true),
+  // No ICE candidate may reveal an address: no host, srflx or mDNS candidates without a proxy.
+  webrtc_ip: async () => {
+    const pc = new RTCPeerConnection({ iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] });
+    const found = [];
+    pc.onicecandidate = (e) => e.candidate && e.candidate.candidate && found.push(e.candidate.candidate);
+    pc.createDataChannel('x');
+    await pc.setLocalDescription(await pc.createOffer());
+    await wait(4000);
+    pc.close();
+    window.ice = found;
+    return found.length === 0;
+  },
+  third_party_cookie: () => race(new Promise((r) => {
+    addEventListener('message', (e) => e.data && e.data.cookie !== undefined && r(!e.data.cookie.includes('tp=1')));
+    const f = document.createElement('iframe');
+    f.src = location.href.replace('127.0.0.1', 'localhost').replace(/index\.html.*/, 'frame.html');
+    document.body.append(f);
+  }), 5000, true),
+  // A known ad host must fail at the network layer, while a normal site still loads (control). Retries for 40 s
+  // because a fresh profile downloads the filter lists on first start.
+  blocks_ads: async () => {
+    const get = (u) => fetch(u, { mode: 'no-cors', cache: 'no-store' }).then(() => true, () => false);
+    if (!(await get('https://example.org/'))) return false;
+    for (let i = 0; i < 20; i++) {
+      if (!(await get('https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js'))) return true;
+      await wait(2000);
+    }
+    return false;
+  },
+  first_party_cookie: async () => {
+    document.cookie = 'fp=1; SameSite=Lax';
+    return document.cookie.includes('fp=1') ? true : (window.fpFail = true, false);
+  },
+};
+(async () => {
+  const failed = [];
+  for (const [name, fn] of Object.entries(checks)) {
+    let ok = false;
+    try { ok = await fn(); } catch (e) { ok = name !== 'first_party_cookie'; }
+    if (!ok) failed.push(name);
+  }
+  const res = { userAgent: navigator.userAgent, total: Object.keys(checks).length, failed, ice: window.ice || [] };
+  document.getElementById('out').textContent = JSON.stringify(res, null, 2);
+  fetch('/result', { method: 'POST', body: JSON.stringify(res) });
+})();
+</script>

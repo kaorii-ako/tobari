@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#6F68E8"/>
+      <stop offset="1" stop-color="#2B2670"/>
+    </linearGradient>
+  </defs>
+  <rect x="16" y="16" width="224" height="224" rx="56" fill="url(#g)"/>
+  <!-- tobari: a curtain drawn across the evening -->
+  <path d="M60 64h136v20c-22 0-34 12-34 40v76h-24v-76c0-28-12-40-34-40-14 0-24 6-44 18Z" fill="#F4F2FF"/>
+  <circle cx="186" cy="180" r="14" fill="#F4F2FF" opacity="0.85"/>
+</svg>

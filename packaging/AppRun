@@ -1,0 +1,4 @@
+#!/bin/sh
+# The AppImage mount path changes on every launch; nothing here may persist it.
+here=$(dirname "$(readlink -f "$0")")
+exec "$here/usr/lib/tobari/tobari" "$@"

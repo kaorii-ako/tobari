@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Tobari</title>
+<link rel="stylesheet" href="tokens.css">
+<link rel="stylesheet" href="ui.css">
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="i-back" viewBox="0 0 16 16"><path d="M10 3 5 8l5 5"/></symbol>
+    <symbol id="i-forward" viewBox="0 0 16 16"><path d="m6 3 5 5-5 5"/></symbol>
+    <symbol id="i-reload" viewBox="0 0 16 16"><path d="M13 8a5 5 0 1 1-1.5-3.6M13 2.5v3h-3"/></symbol>
+    <symbol id="i-stop" viewBox="0 0 16 16"><path d="m4 4 8 8M12 4l-8 8"/></symbol>
+    <symbol id="i-plus" viewBox="0 0 16 16"><path d="M8 3v10M3 8h10"/></symbol>
+    <symbol id="i-close" viewBox="0 0 16 16"><path d="m4.5 4.5 7 7M11.5 4.5l-7 7"/></symbol>
+    <symbol id="i-min" viewBox="0 0 16 16"><path d="M3.5 8h9"/></symbol>
+    <symbol id="i-max" viewBox="0 0 16 16"><rect x="3.5" y="3.5" width="9" height="9" rx="1.5"/></symbol>
+    <symbol id="i-sidebar" viewBox="0 0 16 16"><rect x="2" y="3" width="12" height="10" rx="2"/><path d="M6 3v10"/></symbol>
+    <symbol id="i-split" viewBox="0 0 16 16"><rect x="2" y="3" width="12" height="10" rx="2"/><path d="M8 3v10"/></symbol>
+    <symbol id="i-spark" viewBox="0 0 16 16"><path d="M8 2.5c.4 2.7 1.6 4 4.5 4.5-2.9.5-4.1 1.8-4.5 4.5-.4-2.7-1.6-4-4.5-4.5 2.9-.5 4.1-1.8 4.5-4.5Z"/><path d="M12.5 11v2.5M11.25 12.25h2.5"/></symbol>
+    <symbol id="i-search" viewBox="0 0 16 16"><circle cx="7" cy="7" r="4"/><path d="m10 10 3 3"/></symbol>
+    <symbol id="i-lock" viewBox="0 0 16 16"><rect x="4" y="7" width="8" height="6" rx="1.5"/><path d="M6 7V5.5a2 2 0 0 1 4 0V7"/></symbol>
+    <symbol id="i-moon" viewBox="0 0 16 16"><path d="M13 9.5A5.5 5.5 0 0 1 6.5 3a5.5 5.5 0 1 0 6.5 6.5Z"/></symbol>
+    <symbol id="i-up" viewBox="0 0 16 16"><path d="m4 10 4-4 4 4"/></symbol>
+    <symbol id="i-shield" viewBox="0 0 16 16"><path d="M8 2 3 4v4c0 3 2.2 5.2 5 6 2.8-.8 5-3 5-6V4L8 2Z"/></symbol>
+    <symbol id="i-down" viewBox="0 0 16 16"><path d="m4 6 4 4 4-4"/></symbol>
+  </defs>
+</svg>
+
+<div id="app">
+  <aside id="sidebar" aria-label="Tabs">
+    <div class="side-top drag">
+      <span class="brand" aria-hidden="true"><span class="brand-mark"></span>Tobari</span>
+      <button class="icon nodrag" data-act="compact" title="Compact mode (Alt+S)" aria-label="Compact mode"><svg><use href="#i-sidebar"/></svg></button>
+    </div>
+    <button class="new-tab" data-act="newtab"><svg><use href="#i-plus"/></svg><span>New tab</span><kbd>Ctrl T</kbd></button>
+    <ol id="tabs" role="listbox" aria-label="Open tabs"></ol>
+    <nav id="spaces" aria-label="Workspaces"></nav>
+  </aside>
+  <div id="edge" aria-hidden="true"></div>
+
+  <header id="top" class="drag">
+    <div class="nav nodrag">
+      <button class="icon" data-act="back" title="Back (Alt+Left)" aria-label="Back"><svg><use href="#i-back"/></svg></button>
+      <button class="icon" data-act="forward" title="Forward (Alt+Right)" aria-label="Forward"><svg><use href="#i-forward"/></svg></button>
+      <button class="icon" data-act="reload" id="reload" title="Reload (Ctrl+R)" aria-label="Reload"><svg><use href="#i-reload"/></svg></button>
+    </div>
+    <button id="address" class="nodrag" data-act="address" title="Edit address (Ctrl+L)">
+      <svg class="lock"><use href="#i-lock"/></svg><span id="addr-host"></span><span id="addr-path"></span>
+    </button>
+    <button id="shield" class="nodrag" data-act="shield" hidden><svg><use href="#i-shield"/></svg><span id="shield-n"></span></button>
+    <form id="find" class="nodrag" hidden>
+      <svg><use href="#i-search"/></svg>
+      <input id="find-q" type="search" placeholder="Find in page" aria-label="Find in page" autocomplete="off">
+      <output id="find-n" aria-live="polite"></output>
+      <button type="button" class="icon" data-act="find-prev" aria-label="Previous match"><svg><use href="#i-up"/></svg></button>
+      <button type="button" class="icon" data-act="find-next" aria-label="Next match"><svg><use href="#i-down"/></svg></button>
+      <button type="button" class="icon" data-act="find-close" aria-label="Close find"><svg><use href="#i-close"/></svg></button>
+    </form>
+    <div class="tools nodrag">
+      <button class="icon" data-act="split" id="split-btn" title="Split view (Alt+\)" aria-label="Split view" aria-pressed="false"><svg><use href="#i-split"/></svg></button>
+      <button class="icon" data-act="ai" id="ai-btn" title="Assistant (Alt+J)" aria-label="Assistant" aria-pressed="false"><svg><use href="#i-spark"/></svg></button>
+    </div>
+    <div class="win nodrag">
+      <button class="icon" data-act="win-min" aria-label="Minimize"><svg><use href="#i-min"/></svg></button>
+      <button class="icon" data-act="win-max" aria-label="Maximize"><svg><use href="#i-max"/></svg></button>
+      <button class="icon close" data-act="win-close" aria-label="Close window"><svg><use href="#i-close"/></svg></button>
+    </div>
+  </header>
+
+  <main id="card">
+    <div class="pane" id="pane-main"><div class="empty" id="empty">
+      <p class="empty-title">Nothing open in <span id="empty-ws"></span></p>
+      <p>Press <kbd>Ctrl T</kbd> for a new tab or <kbd>Alt K</kbd> for commands.</p>
+    </div></div>
+    <div class="pane" id="pane-split" hidden></div>
+  </main>
+
+  <aside id="ai" aria-label="Assistant" hidden>
+    <div id="ai-resize" role="separator" aria-orientation="vertical" aria-label="Resize assistant" tabindex="0"></div>
+    <header class="ai-head">
+      <span class="ai-title">Assistant</span>
+      <span class="model" title="Where prompts go">No model · nothing leaves this device</span>
+      <button class="icon" data-act="ai" aria-label="Close assistant"><svg><use href="#i-close"/></svg></button>
+    </header>
+    <div class="ai-body">
+      <p class="ai-hint">The assistant starts no process and loads no model until you use it.</p>
+      <p class="ai-hint">Type <kbd>@</kbd> to add the page, tabs or files, or <kbd>/</kbd> for a skill.</p>
+    </div>
+    <form class="ai-input"><textarea rows="2" placeholder="Ask about this page" aria-label="Message" disabled></textarea></form>
+  </aside>
+</div>
+
+<div id="toasts" aria-live="polite"></div>
+<script src="ui.js"></script>
+</body>
+</html>

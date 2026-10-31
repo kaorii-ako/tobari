@@ -1,0 +1,168 @@
+/* Frame UI. Page tabs are separate views placed over #card's panes, so layout changes are never animated:
+   the page view can't follow a CSS transition and would visibly lag behind it. */
+* { box-sizing: border-box; }
+html, body { height: 100%; overflow: hidden; user-select: none; }
+button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: default; }
+input, textarea { font: inherit; color: inherit; }
+kbd { font: 500 var(--t-xs)/1 var(--font); color: var(--text-3); padding: 2px 5px; border-radius: 4px; background: var(--surface-3); }
+svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+[hidden] { display: none !important; }
+.drag { -webkit-app-region: drag; }
+.nodrag, .drag button, .drag input { -webkit-app-region: no-drag; }
+
+#app {
+  --side-w: 248px;
+  --ai-w: 380px;
+  height: 100%;
+  display: grid;
+  grid-template-columns: var(--side-w) minmax(0, 1fr) 0;
+  grid-template-rows: 48px minmax(0, 1fr);
+  grid-template-areas: "side top top" "side card ai";
+  padding: 0 var(--s2) var(--s2) 0;
+}
+#app.ai-open { grid-template-columns: var(--side-w) minmax(0, 1fr) var(--ai-w); }
+#app.compact { --side-w: 0px; padding-left: var(--s2); }
+#app.compact.peek, #app.compact.toasting { --side-w: 248px; padding-left: 0; }
+
+/* Buttons: one size, one hover tint, a small press. */
+.icon {
+  width: 30px; height: 30px; display: grid; place-items: center; border-radius: var(--r1); color: var(--text-2);
+  transition: background-color var(--d1) var(--ease-out), transform var(--d1) var(--ease-out);
+}
+.icon:active { transform: scale(0.94); }
+.icon:disabled { opacity: 0.4; }
+.icon[aria-pressed="true"] { color: var(--accent); background: var(--accent-soft); }
+@media (hover: hover) and (pointer: fine) {
+  .icon:hover:not(:disabled) { background: var(--surface-3); color: var(--text); }
+  .win .close:hover { background: var(--danger); color: var(--surface); }
+}
+
+/* Sidebar */
+#sidebar { grid-area: side; display: flex; flex-direction: column; min-width: 0; overflow: hidden; padding: 0 var(--s2); }
+#app.compact:not(.peek):not(.toasting) #sidebar { visibility: hidden; }
+.side-top { height: 48px; display: flex; align-items: center; justify-content: space-between; padding-left: var(--s2); flex: none; }
+.brand { display: flex; align-items: center; gap: var(--s2); font-weight: 600; font-size: var(--t-lg); letter-spacing: -0.01em; }
+.brand-mark { width: 16px; height: 16px; border-radius: 5px; background: linear-gradient(160deg, var(--accent) 0 50%, var(--text) 50%); }
+.new-tab {
+  display: flex; align-items: center; gap: var(--s2); height: 34px; padding: 0 var(--s2); border-radius: var(--r2);
+  color: var(--text-2); flex: none; margin-bottom: var(--s1);
+  transition: background-color var(--d1) var(--ease-out), transform var(--d1) var(--ease-out);
+}
+.new-tab span { flex: 1; text-align: left; }
+.new-tab:active { transform: scale(0.98); }
+@media (hover: hover) and (pointer: fine) { .new-tab:hover { background: var(--surface-3); color: var(--text); } }
+
+#tabs { list-style: none; margin: 0; padding: 0; flex: 1; overflow-y: auto; scrollbar-width: none; }
+.tab {
+  position: relative; display: flex; align-items: center; gap: var(--s2); height: 34px; padding: 0 var(--s1) 0 var(--s2);
+  border-radius: var(--r2); color: var(--text-2); margin-bottom: 2px;
+  transition: background-color var(--d1) var(--ease-out), opacity var(--d2) var(--ease-out), transform var(--d2) var(--ease-out);
+}
+.tab.enter { opacity: 0; transform: translateX(-6px); }
+.tab[aria-selected="true"] { background: var(--surface); color: var(--text); box-shadow: var(--shadow); }
+.tab.split-side { background: var(--surface-2); color: var(--text); }
+.tab.sleeping .fav, .tab.sleeping .title { opacity: 0.55; }
+.tab.drop-before::before { content: ""; position: absolute; left: var(--s2); right: var(--s2); top: -2px; height: 2px; border-radius: 1px; background: var(--accent); }
+.tab .title { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tab .x { width: 24px; height: 24px; opacity: 0; }
+.tab[aria-selected="true"] .x, .tab:focus-within .x { opacity: 1; }
+@media (hover: hover) and (pointer: fine) {
+  .tab:hover:not([aria-selected="true"]) { background: var(--surface-3); color: var(--text); }
+  .tab:hover .x { opacity: 1; }
+}
+.fav { width: 16px; height: 16px; border-radius: 4px; flex: none; display: grid; place-items: center; overflow: hidden; }
+.fav img { width: 16px; height: 16px; }
+.fav.letter { background: var(--surface-3); color: var(--text-2); font-size: 10px; font-weight: 600; }
+.fav.loading { border: 1.5px solid var(--surface-3); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+#spaces { display: flex; gap: var(--s1); padding: var(--s2) 0 var(--s3); flex: none; flex-wrap: wrap; }
+.space {
+  height: 28px; padding: 0 var(--s3); border-radius: 14px; color: var(--text-2); font-size: var(--t-sm); font-weight: 500;
+  transition: background-color var(--d1) var(--ease-out), transform var(--d1) var(--ease-out);
+}
+.space[aria-current="true"] { background: var(--surface); color: var(--text); box-shadow: var(--shadow); }
+.space:active { transform: scale(0.96); }
+@media (hover: hover) and (pointer: fine) { .space:hover:not([aria-current="true"]) { background: var(--surface-3); color: var(--text); } }
+
+/* Compact mode: a thin strip at the left edge brings the sidebar back while the pointer is near. */
+#edge { position: fixed; left: 0; top: 0; bottom: 0; width: 8px; display: none; }
+#app.compact ~ #edge, #app.compact #edge { display: block; }
+
+/* Top bar */
+#top { grid-area: top; display: flex; align-items: center; gap: var(--s2); min-width: 0; }
+.nav, .tools, .win { display: flex; gap: 2px; flex: none; }
+.win { margin-left: var(--s2); }
+#address {
+  flex: 1; min-width: 0; max-width: 720px; margin: 0 auto; height: 32px; display: flex; align-items: center; gap: var(--s2);
+  padding: 0 var(--s3); border-radius: var(--r2); background: var(--surface-2); color: var(--text-2); white-space: nowrap; overflow: hidden;
+  transition: background-color var(--d1) var(--ease-out);
+}
+#address .lock { width: 14px; height: 14px; color: var(--text-3); }
+#addr-host { color: var(--text); }
+#addr-path { overflow: hidden; text-overflow: ellipsis; color: var(--text-3); }
+@media (hover: hover) and (pointer: fine) { #address:hover { background: var(--surface); } }
+
+#shield {
+  flex: none; height: 32px; display: flex; align-items: center; gap: var(--s1); padding: 0 var(--s2); border-radius: var(--r2);
+  color: var(--text-2); font-size: var(--t-sm); font-variant-numeric: tabular-nums;
+  transition: background-color var(--d1) var(--ease-out), transform var(--d1) var(--ease-out);
+}
+#shield svg { width: 16px; height: 16px; color: var(--accent); }
+#shield.off svg { color: var(--text-3); }
+#shield:active { transform: scale(0.97); }
+@media (hover: hover) and (pointer: fine) { #shield:hover { background: var(--surface-2); } }
+
+#find {
+  flex: 1; max-width: 720px; margin: 0 auto; height: 32px; display: flex; align-items: center; gap: var(--s1);
+  padding: 0 var(--s1) 0 var(--s3); border-radius: var(--r2); background: var(--surface); box-shadow: 0 0 0 1.5px var(--focus);
+}
+#find > svg { color: var(--text-3); margin-right: var(--s1); }
+#find input { flex: 1; min-width: 0; border: 0; outline: 0; background: none; }
+#find input::-webkit-search-cancel-button { display: none; }
+#find output { color: var(--text-3); font-size: var(--t-sm); font-variant-numeric: tabular-nums; padding: 0 var(--s2); }
+#find .icon { width: 26px; height: 26px; }
+
+/* The card: pages are drawn over its panes, so the card only provides the border and the empty state. */
+#card { grid-area: card; display: flex; gap: var(--s2); min-width: 0; min-height: 0; }
+.pane { flex: 1; min-width: 0; background: var(--surface); border: 1px solid var(--border); box-shadow: var(--shadow); position: relative; }
+.empty { position: absolute; inset: 0; display: grid; place-content: center; text-align: center; gap: var(--s2); color: var(--text-2); }
+.empty p { margin: 0; }
+.empty-title { font-size: var(--t-xl); font-weight: 600; color: var(--text); letter-spacing: -0.01em; }
+
+/* Assistant panel */
+#ai {
+  grid-area: ai; position: relative; margin-left: var(--s2); display: flex; flex-direction: column; min-width: 0;
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--r3); box-shadow: var(--shadow);
+}
+#ai-resize { position: absolute; left: -7px; top: 0; bottom: 0; width: 8px; cursor: col-resize; }
+#ai-resize:focus-visible { outline: 0; background: var(--focus); width: 2px; left: -5px; }
+.ai-head { display: flex; align-items: center; gap: var(--s2); padding: var(--s2) var(--s2) var(--s2) var(--s4); border-bottom: 1px solid var(--border); }
+.ai-title { font-weight: 600; }
+.model { flex: 1; min-width: 0; font-size: var(--t-sm); color: var(--text-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ai-body { flex: 1; overflow-y: auto; padding: var(--s4); display: flex; flex-direction: column; justify-content: flex-end; gap: var(--s2); }
+.ai-hint { margin: 0; color: var(--text-2); }
+.ai-input { padding: var(--s2); }
+.ai-input textarea {
+  width: 100%; resize: none; border: 1px solid var(--border); border-radius: var(--r2); background: var(--surface-2);
+  padding: var(--s2) var(--s3); outline: 0;
+}
+.ai-input textarea:focus { border-color: var(--focus); }
+
+/* Toasts: enter from below, leave faster than they came. They sit over the sidebar because page overlays
+   are native views drawn above this document, so anything over the card would be hidden.
+   In compact mode toast() makes the sidebar peek while one is up. */
+#toasts { position: fixed; left: var(--s2); bottom: var(--s3); width: calc(248px - 2 * var(--s2)); display: flex; flex-direction: column; gap: var(--s2); pointer-events: none; z-index: 5; }
+.toast {
+  pointer-events: auto; padding: var(--s2) var(--s4); border-radius: var(--r2);
+  background: var(--text); color: var(--surface); box-shadow: var(--shadow-pop); font-size: var(--t-md);
+  transition: opacity var(--d2) var(--ease-out), transform var(--d2) var(--ease-out);
+}
+.toast.enter { opacity: 0; transform: translateY(8px) scale(0.98); }
+.toast.leave { opacity: 0; transform: translateY(4px); transition-duration: var(--d1); }
+.toast progress { display: block; width: 100%; height: 3px; margin-top: var(--s1); appearance: none; border: 0; background: rgb(127 127 127 / 0.3); border-radius: 2px; }
+.toast progress::-webkit-progress-bar { background: transparent; }
+.toast progress::-webkit-progress-value { background: var(--accent-soft); border-radius: 2px; }
+@media (prefers-reduced-motion: reduce) {
+  .tab.enter, .toast.enter, .toast.leave { transform: none; }
+}

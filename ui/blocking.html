@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Blocking and privacy</title>
+<link rel="stylesheet" href="tokens.css">
+<link rel="stylesheet" href="page.css">
+</head>
+<body>
+<main>
+  <h1>Blocking and privacy</h1>
+  <p class="lead"><span id="count">0</span> requests blocked since Tobari started.</p>
+  <h2>Filter lists</h2>
+  <p>Requests to ad and tracker hosts are cancelled before they leave the browser. Lists update once a week; nothing else is sent.</p>
+  <table id="lists"><thead><tr><th>List</th><th>Rules used</th><th>Updated</th></tr></thead><tbody></tbody></table>
+  <h2>Sites with blocking off</h2>
+  <p id="none">None. Use the shield next to the address to turn blocking off for one site.</p>
+  <ul id="off" class="plain"></ul>
+  <h2>Always on</h2>
+  <dl>
+    <dt>HTTPS-Only</dt><dd>Pages load over https. If a site has no https, Tobari asks before using http.</dd>
+    <dt>Cookies</dt><dd>Third-party cookies are blocked.</dd>
+    <dt>WebRTC</dt><dd>Calls go through a proxy or not at all, so your local and public IP stay private.</dd>
+    <dt>Device access</dt><dd>Camera, microphone, location, notifications, USB, Bluetooth, serial and MIDI requests are refused.</dd>
+    <dt>Telemetry</dt><dd>None. Tobari sends no usage data, crash reports or pings.</dd>
+  </dl>
+</main>
+<script src="blocking.js"></script>
+</body>
+</html>

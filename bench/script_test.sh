@@ -1,19 +1,21 @@
 #!/usr/bin/env bash
 # Grade CJK and Thai rendering in one browser: bench/script_test.sh NAME CMD...
-# CMD gets the test URL appended. Runs inside a headless cage so no window shows.
+# TEST=privacy-test runs bench/privacy-test instead. CMD gets the test URL appended.
+# Runs inside a headless cage so no window shows.
 set -euo pipefail
 name=$1; shift
 here=$(dirname "$0")
 port=$((20000 + RANDOM % 10000))
-out="$here/results/script-$name.json"
+test=${TEST:-script-test}
+out="$here/results/${test%-test}-$name.json"
 mkdir -p "$here/results"
-python3 "$here/script_server.py" "$port" > "$out.tmp" &
+python3 "$here/script_server.py" "$port" "$test" > "$out.tmp" &
 srv=$!
 sleep 0.5
 WLR_BACKENDS=headless WLR_RENDERER=pixman WLR_LIBINPUT_NO_DEVICES=1 \
-  timeout 60 cage -- "$@" "http://127.0.0.1:$port/index.html" >/dev/null 2>&1 &
+  timeout 90 cage -- "$@" "http://127.0.0.1:$port/index.html" >/dev/null 2>&1 &
 br=$!
-for _ in $(seq 60); do kill -0 "$srv" 2>/dev/null || break; sleep 1; done
+for _ in $(seq 90); do kill -0 "$srv" 2>/dev/null || break; sleep 1; done
 kill "$br" "$srv" 2>/dev/null || true
 wait 2>/dev/null || true
 [ -s "$out.tmp" ] || { echo "$name: no result (browser did not post)"; rm -f "$out.tmp"; exit 1; }

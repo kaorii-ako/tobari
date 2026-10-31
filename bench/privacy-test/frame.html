@@ -1,0 +1,7 @@
+<!doctype html>
+<meta charset="utf-8">
+<script>
+// Third-party frame: try to set a cookie and report what stuck.
+document.cookie = 'tp=1; SameSite=None; Secure';
+parent.postMessage({ cookie: document.cookie }, '*');
+</script>

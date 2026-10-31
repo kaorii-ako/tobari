@@ -12,3 +12,7 @@
 {"name": "cef", "tabs": 10, "pss_mib": 1859, "processes": 56, "content_processes": 48, "date": "2026-10-30", "samples_mib": [1851, 1859, 1900]}
 {"name": "chromium", "tabs": 0, "pss_mib": 523, "processes": 15, "content_processes": 6, "date": "2026-10-30", "samples_mib": [522, 523, 531]}
 {"name": "firefox", "tabs": 0, "pss_mib": 605, "processes": 12, "content_processes": 7, "date": "2026-10-30", "samples_mib": [599, 605, 608]}
+{"name": "cef", "tabs": 0, "pss_mib": 367, "processes": 9, "content_processes": 2, "date": "2026-10-30", "samples_mib": [366, 367, 367]}
+{"name": "chromium", "tabs": 10, "pss_mib": 1995, "processes": 72, "content_processes": 63, "date": "2026-10-30", "samples_mib": [1974, 1995, 2003]}
+{"name": "firefox", "tabs": 10, "pss_mib": 2464, "processes": 76, "content_processes": 71, "date": "2026-10-30", "samples_mib": [2291, 2464, 2467]}
+{"name": "cef", "tabs": 10, "pss_mib": 1852, "processes": 60, "content_processes": 52, "date": "2026-10-30", "samples_mib": [1838, 1852, 1856]}

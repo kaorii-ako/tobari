@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Command bar</title>
+<link rel="stylesheet" href="tokens.css">
+<link rel="stylesheet" href="cmd.css">
+</head>
+<body>
+<div id="bar">
+  <div class="row">
+    <svg viewBox="0 0 16 16"><circle cx="7" cy="7" r="4"/><path d="m10 10 3 3"/></svg>
+    <input id="q" autocomplete="off" spellcheck="false" aria-label="Command" aria-controls="list" aria-autocomplete="list">
+    <kbd id="mode"></kbd>
+  </div>
+  <ul id="list" role="listbox" aria-label="Results"></ul>
+  <footer><span><kbd>↑</kbd><kbd>↓</kbd> move</span><span><kbd>Enter</kbd> open</span><span><kbd>Esc</kbd> close</span></footer>
+</div>
+<script src="cmd.js"></script>
+</body>
+</html>
