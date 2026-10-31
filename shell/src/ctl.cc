@@ -87,12 +87,14 @@ void CtlServe() {
 }
 
 int CtlClient(int argc, char* argv[]) {
+  // `tobari --profile=NAME tabs` talks to that profile; main has already applied the switch.
+  if (argc > 1 && !strncmp(argv[1], "--profile=", 10)) ++argv, --argc;
   if (argc < 2) return -1;
   std::string cmd = argv[1];
-  if (cmd != "tabs" && cmd != "open" && cmd != "text" && cmd != "close") return -1;
+  if (cmd != "tabs" && cmd != "open" && cmd != "text" && cmd != "close" && cmd != "profile") return -1;
   std::string arg = argc > 2 ? argv[2] : "";
-  if ((cmd == "open" || cmd == "close") && arg.empty()) {
-    fprintf(stderr, "usage: tobari tabs | open URL | text [ID] | close ID\n");
+  if ((cmd == "open" || cmd == "close" || cmd == "profile") && arg.empty()) {
+    fprintf(stderr, "usage: tobari [--profile=NAME] tabs | open URL | text [ID] | close ID | profile NAME\n");
     return 2;
   }
   for (char& ch : arg)

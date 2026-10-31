@@ -6,6 +6,13 @@
 #include <fstream>
 
 #include <sys/stat.h>
+#include <algorithm>
+#include <filesystem>
+
+namespace {
+std::string g_profile;  // "" is the default profile, which lives at the data root as before profiles existed
+std::string g_search = "https://duckduckgo.com/?q=%s";
+}  // namespace
 
 std::string Home() {
   const char* h = getenv("HOME");
@@ -123,7 +130,21 @@ std::string FixupInput(const std::string& text) {
   if (t.find(' ') == std::string::npos && LooksLikeHost(HostOf(t)))
     return (StartsWith(t, "localhost") || isdigit(static_cast<unsigned char>(t[0])) ? "http://" : "https://") + t;
   if (std::string bang = BangUrl(t); !bang.empty()) return bang;
-  return "https://duckduckgo.com/?q=" + Encode(t);
+  std::string u = g_search;
+  return u.replace(u.find("%s"), 2, Encode(t));
+}
+
+const std::vector<std::string>& SearchEngines() {
+  static const std::vector<std::string> keys = {"ddg", "g", "b", "sp"};
+  return keys;
+}
+
+bool SetSearch(const std::string& key) {
+  for (auto& k : SearchEngines())
+    if (k == key)
+      for (auto& b : Bangs())
+        if (key == b.key) return g_search = b.url, true;
+  return false;
 }
 
 std::string UiPath(const std::string& host, const std::string& path) {
@@ -149,9 +170,38 @@ std::string FreeName(const std::string& dir, std::string name,
   return path;
 }
 
-std::string DataDir() {
+std::string DataRoot() {
   const char* x = getenv("XDG_DATA_HOME");
   return (x && *x ? std::string(x) : Home() + "/.local/share") + "/tobari";
+}
+
+std::string DataDir() { return g_profile.empty() ? DataRoot() : DataRoot() + "/profiles/" + g_profile; }
+
+const std::string& CurrentProfile() { return g_profile; }
+
+bool ValidProfile(const std::string& name) {
+  if (name.empty() || name.size() > 64 || name[0] == '.' || name[0] == ' ' || name.back() == ' ') return false;
+  // Bytes >= 0x80 are UTF-8, so Thai and Japanese names work; '/' and control characters would escape the folder.
+  for (unsigned char c : name)
+    if (c < 0x20 || c == '/' || c == 0x7f) return false;
+  return true;
+}
+
+bool SetProfile(const std::string& name) {
+  if (name == "Default") return g_profile.clear(), true;
+  if (!ValidProfile(name)) return false;
+  g_profile = name;
+  return true;
+}
+
+std::vector<std::string> Profiles() {
+  std::vector<std::string> out = {"Default"};
+  std::error_code ec;
+  for (auto& d : std::filesystem::directory_iterator(DataRoot() + "/profiles", ec))
+    if (d.is_directory() && ValidProfile(d.path().filename().string()) && d.path().filename() != "Default")
+      out.push_back(d.path().filename().string());
+  std::sort(out.begin() + 1, out.end());
+  return out;
 }
 
 std::string DownloadDir() {

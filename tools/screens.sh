@@ -9,7 +9,7 @@ for theme in light dark; do
   # surface:demo flags:extra args
   for spec in 'browse::' 'assistant:ai:' 'command:cmd:' 'find:find:' 'split:split:' 'compact:compact:' \
               'toast:toast:' 'empty::--tobari-empty' 'about::tobari://about/' 'blocking::tobari://blocking/' \
-              'bangs::tobari://bangs/' 'https::tobari://https/#http://http.badssl.com/' 'import::tobari://import/'; do
+              'bangs::tobari://bangs/' 'https::tobari://https/#http://http.badssl.com/' 'import::tobari://import/' 'welcome::tobari://welcome/'; do
     name=${spec%%:*}; rest=${spec#*:}; demo=${rest%%:*}; extra=${rest#*:}
     urls=$pages
     case $extra in --tobari-empty) urls= extra= ;; tobari:*) urls="$pages $extra" extra= ;; esac

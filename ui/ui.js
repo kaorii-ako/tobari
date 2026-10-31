@@ -6,7 +6,7 @@ const app = $('#app');
 
 const T = (window.T = {
   s: { tabs: [], active: 0, split: 0, focus: 0, ws: 'main', maximized: false },
-  ui: { theme: 'system', compact: false, ai: false, aiW: 380, spaces: ['main'] },
+  ui: { theme: 'system', search: 'ddg', compact: false, ai: false, aiW: 380, spaces: ['main'] },
   cmdWin: null,
 
   api(cmd, arg = {}) {
@@ -76,11 +76,17 @@ function tabsHere() {
 
 // ---- Rendering --------------------------------------------------------------------------------------------
 
-let appliedTheme = '';
+let appliedTheme = '', appliedSearch = '';
 function render() {
   document.documentElement.dataset.theme = T.ui.theme === 'system' ? '' : T.ui.theme;
   if (appliedTheme !== T.ui.theme) T.api('theme', { mode: (appliedTheme = T.ui.theme) });
+  if (appliedSearch !== T.ui.search) T.api('search', { key: (appliedSearch = T.ui.search) });
   app.classList.toggle('compact', !!T.ui.compact);
+  const prof = $('#profile');
+  prof.style.setProperty('--hue', T.s.hue);
+  prof.querySelector('.avatar').textContent = (T.s.profile || 'D')[0].toUpperCase();
+  prof.querySelector('.pname').textContent = T.s.profile === 'Default' ? '' : T.s.profile;
+  prof.setAttribute('aria-label', `Profile: ${T.s.profile}. Switch or add a profile`);
   app.classList.toggle('ai-open', !!T.ui.ai);
   app.style.setProperty('--ai-w', T.ui.aiW + 'px');
   $('#ai').hidden = !T.ui.ai;
@@ -259,6 +265,8 @@ function run(name, arg) {
     case 'find': return openFind();
     case 'devtools': return T.api('devtools');
     case 'theme': T.ui.theme = arg; render(); return saveUi();
+    case 'search': T.ui.search = arg; render(); return saveUi();
+    case 'profiles': return openCmd('cmd', 'profile ');
     case 'ws':
       if (!T.ui.spaces.includes(arg)) { T.ui.spaces.push(arg); saveUi(); }
       return T.api('ws', { ws: arg });
@@ -270,11 +278,11 @@ function run(name, arg) {
 }
 
 // The command bar is a popup that shares this renderer; the shell shows it over the page views.
-function openCmd(mode) {
+function openCmd(mode, text) {
   if (!T.cmdWin || T.cmdWin.closed) T.cmdWin = window.open('cmd.html', 'cmd');
   const go = () => {
     if (!T.cmdWin.C) return setTimeout(go, 16);
-    T.cmdWin.C.open(mode);
+    T.cmdWin.C.open(mode, text);
     T.api('cmd', { open: true });
   };
   go();

@@ -45,6 +45,8 @@ Updated 2026-10-31. Current step: **All steps (0–6) are done. 0.5.0 is release
 - **Step 5:** `bench/compare.sh BIN` (RAM through `bench/ram.py`, start time through `bench/startup.sh`) and `bench/report.py` write `docs/benchmark.md`.
 - **Step 6:** v* tags build the release AppImage in CI; `packaging/release.sh VERSION NOTES.md` downloads that build, signs `SHA256SUMS` locally with `~/.minisign/tobari.key`, checks it against `tobari.pub` and publishes it with `install.sh`.
 
+- **After 0.5.0:** first-run welcome page (`tobari://welcome/`: theme, search engine, import, assistant setup, keys) and profiles. Each profile is its own browser process with its own folder under `~/.local/share/tobari/profiles/NAME` (the default stays at the root), so Google and other logins stay separate. Switch or add one from the avatar in the sidebar, the command bar (`profile NAME`), or `tobari profile NAME`; `tobari --profile=NAME ...` runs or talks to it. Chrome-style Google account sync isn't possible: Google closed its sync API to other browsers in 2021. `bench/profile_test.sh` 7/7.
+
 ## Step 5 results (2026-10-31, Kao's desktop: Ryzen 5 9600X, Bazzite 44)
 | Browser | RAM, 1 blank tab | RAM, 10 real pages | Start to first rendered page |
 | --- | --- | --- | --- |

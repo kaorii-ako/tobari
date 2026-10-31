@@ -1,6 +1,7 @@
 #include "shell.h"
 
 #include <sys/stat.h>
+#include <sys/wait.h>
 #include <unistd.h>
 
 #include <algorithm>
@@ -135,6 +136,41 @@ class WindowDelegate : public CefWindowDelegate {
 
 }  // namespace
 
+bool Shell::first_run = false;
+
+namespace {
+// Opens a profile in its own process and window, the way Chrome opens a profile in a new window. Runs the AppImage
+// again when inside one, since this binary's mount goes away when the first window's AppImage exits.
+void OpenProfile(const std::string& name) {
+  const char* appimage = getenv("APPIMAGE");
+  char self[4096];
+  ssize_t n = readlink("/proc/self/exe", self, sizeof self - 1);
+  if (!appimage && n <= 0) return;
+  if (n > 0) self[n] = 0;
+  std::string exe = appimage ? appimage : self, arg = "--profile=" + name;
+  auto cl = CefCommandLine::GetGlobalCommandLine();
+  std::string ozone = cl->HasSwitch("ozone-platform") ? "--ozone-platform=" + cl->GetSwitchValue("ozone-platform").ToString() : "";
+  std::vector<char*> argv = {exe.data(), arg.data()};
+  if (!ozone.empty()) argv.push_back(ozone.data());
+  argv.push_back(nullptr);
+  // Double fork so the new browser isn't our child: it outlives this window and leaves no zombie.
+  pid_t pid = fork();
+  if (pid == 0) {
+    setsid();
+    if (fork() == 0) execv(argv[0], argv.data());
+    _exit(0);
+  }
+  if (pid > 0) waitpid(pid, nullptr, 0);
+}
+
+// Hue for a profile's avatar, the same in every window.
+int ProfileHue(const std::string& name) {
+  unsigned h = 0;
+  for (unsigned char c : name) h = h * 31 + c;
+  return static_cast<int>(h % 360);
+}
+}  // namespace
+
 void Shell::Start(CefRefPtr<CefCommandLine> cl) {
   g_shell = new Shell;
   g_view_delegate = new ViewDelegate;
@@ -144,6 +180,7 @@ void Shell::Start(CefRefPtr<CefCommandLine> cl) {
   CefCommandLine::ArgumentList args;
   cl->GetArguments(args);
   for (auto& a : args) g_shell->start_urls_.push_back(FixupInput(a.ToString()));
+  if (first_run && g_shell->start_urls_.empty() && g_shell->demo_.empty()) g_shell->start_urls_.push_back("tobari://welcome/");
   mkdir(DataDir().c_str(), 0700);
   CefWindow::CreateTopLevelWindow(new WindowDelegate);
   CtlServe();
@@ -160,7 +197,7 @@ void Shell::OnWindowCreated(CefRefPtr<CefWindow> window) {
   window->AddChildView(frame_);
   for (size_t i = 0; i < sizeof(kKeys) / sizeof(kKeys[0]); ++i)
     window->SetAccelerator(static_cast<int>(i), kKeys[i].code, kKeys[i].shift, kKeys[i].ctrl, kKeys[i].alt, true);
-  window->SetTitle("Tobari");
+  window->SetTitle(CurrentProfile().empty() ? "Tobari" : "Tobari · " + CurrentProfile());
   window->Show();
   LoadHistory();
   if (demo_.empty()) LoadSession();
@@ -170,6 +207,11 @@ void Shell::OnWindowCreated(CefRefPtr<CefWindow> window) {
 }
 
 void Shell::Ctl(const std::string& cmd, const std::string& arg, std::function<void(bool, const std::string&)> done) {
+  if (cmd == "profile") {
+    if (arg != "Default" && !ValidProfile(arg)) return done(false, "That isn't a usable profile name.");
+    if (arg != (CurrentProfile().empty() ? "Default" : CurrentProfile())) OpenProfile(arg);
+    return done(true, "");
+  }
   if (cmd == "tabs") {
     auto list = CefListValue::Create();
     for (auto& t : tabs_) {
@@ -418,6 +460,8 @@ void Shell::Push() {
   s->SetInt("focus", Current() ? Current()->id : 0);
   s->SetString("ws", ws_);
   s->SetString("ui", ui_blob_);
+  s->SetString("profile", CurrentProfile().empty() ? "Default" : CurrentProfile());
+  s->SetInt("hue", ProfileHue(CurrentProfile().empty() ? "Default" : CurrentProfile()));
   s->SetBool("maximized", window_ && window_->IsMaximized());
   Js("T.state(" + Json(s) + ")");
 }
@@ -436,7 +480,11 @@ void Shell::OnAccelerator(int id) { Js(std::string("T.key('") + kKeys[id].name +
 
 std::string Shell::Api(CefRefPtr<CefBrowser> caller, const std::string& cmd, CefRefPtr<CefDictionaryValue> a) {
   // scheme.cc lets built-in pages call only their own "<host>." commands.
-  if (!IsUi(caller) && cmd.rfind("blocking.", 0) && cmd.rfind("bangs.", 0) && cmd.rfind("https.", 0) && cmd.rfind("import.", 0)) return "";
+  if (!IsUi(caller) && cmd.rfind("blocking.", 0) && cmd.rfind("bangs.", 0) && cmd.rfind("https.", 0) && cmd.rfind("import.", 0) &&
+      cmd.rfind("welcome.", 0))
+    return "";
+  // The welcome page reuses the import page's commands.
+  if (cmd == "welcome.import.list" || cmd == "welcome.import.run") return Api(caller, cmd.substr(8), a);
   auto S = [&](const char* k) { return a->GetString(k).ToString(); };
   Tab* cur = a->HasKey("id") ? ById(a->GetInt("id")) : Current();
   CefRefPtr<CefBrowserHost> host = cur && cur->view && cur->view->GetBrowser() ? cur->view->GetBrowser()->GetHost() : nullptr;
@@ -500,6 +548,45 @@ std::string Shell::Api(CefRefPtr<CefBrowser> caller, const std::string& cmd, Cef
     auto m = S("mode");
     CefRequestContext::GetGlobalContext()->SetChromeColorScheme(
         m == "light" ? CEF_COLOR_VARIANT_LIGHT : m == "dark" ? CEF_COLOR_VARIANT_DARK : CEF_COLOR_VARIANT_SYSTEM, 0);
+  } else if (cmd == "search") {
+    SetSearch(S("key"));
+  } else if (cmd == "profile.list") {
+    auto r = CefDictionaryValue::Create();
+    auto list = CefListValue::Create();
+    for (auto& name : Profiles()) {
+      auto d = CefDictionaryValue::Create();
+      d->SetString("name", name);
+      d->SetInt("hue", ProfileHue(name));
+      d->SetBool("current", name == (CurrentProfile().empty() ? "Default" : CurrentProfile()));
+      list->SetDictionary(list->GetSize(), d);
+    }
+    r->SetList("profiles", list);
+    return Json(r);
+  } else if (cmd == "profile.open") {
+    std::string name = S("name");
+    if (name != "Default" && !ValidProfile(name)) return "{\"error\":\"Use up to 64 characters, without / or a leading dot.\"}";
+    if (name != (CurrentProfile().empty() ? "Default" : CurrentProfile())) OpenProfile(name);
+  } else if (cmd == "welcome.state") {
+    auto ui = CefParseJSON(ui_blob_, JSON_PARSER_RFC);
+    auto d = ui && ui->GetType() == VTYPE_DICTIONARY ? ui->GetDictionary() : CefDictionaryValue::Create();
+    auto r = CefDictionaryValue::Create();
+    r->SetString("theme", d->HasKey("theme") ? d->GetString("theme") : "system");
+    r->SetString("search", d->HasKey("search") ? d->GetString("search") : "ddg");
+    r->SetString("profile", CurrentProfile().empty() ? "Default" : CurrentProfile());
+    r->SetDictionary("ai", AiConfig());
+    return Json(r);
+  } else if (cmd == "welcome.theme" || cmd == "welcome.search") {
+    // The UI owns these settings; the page asks it to apply one, after checking it's one of the allowed values.
+    std::string v = S("value");
+    bool ok = cmd == "welcome.theme" ? v == "light" || v == "dark" || v == "system"
+                                     : std::find(SearchEngines().begin(), SearchEngines().end(), v) != SearchEngines().end();
+    if (!ok) return "{\"error\":\"Unknown choice.\"}";
+    Js("T.run('" + cmd.substr(8) + "', '" + v + "')");
+  } else if (cmd == "welcome.ai") {
+    std::string key = S("key");
+    std::string err = AiSetConfig(S("url"), S("model"), a->HasKey("key") ? &key : nullptr);
+    if (!err.empty()) return "{\"error\":" + JsonStr(err) + "}";
+    return Json(AiConfig());
   } else if (cmd == "ui.save") {
     ui_blob_ = S("blob");
     Changed();

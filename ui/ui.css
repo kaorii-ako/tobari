@@ -42,6 +42,14 @@ svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width:
 #app.compact:not(.peek):not(.toasting) #sidebar { visibility: hidden; }
 .side-top { height: 48px; display: flex; align-items: center; justify-content: space-between; padding-left: var(--s2); flex: none; }
 .brand { display: flex; align-items: center; gap: var(--s2); font-weight: 600; font-size: var(--t-lg); letter-spacing: -0.01em; }
+.side-top #profile { margin-left: auto; display: flex; align-items: center; gap: 6px; max-width: 110px; padding: 2px 6px 2px 2px;
+  border: 0; border-radius: 999px; background: transparent; color: var(--text-2, var(--text)); font: inherit; font-size: var(--t-sm, 12px); cursor: pointer; }
+#profile .avatar { flex: none; width: 20px; height: 20px; border-radius: 50%; display: grid; place-items: center; font-weight: 600; font-size: 11px;
+  color: #fff; background: hsl(var(--hue, 250) 45% 45%); }
+#profile .pname { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#profile .pname:empty { display: none; }
+@media (hover: hover) and (pointer: fine) { #profile:hover { background: var(--hover, color-mix(in srgb, var(--text) 8%, transparent)); } }
+#profile:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 .brand-mark { width: 16px; height: 16px; border-radius: 5px; background: linear-gradient(160deg, var(--accent) 0 50%, var(--text) 50%); }
 .new-tab {
   display: flex; align-items: center; gap: var(--s2); height: 34px; padding: 0 var(--s2); border-radius: var(--r2);

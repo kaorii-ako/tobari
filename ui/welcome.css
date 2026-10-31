@@ -1,0 +1,8 @@
+section { margin-top: var(--s5, 32px); }
+.choices { display: flex; flex-wrap: wrap; gap: var(--s2); }
+.choices label { display: flex; align-items: center; gap: 6px; padding: var(--s2) var(--s3); border-radius: var(--r2); background: var(--surface-2); cursor: pointer; }
+.choices label:has(input:checked) { outline: 2px solid var(--accent); }
+#ai { display: grid; gap: var(--s2); }
+#ai label { display: grid; gap: 4px; }
+#ai input { font: inherit; padding: var(--s2); border-radius: var(--r2); border: 1px solid var(--line, var(--surface-2)); background: var(--surface, transparent); color: var(--text); }
+.row { display: flex; align-items: center; gap: var(--s3); }

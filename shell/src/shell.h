@@ -44,6 +44,8 @@ class Shell : public CefClient,
               public CefDragHandler {
  public:
   static void Start(CefRefPtr<CefCommandLine> cl);
+  // Set by main when this profile has never run; the first window opens tobari://welcome/.
+  static bool first_run;
   static Shell* Get();
 
   // Called from the tobari:// scheme handler on the UI thread. Returns the JSON reply.

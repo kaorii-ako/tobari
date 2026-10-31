@@ -23,15 +23,19 @@ const COMMANDS = [
   ['Blocking and privacy', '', () => T.api('tab.new', { url: 'tobari://blocking/' })],
   ['Bangs', '', () => T.api('tab.new', { url: 'tobari://bangs/' })],
   ['Import bookmarks and history', '', () => T.api('tab.new', { url: 'tobari://import/' })],
+  ['Welcome and setup', '', () => T.api('tab.new', { url: 'tobari://welcome/' })],
   ['About Tobari', '', () => T.api('tab.new', { url: 'tobari://about/' })],
 ];
 
+const SEARCH = { ddg: 'DuckDuckGo', g: 'Google', b: 'Bing', sp: 'Startpage' };
+for (const [k, name] of Object.entries(SEARCH)) COMMANDS.push([`Search engine: ${name}`, '', () => T.run('search', k)]);
+
 const C = (window.C = {
-  open(m) {
+  open(m, text) {
     mode = m;
     shown = true;
     const cur = T.s.tabs.find((t) => t.id === (T.s.focus || T.s.active));
-    q.value = mode === 'address' && cur ? cur.url : '';
+    q.value = text || (mode === 'address' && cur ? cur.url : '');
     q.placeholder = { cmd: 'Type a command, address or search', newtab: 'Search or enter address', address: 'Search or enter address' }[mode];
     document.getElementById('mode').textContent = { cmd: 'Alt K', newtab: 'New tab', address: 'Current tab' }[mode];
     q.focus();
@@ -60,10 +64,23 @@ async function update() {
   const my = ++seq;
   const out = [];
   if (text) {
-    out.push({ group: '', label: looksLikeUrl(text) ? text : `Search for “${text}”`, hint: looksLikeUrl(text) ? 'Open' : 'DuckDuckGo', ic: '→', run: () => go(text) });
+    out.push({ group: '', label: looksLikeUrl(text) ? text : `Search for “${text}”`, hint: looksLikeUrl(text) ? 'Open' : SEARCH[T.ui.search] || 'DuckDuckGo', ic: '→', run: () => go(text) });
     if (T.ui.spaces.every((w) => w !== text) && mode === 'cmd')
       out.push({ group: '', label: `Create workspace “${text}”`, hint: 'Workspace', ic: '+', run: () => T.run('ws', text) });
   }
+  // Profiles: each opens in its own window with its own logins and history, like Chrome's.
+  const profiles = words[0] === 'profile' || words[0] === 'profiles' ? (await T.api('profile.list').catch(() => ({ profiles: [] }))).profiles : [];
+  if (my !== seq) return;
+  const pname = words.slice(1).join(' ');
+  const pcmds = profiles.filter((p) => has(p.name, words.slice(1))).map((p) => ({
+    group: 'Profiles', label: p.current ? `${p.name} (this window)` : `Open profile “${p.name}”`, hint: '', ic: p.name[0].toUpperCase(),
+    run: () => !p.current && T.api('profile.open', { name: p.name }),
+  }));
+  if (pname && !profiles.some((p) => p.name.toLowerCase() === pname))
+    pcmds.push({ group: 'Profiles', label: `New profile “${text.split(/\s+/).slice(1).join(' ')}”`, hint: 'Opens a new window', ic: '+',
+      run: () => T.api('profile.open', { name: text.split(/\s+/).slice(1).join(' ') }).then((r) => r && r.error && T.toast && T.toast(r.error)) });
+  out.push(...pcmds);
+  if (!profiles.length && has('profiles', words)) out.push({ group: 'Commands', label: 'Profiles…', hint: '', ic: '›', run: () => T.run('profiles') });
   const cmds = COMMANDS.filter(([label]) => has(label, words)).map(([label, key, fn]) => ({ group: 'Commands', label, hint: key, ic: '›', run: fn }));
   for (const ws of T.ui.spaces)
     if (ws !== T.s.ws) {

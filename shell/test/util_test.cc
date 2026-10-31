@@ -49,5 +49,15 @@ int main() {
     buf += "ces\":[{\"delta\":{}}]}\ndata: [DONE]\n";
     assert(SseDeltas(buf, done).empty() && done && buf.empty());
   }
+  // Default search engine and profile names.
+  assert(SetSearch("g") && FixupInput("what is cef") == "https://www.google.com/search?q=what%20is%20cef");
+  assert(!SetSearch("w") && !SetSearch("nope"));  // only real search engines, not every bang
+  assert(SetSearch("ddg"));
+  assert(ValidProfile("School") && ValidProfile("งาน") && ValidProfile("Work 2"));
+  for (const char* bad : {"", ".", "..", "a/b", "../x", " x", "x ", "a\nb", ".hidden"}) assert(!ValidProfile(bad));
+  assert(ValidProfile(std::string(64, 'a')) && !ValidProfile(std::string(65, 'a')));
+  assert(SetProfile("School") && DataDir() == DataRoot() + "/profiles/School" && CurrentProfile() == "School");
+  assert(!SetProfile("../x") && CurrentProfile() == "School");
+  assert(SetProfile("Default") && DataDir() == DataRoot() && CurrentProfile().empty());
   puts("util_test: all checks passed");
 }

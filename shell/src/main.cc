@@ -1,6 +1,8 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
+#include <cstdio>
+#include <cstring>
 #include <filesystem>
 
 #include "include/cef_app.h"
@@ -43,6 +45,12 @@ class App : public CefApp, public CefBrowserProcessHandler {
 // Zygote children get a fresh stack canary after fork and then return through main, so main must not
 // check one (Chromium marks its own main the same way).
 __attribute__((no_stack_protector)) int main(int argc, char* argv[]) {
+  // --profile=NAME runs that profile: its own data folder, process and window (Shell::OpenProfile).
+  for (int i = 1; i < argc; ++i)
+    if (!strncmp(argv[i], "--profile=", 10) && !SetProfile(argv[i] + 10)) {
+      fprintf(stderr, "tobari: \"%s\" isn't a usable profile name.\n", argv[i] + 10);
+      return 2;
+    }
   if (int code = CtlClient(argc, argv); code >= 0) return code;
   CefMainArgs args(argc, argv);
   CefRefPtr<App> app = new App;
@@ -60,7 +68,8 @@ __attribute__((no_stack_protector)) int main(int argc, char* argv[]) {
   // external extensions before PrivacyStart can set them (bench/idle_net.sh first start).
   std::string prefs = data + "/profile/Default/Preferences";
   if (access(prefs.c_str(), F_OK) != 0) {
-    std::filesystem::create_directories(std::filesystem::path(data).parent_path());  // XDG_DATA_HOME may not exist yet
+    Shell::first_run = true;
+    std::filesystem::create_directories(std::filesystem::path(data).parent_path());  // XDG_DATA_HOME or profiles/ may not exist yet
     for (auto d : {data, data + "/profile", data + "/profile/Default"}) mkdir(d.c_str(), 0700);
     WriteFile(prefs, R"({"browser":{"enable_spellchecking":false},"extensions":{"block_external_extensions":true},)"
                      R"("default_search_provider":{"enabled":false},"safebrowsing":{"enabled":false}})");

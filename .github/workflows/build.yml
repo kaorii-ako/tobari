@@ -67,6 +67,7 @@ jobs:
           bash bench/ai_test.sh "$(ls dist/Tobari-*.AppImage)" | tee -a "$GITHUB_STEP_SUMMARY"
           bash bench/import_test.sh "$(ls dist/Tobari-*.AppImage)" | tee -a "$GITHUB_STEP_SUMMARY"
           bash bench/cli_test.sh "$(ls dist/Tobari-*.AppImage)" | tee -a "$GITHUB_STEP_SUMMARY"
+          bash bench/profile_test.sh "$(ls dist/Tobari-*.AppImage)" | tee -a "$GITHUB_STEP_SUMMARY"
           bash bench/install_test.sh | tee -a "$GITHUB_STEP_SUMMARY"
 
       - name: Idle network capture (first start fetches only the filter lists; idle contacts nothing)

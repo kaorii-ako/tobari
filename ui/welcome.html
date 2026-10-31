@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Welcome to Tobari</title>
+<link rel="stylesheet" href="tokens.css">
+<link rel="stylesheet" href="page.css">
+<link rel="stylesheet" href="welcome.css">
+</head>
+<body>
+<main>
+  <h1>Welcome to Tobari</h1>
+  <p class="lead">A private browser. Everything below is optional and can be changed later from the command bar (<kbd>Alt K</kbd>).
+    <span id="prof"></span></p>
+
+  <section aria-labelledby="h-look">
+    <h2 id="h-look">Look</h2>
+    <div class="choices" role="radiogroup" aria-labelledby="h-look" id="theme">
+      <label><input type="radio" name="theme" value="system"> Follow system</label>
+      <label><input type="radio" name="theme" value="light"> Light</label>
+      <label><input type="radio" name="theme" value="dark"> Dark</label>
+    </div>
+  </section>
+
+  <section aria-labelledby="h-search">
+    <h2 id="h-search">Search engine</h2>
+    <p>Used when you type something that isn't an address. <a href="tobari://bangs/">Bangs</a> like <code>!w</code> pick another site for one search.</p>
+    <div class="choices" role="radiogroup" aria-labelledby="h-search" id="search">
+      <label><input type="radio" name="search" value="ddg"> DuckDuckGo</label>
+      <label><input type="radio" name="search" value="sp"> Startpage</label>
+      <label><input type="radio" name="search" value="g"> Google</label>
+      <label><input type="radio" name="search" value="b"> Bing</label>
+    </div>
+  </section>
+
+  <section aria-labelledby="h-import">
+    <h2 id="h-import">Bring your bookmarks and history</h2>
+    <p>Copied from another browser on this computer. Nothing is sent anywhere.</p>
+    <p id="none" hidden>No other browsers were found.</p>
+    <ul class="plain" id="profiles"></ul>
+    <p id="istatus" role="status"></p>
+  </section>
+
+  <section aria-labelledby="h-ai">
+    <h2 id="h-ai">Assistant</h2>
+    <p>Tobari has no model of its own. Point it at one running on this computer (Ollama, llama.cpp, LM Studio) or at a
+      provider with your own key. Prompts go straight there.</p>
+    <form id="ai">
+      <label>Address <input id="ai-url" type="url" required placeholder="http://127.0.0.1:11434/v1"></label>
+      <label>Model <input id="ai-model" placeholder="for example qwen3:4b"></label>
+      <label>API key <input id="ai-key" type="password" autocomplete="off" placeholder="Not needed for a local model"></label>
+      <div class="row"><button class="primary" type="submit">Save</button><span id="aistatus" role="status"></span></div>
+    </form>
+  </section>
+
+  <section aria-labelledby="h-keys">
+    <h2 id="h-keys">Keys worth knowing</h2>
+    <table>
+      <tr><td><kbd>Alt K</kbd></td><td>Command bar: commands, open tabs, history, search</td></tr>
+      <tr><td><kbd>Ctrl T</kbd> / <kbd>Ctrl L</kbd></td><td>New tab / type an address</td></tr>
+      <tr><td><kbd>Alt J</kbd></td><td>Assistant, with the page you're on</td></tr>
+      <tr><td><kbd>Alt S</kbd> / <kbd>Alt \</kbd></td><td>Compact mode / split view</td></tr>
+      <tr><td><kbd>!w tokyo</kbd></td><td>Search one site with a bang</td></tr>
+      <tr><td>Avatar, top left</td><td>Profiles: each has its own logins and history, in its own window</td></tr>
+    </table>
+  </section>
+</main>
+<script src="welcome.js"></script>
+</body>
+</html>

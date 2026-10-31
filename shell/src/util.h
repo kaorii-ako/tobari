@@ -24,6 +24,17 @@ std::string FreeName(const std::string& dir, std::string name,
 
 // $XDG_DATA_HOME/tobari, or ~/.local/share/tobari.
 std::string DataDir();
+// ~/.local/share/tobari. The default profile lives here; others under profiles/<name>/ with their own everything.
+std::string DataRoot();
+// The profile this process runs, "" for the default. Set once from --profile=NAME before CEF starts.
+const std::string& CurrentProfile();
+bool SetProfile(const std::string& name);
+bool ValidProfile(const std::string& name);
+// "Default" first, then the others by name.
+std::vector<std::string> Profiles();
+// Bang keys that can be the default search engine; SetSearch picks one for FixupInput's fallback.
+const std::vector<std::string>& SearchEngines();
+bool SetSearch(const std::string& key);
 
 // $HOME, or "" when unset.
 std::string Home();
