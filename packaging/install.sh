@@ -11,7 +11,7 @@
 # as root. Anything that fails a check is deleted, never run.
 set -euo pipefail
 
-VERSION="${TOBARI_VERSION:-0.5.0}"
+VERSION="${TOBARI_VERSION:-0.5.1}"
 REPO="kaorii-ako/tobari"
 PUBKEY="RWRo6aS4M8MND+s3tkrSD2POK8Donu5pWez8QI5+Pf6KZike67q2L6iB"
 UNINSTALL=0
