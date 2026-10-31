@@ -6,6 +6,7 @@
 set -euo pipefail
 ver=$1; notes=$2; tag=v$ver
 here=$(cd "$(dirname "$0")" && pwd)
+export GH_REPO=kaorii-ako/tobari  # gh runs from a temp dir below
 run=$(gh run list --workflow build --branch "$tag" --status success -L 1 --json databaseId -q '.[0].databaseId')
 [ -n "$run" ] || { echo "no successful build for $tag yet"; exit 1; }
 d=$(mktemp -d); gh run download "$run" -n tobari-appimage -D "$d"
