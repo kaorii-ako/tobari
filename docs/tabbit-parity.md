@@ -1,20 +1,20 @@
 # Tabbit parity checklist
 
-Source: tabbit.ai home page and the Tabbit CLI quick-start blog post, read 2026-10-30.
+Source: tabbit.ai home page and the Tabbit CLI quick-start blog post, read 2026-10-30; home page and What's New (v1.19, 2026-10-23) re-read 2026-10-31.
 Status values: **built** (with a test or a recorded run), **not built**, **different** (on purpose, with the reason).
-Nothing is built yet. This file changes only when a test or a real run backs the change.
+This file changes only when a test or a real run backs the change. Screenshots are in docs/screens/.
 
 ## Layout
 
 | Tabbit feature | Status | Note |
 | --- | --- | --- |
-| Vertical tabs on the left, nav and address bar at the top of the sidebar | not built | |
-| Page shown as a rounded card on a tinted background | not built | Different: square corners, because CEF overlays can't clip to a radius (see docs/engine-decision.md). Tobari uses its own tokens and colours |
-| AI panel on the right as its own card, resizable, one shortcut | not built | |
-| Workspaces | not built | |
-| Split view | not built | |
-| Command bar | not built | Alt+K |
-| Compact mode (sidebar shows on hover) | not built | |
+| Vertical tabs on the left, nav and address bar at the top of the sidebar | built | Nav and address bar run across the top of the card instead. browse-*.png |
+| Page shown as a rounded card on a tinted background | different | Different: square corners, because CEF overlays can't clip to a radius (see docs/engine-decision.md). Tobari uses its own tokens and colours |
+| AI panel on the right as its own card, resizable, one shortcut | built | Alt+J. Panel only; the assistant is Step 4. assistant-*.png |
+| Workspaces | built | Switcher at the bottom of the sidebar |
+| Split view | built | Alt+\\. split-*.png |
+| Command bar | built | Alt+K. command-*.png |
+| Compact mode (sidebar shows on hover) | built | Alt+S. compact-*.png |
 
 ## Context ("@ anything")
 
@@ -60,7 +60,7 @@ Nothing is built yet. This file changes only when a test or a real run backs the
 | --- | --- | --- |
 | AI tab grouping and clustering | not built | |
 | Tab groups | not built | |
-| Sleeping tabs | not built | |
+| Sleeping tabs | built | Hidden tabs sleep after 30 minutes; restored tabs start asleep |
 
 ## Import
 
@@ -79,15 +79,28 @@ Nothing is built yet. This file changes only when a test or a real run backs the
 | Crash reports | not built | Written locally, sent only after the user reads and approves them |
 | SOC 2 Type I | different | Company certification, doesn't apply to a local-only app |
 
+## Seen on Tabbit 2026-10-31, not in the original list
+
+| Tabbit feature | Status | Note |
+| --- | --- | --- |
+| Search box at the top of the tab list | not built | The command bar searches open tabs |
+| Tab groups with a colour dot and count in the sidebar | not built | |
+| New tab page centred on a chat box | not built | Step 4 |
+| Ask several models at once and compare | not built | |
+| Chat mode and Agent mode, with a card explaining the switch | not built | Step 4 roles cover this |
+| Screenshot tool with scrolling capture and annotations | not built | |
+| Video subtitle transcription and translation (Bilibili, YouTube) | different | Needs a speech model; out of scope for 0.5.0 |
+| Linux build (nav shows "Linux NEW") | — | The /linux link redirected to the home page, so what they ship wasn't checked |
+
 ## Tobari only (Tabbit has none of these)
 
 | Feature | Status |
 | --- | --- |
-| Linux, Wayland, KDE and GNOME, AppImage | not built |
+| Wayland, KDE and GNOME, AppImage | built (GNOME Wayland and headless cage only; KDE not run) |
 | Works fully offline | not built |
-| Network-layer blocking: EasyList, EasyPrivacy, uBO lists, per-site switch and count | not built |
-| HTTPS-Only, third-party cookies blocked, WebRTC limited, device APIs blocked by default | not built |
-| !bangs resolved on the device | not built |
-| Idle network capture showing nothing sent home | not built |
+| Network-layer blocking: EasyList, EasyPrivacy, uBO lists, per-site switch and count | built (host rules only; bench/privacy-test blocks_ads) |
+| HTTPS-Only, third-party cookies blocked, WebRTC limited, device APIs blocked by default | built (bench/privacy-test 7/7, bench/https_test.sh 3/3) |
+| !bangs resolved on the device | built (util_test) |
+| Idle network capture showing nothing sent home | built (bench/idle_net.sh; idle: 0 hosts, also checked in CI) |
 | No AI process until first use, model unloads when idle | not built |
-| Built-in pages: about, blocking, bangs, AI, setup | not built |
+| Built-in pages: about, blocking, bangs, AI, setup | about, blocking, bangs built; AI and setup not built |

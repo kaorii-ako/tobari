@@ -470,6 +470,8 @@ std::string Shell::Api(CefRefPtr<CefBrowser> caller, const std::string& cmd, Cef
   } else if (cmd == "blocking.site") {
     SetSiteProtected(S("site"), a->GetBool("on"));
     Changed();
+  } else if (cmd == "blocking.safebrowsing") {
+    SetSafeBrowsing(a->GetBool("on"));
   } else if (cmd == "bangs.list") {
     auto l = CefListValue::Create();
     for (const Bang& b : Bangs()) {

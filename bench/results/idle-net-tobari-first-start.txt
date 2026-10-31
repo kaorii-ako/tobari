@@ -1,0 +1,4 @@
+cloudflare-ech.com	2	no request
+easylist.to	20
+ublockorigin.github.io	17
+update.googleapis.com	22	not resolved (blocked)

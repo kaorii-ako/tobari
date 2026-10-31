@@ -7,7 +7,7 @@ fail=0
 check() {  # URL EXPECTED-PREFIX (a leading ! means "must not start with")
   local d; d=$(mktemp -d)
   XDG_DATA_HOME=$d WLR_BACKENDS=headless WLR_RENDERER=pixman WLR_LIBINPUT_NO_DEVICES=1 \
-    timeout 25 cage -- "$bin" --ozone-platform=wayland "$1" >/dev/null 2>&1
+    timeout -s INT 25 cage -- "$bin" --ozone-platform=wayland "$1" >/dev/null 2>&1  # INT lets the shell save its final session
   local got; got=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["tabs"][0]["url"])' "$d/tobari/session.json" 2>/dev/null)
   rm -rf "$d"
   local ok=0; case $got in "${2#!}"*) ok=1 ;; esac

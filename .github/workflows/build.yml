@@ -59,5 +59,16 @@ jobs:
           TEST=privacy-test bash bench/script_test.sh tobari dist/Tobari-*.AppImage --ozone-platform=wayland | tee -a "$GITHUB_STEP_SUMMARY"
           bash bench/https_test.sh "$(ls dist/Tobari-*.AppImage)" | tee -a "$GITHUB_STEP_SUMMARY"
 
+      - name: Idle network capture (first start fetches only the filter lists; idle contacts nothing)
+        env: { APPIMAGE_EXTRACT_AND_RUN: 1 }
+        run: |
+          export XDG_DATA_HOME=$(mktemp -d)
+          app=$(ls dist/Tobari-*.AppImage)
+          bash bench/idle_net.sh first-start 60 "$app" --ozone-platform=wayland | tee -a "$GITHUB_STEP_SUMMARY"
+          bash bench/idle_net.sh idle 120 "$app" --ozone-platform=wayland | tee -a "$GITHUB_STEP_SUMMARY"
+          # bash -e ignores a failing "! cmd", so test explicitly.
+          if grep -vE "blocked|no request|^(easylist\.to|ublockorigin\.github\.io)\s" bench/results/idle-net-first-start.txt \
+             || grep -vE "blocked|no request" bench/results/idle-net-idle.txt; then exit 1; fi
+
       - uses: actions/upload-artifact@v4
         with: { name: tobari-appimage, path: dist/ }

@@ -8,7 +8,8 @@ pages='https://ja.wikipedia.org/wiki/%E3%83%96%E3%83%A9%E3%82%A6%E3%82%B6 https:
 for theme in light dark; do
   # surface:demo flags:extra args
   for spec in 'browse::' 'assistant:ai:' 'command:cmd:' 'find:find:' 'split:split:' 'compact:compact:' \
-              'toast:toast:' 'empty::--tobari-empty' 'about::tobari://about/'; do
+              'toast:toast:' 'empty::--tobari-empty' 'about::tobari://about/' 'blocking::tobari://blocking/' \
+              'bangs::tobari://bangs/' 'https::tobari://https/#http://http.badssl.com/'; do
     name=${spec%%:*}; rest=${spec#*:}; demo=${rest%%:*}; extra=${rest#*:}
     urls=$pages
     case $extra in --tobari-empty) urls= extra= ;; tobari:*) urls="$pages $extra" extra= ;; esac

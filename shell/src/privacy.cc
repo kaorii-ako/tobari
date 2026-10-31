@@ -193,6 +193,18 @@ void PrivacyStart() {
   auto webrtc = CefValue::Create();
   webrtc->SetString("disable_non_proxied_udp");  // no direct UDP, so no local or public IP leaks
   Pref("webrtc.ip_handling_policy", webrtc);
+  // Tobari resolves searches itself (FixupInput). With Google as Chromium's default engine, the omnibox code
+  // polls www.google.com/async/folae (AI Mode eligibility) while idle.
+  auto off = CefValue::Create();
+  off->SetBool(false);
+  Pref("default_search_provider.enabled", off);
+  // Host packages (e.g. GNOME's browser connector) drop external-extension JSON in /usr/share/chromium/extensions,
+  // which Chromium would fetch from Google's web store. Spellcheck dictionaries download from Google too.
+  // shortcut: spellcheck is off until dictionaries can be bundled or fetched on request, Step 4 or later.
+  auto on = CefValue::Create();
+  on->SetBool(true);
+  Pref("extensions.block_external_extensions", on);
+  Pref("browser.enable_spellchecking", off);
   CefPostTask(TID_FILE_USER_VISIBLE, base::BindOnce(&LoadLists));
   PrivacyUpdate();
 }
@@ -226,6 +238,12 @@ void SetSiteProtected(const std::string& site, bool on) {
   SaveOff();
 }
 
+void SetSafeBrowsing(bool on) {
+  auto v = CefValue::Create();
+  v->SetBool(on);
+  Pref("safebrowsing.enabled", v);
+}
+
 bool WasUpgraded(const std::string& host) {
   std::lock_guard lock(g_mu);
   return g_upgraded.erase(host) > 0;
@@ -253,6 +271,8 @@ std::string PrivacyStatus() {
   d->SetList("lists", lists);
   d->SetList("off", off);
   d->SetDouble("blocked", static_cast<double>(g_blocked.load()));
+  auto sb = CefRequestContext::GetGlobalContext()->GetPreference("safebrowsing.enabled");
+  d->SetBool("safebrowsing", sb && sb->GetBool());
   auto v = CefValue::Create();
   v->SetDictionary(d);
   return CefWriteJSON(v, JSON_WRITER_DEFAULT);

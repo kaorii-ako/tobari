@@ -13,6 +13,7 @@ async function load() {
     tr.cells[2].textContent = l.updated ? fmt.format(l.updated * 1000) : 'Not yet';
     return tr;
   }));
+  document.getElementById('sb').checked = s.safebrowsing;
   document.getElementById('none').hidden = s.off.length > 0;
   document.getElementById('off').replaceChildren(...s.off.map((site) => {
     const li = document.createElement('li');
@@ -22,4 +23,5 @@ async function load() {
     return li;
   }));
 }
+document.getElementById('sb').addEventListener('change', (e) => api('blocking.safebrowsing', { on: e.target.checked }));
 load();

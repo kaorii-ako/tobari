@@ -19,5 +19,8 @@ void SetSiteProtected(const std::string& site, bool on);
 bool WasUpgraded(const std::string& host);
 void AllowHttp(const std::string& host);
 
-// JSON for tobari://blocking/.
+// Google Safe Browsing warnings. Off by default because its list refresh calls Google every ~30 minutes.
+void SetSafeBrowsing(bool on);
+
+// JSON for tobari://blocking/. UI thread.
 std::string PrivacyStatus();
