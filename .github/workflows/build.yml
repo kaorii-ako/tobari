@@ -1,8 +1,10 @@
-# Every push to rewrite: build the shell, run the checks, package an AppImage and smoke-test it.
+# Every push to rewrite and every v* tag: build the shell, run the checks, package an AppImage and smoke-test it.
+# A tag's AppImage is the release build; packaging/release.sh signs it locally (the key never enters CI).
 name: build
 on:
   push:
     branches: [rewrite]
+    tags: ['v*']
   workflow_dispatch:
 
 env:
@@ -19,7 +21,11 @@ jobs:
       - name: Tools
         run: |
           sudo apt-get update -q
-          sudo apt-get install -y -q ninja-build g++-12 libgtk-3-dev libnss3 cage fonts-noto-cjk fonts-noto-core minisign >/dev/null
+          sudo apt-get install -y -q ninja-build g++-12 libgtk-3-dev libnss3 cage fonts-noto-cjk fonts-noto-core >/dev/null
+          # Ubuntu 22.04 has no minisign package; the installer test needs it to sign its fake releases.
+          curl -sSfL https://github.com/jedisct1/minisign/releases/download/0.12/minisign-0.12-linux.tar.gz -o /tmp/ms.tgz
+          echo "9a599b48ba6eb7b1e80f12f36b94ceca7c00b7a5173c95c3efc88d9822957e73  /tmp/ms.tgz" | sha256sum -c
+          sudo tar xzf /tmp/ms.tgz -C /usr/local/bin --strip-components=2 minisign-linux/x86_64/minisign
           # shortcut: appimagetool only publishes a moving "continuous" build; pin by checksum once it is stable.
           sudo curl -sSfLo /usr/local/bin/appimagetool https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-x86_64.AppImage
           sudo chmod +x /usr/local/bin/appimagetool
@@ -44,7 +50,7 @@ jobs:
 
       - name: AppImage
         env: { APPIMAGE_EXTRACT_AND_RUN: 1 }
-        run: sh packaging/appimage.sh build/out "0.5.0-dev.${GITHUB_RUN_NUMBER}"
+        run: sh packaging/appimage.sh build/out "$([ "$GITHUB_REF_TYPE" = tag ] && echo "${GITHUB_REF_NAME#v}" || echo "0.5.0-dev.$GITHUB_RUN_NUMBER")"
 
       - name: Smoke test (CJK and Thai render through the AppImage)
         env: { APPIMAGE_EXTRACT_AND_RUN: 1 }

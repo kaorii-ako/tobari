@@ -4,8 +4,9 @@
 # (5 runs, bench/startup.sh), each with a fresh profile. Results append to bench/results/{ram,startup}.jsonl;
 # python3 bench/report.py turns them into docs/benchmark.md.
 set -euo pipefail
+tob=$(realpath "$1")
 cd "$(dirname "$0")"
-tob=$(realpath "$1"); E=~/.cache/tobari-engines; tag=$(date +%F)
+E=~/.cache/tobari-engines; tag=$(date +%F)
 ffprofile() {  # no first-run tabs, so "0 tabs" means one blank tab
   local d; d=$(mktemp -d)
   printf '%s\n' 'user_pref("browser.aboutwelcome.enabled", false);' \
