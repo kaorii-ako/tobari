@@ -10,8 +10,10 @@ cp -a "$out/." "$app/usr/lib/tobari/"
 # libcef.so ships with debug symbols (about 1.4 GB); users don't need them.
 strip --strip-unneeded "$app/usr/lib/tobari/libcef.so" "$app/usr/lib/tobari/tobari"
 rm -f "$app/usr/lib/tobari/chrome-sandbox"
-cp "$here/AppRun" "$here/tobari.desktop" "$here/tobari.svg" "$app/"
-ln -s tobari.svg "$app/.DirIcon"
+cp "$here/AppRun" "$here/tobari.desktop" "$here/tobari.svg" "$here/tobari.png" "$app/"
+# appimagetool rejects an SVG .DirIcon; tobari.png is tobari.svg rendered at 256 px.
+ln -s tobari.png "$app/.DirIcon"
+chmod -R a+rX "$app"  # CEF makes some folders 0700; other users must be able to run the AppImage
 name="Tobari-$version-x86_64.AppImage"
 ARCH=x86_64 VERSION=$version ${APPIMAGETOOL:-appimagetool} -n \
   -u "gh-releases-zsync|kaorii-ako|tobari|latest|Tobari-*x86_64.AppImage.zsync" \
