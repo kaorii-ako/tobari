@@ -9,7 +9,17 @@ here=$(cd "$(dirname "$0")" && pwd)
 export GH_REPO=kaorii-ako/tobari  # gh runs from a temp dir below
 run=$(gh run list --workflow build --branch "$tag" --status success -L 1 --json databaseId -q '.[0].databaseId')
 [ -n "$run" ] || { echo "no successful build for $tag yet"; exit 1; }
-d=$(mktemp -d); gh run download "$run" -n tobari-appimage -D "$d"
+d=$(mktemp -d)
+# The artifact store can be slow from here, and gh run download neither resumes nor reports progress: fetch the zip
+# with curl, resuming until it's complete.
+aid=$(gh api "repos/$GH_REPO/actions/runs/$run/artifacts" -q '.artifacts[] | select(.name=="tobari-appimage") | .id')
+size=$(gh api "repos/$GH_REPO/actions/artifacts/$aid" -q .size_in_bytes)
+until [ "$(stat -c %s "$d/a.zip" 2>/dev/null || echo 0)" = "$size" ]; do
+  url=$(curl -sS -o /dev/null -w '%{redirect_url}' -H "Authorization: Bearer $(gh auth token)" \
+    "https://api.github.com/repos/$GH_REPO/actions/artifacts/$aid/zip")
+  curl -sS -C - --speed-time 60 --speed-limit 1000 -o "$d/a.zip" "$url" || sleep 5
+done
+(cd "$d" && unzip -q a.zip && rm a.zip)
 cd "$d"; app=Tobari-$ver-x86_64.AppImage
 [ -f "$app" ] || { echo "the build has no $app"; ls; exit 1; }
 cp "$here/install.sh" .
