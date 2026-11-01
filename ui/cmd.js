@@ -17,6 +17,10 @@ const COMMANDS = [
   ['Back', 'Alt ←', () => T.run('back')],
   ['Forward', 'Alt →', () => T.run('forward')],
   ['Screenshot and annotate', '', () => T.api('shot')],
+  ['Copy clean link (no tracking)', '', () => {
+    const cur = T.s.tabs.find((t) => t.id === (T.s.focus || T.s.active));
+    if (cur) navigator.clipboard.writeText(window.Clean.clean(cur.url)).then(() => T.toast && T.toast('Copied link without tracking'), () => {});
+  }],
   ['Developer tools', 'F12', () => T.run('devtools')],
   ['Theme: light', '', () => T.run('theme', 'light')],
   ['Theme: dark', '', () => T.run('theme', 'dark')],
