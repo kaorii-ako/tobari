@@ -63,6 +63,8 @@ async function update() {
   const words = text.toLowerCase().split(/\s+/).filter(Boolean);
   const my = ++seq;
   const out = [];
+  const sum = mode === 'cmd' || mode === 'newtab' ? window.Calc.calc(text) : null;
+  if (sum) out.push({ group: '', label: sum.label, hint: 'Copy answer', ic: '=', run: () => navigator.clipboard.writeText(sum.value).then(() => T.toast && T.toast('Copied ' + sum.value), () => {}) });
   if (text) {
     out.push({ group: '', label: looksLikeUrl(text) ? text : `Search for “${text}”`, hint: looksLikeUrl(text) ? 'Open' : SEARCH[T.ui.search] || 'DuckDuckGo', ic: '→', run: () => go(text) });
     if (T.ui.spaces.every((w) => w !== text) && mode === 'cmd')

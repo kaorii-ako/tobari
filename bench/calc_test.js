@@ -1,0 +1,20 @@
+// node bench/calc_test.js — command-bar maths and unit conversion.
+const assert = require('assert');
+const { calc } = require('../ui/calc.js');
+const v = (s) => (calc(s) || {}).value;
+assert.strictEqual(v('12*(3+4)'), '84');
+assert.strictEqual(v('2+3*4'), '14');
+assert.strictEqual(v('2^3^2'), '512');
+assert.strictEqual(v('sqrt(16)+1'), '5');
+assert.strictEqual(v('50% * 8'), '4');
+assert.strictEqual(v('1,000 * 2'), '2000');
+assert.strictEqual(v('5 km in mi'), '3.106855961');
+assert.strictEqual(v('100 c to f'), '212');
+assert.strictEqual(v('1 gib to mb'), '1073.741824');
+assert.strictEqual(calc('5 km in kg'), null);
+assert.strictEqual(calc('42'), null);
+assert.strictEqual(calc('hello world'), null);
+assert.strictEqual(calc('1/0'), null);
+assert.strictEqual(calc('process.exit()'), null);
+assert.strictEqual(calc('2 +'), null);
+console.log('calc: PASS');
