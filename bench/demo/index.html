@@ -1,0 +1,17 @@
+<!doctype html><meta charset=utf-8><title>Trip checklist</title>
+<style>
+body{font:17px/1.5 system-ui,"Noto Sans",sans-serif;background:#f6f5f1;color:#1b1d21;margin:0;display:grid;place-items:start center}
+main{margin-top:72px;width:520px;background:#fff;border-radius:16px;padding:28px 32px;box-shadow:0 10px 40px rgba(0,0,0,.08)}
+h1{margin:0 0 4px;font-size:28px;letter-spacing:-.02em}p{margin:0 0 20px;color:#6b6e75}
+form{display:flex;gap:8px}input{flex:1;font:inherit;padding:10px 12px;border:1px solid #d8d6cf;border-radius:10px}
+button{font:inherit;font-weight:600;padding:10px 16px;border:0;border-radius:10px;background:#1b1d21;color:#fff}
+ul{list-style:none;padding:0;margin:20px 0 0}li{padding:12px 0;border-top:1px solid #eeece6;display:flex;gap:10px}
+li::before{content:"✓";color:#3f8f5e;font-weight:700}
+</style>
+<main><h1>Trip checklist</h1><p>Kyoto · 3 days</p>
+<form id=f><input id=item placeholder="Add an item"><button id=add>Add</button></form><ul id=list><li>Passport</li></ul></main>
+<script>
+document.getElementById('f').onsubmit=(e)=>{e.preventDefault();const i=document.getElementById('item');if(!i.value)return;
+const li=document.createElement('li');li.textContent=i.value;document.getElementById('list').append(li);i.value='';
+document.title='Trip checklist ('+document.querySelectorAll('li').length+')';};
+</script>
