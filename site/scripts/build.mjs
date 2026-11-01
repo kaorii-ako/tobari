@@ -275,7 +275,7 @@ async function build() {
     html.replace(/<!--if:v2-->([\s\S]*?)<!--else:v2-->([\s\S]*?)<!--end:v2-->/g, (m, yes, no) => (v2 ? yes : no));
   const page = async (name) => fill(cond(await readFile(path.join(SITE, "src/pages", name), "utf8"))).replace(/<!--\s*picture:(\S+)\s+(\d+)x(\d+)\s+"([^"]+)"(?:\s+class="([^"]*)")?\s*-->/g, (m, n, w, h, alt, cls) => picture(n, alt, w, h, cls ?? ""));
 
-  await emit("/", layout({ title: "", url: "/", page: "home", description: "Tobari is a web browser for Linux with an assistant that runs on your own GPU and asks before it acts.", body: await page("home.html") }));
+  await emit("/", layout({ title: "", url: "/", page: "home", description: "Tobari is a private browser for Linux and Windows with an assistant on your own model and a built-in MCP server for AI agents.", body: await page("home.html") }));
   await emit("/install/", layout({ title: "Install", url: "/install/", description: "How to run Tobari on Linux today.", body: await page("install.html") }));
 
   await emit("/download/", layout({ title: "Download", url: "/download/", page: "download", description: "Every Tobari release with files, sizes and SHA-256 checksums.", body: downloadPage(list) }));
