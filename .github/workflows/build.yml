@@ -108,10 +108,11 @@ jobs:
           [ -d cef ] || { mkdir cef; curl -sSfL "https://cef-builds.spotifycdn.com/${CEFW//+/%2B}.tar.bz2" | tar xj -C cef; }
 
       - name: Build
-        shell: cmd
+        shell: bash
         run: |
-          cmake -G Ninja -S shell -B build -DCEF_ROOT="%CD%/cef/%CEFW%" -DCMAKE_BUILD_TYPE=Release || exit /b 1
-          ninja -C build || exit /b 1
+          # Forward slashes: CEF's cmake macros put CEF_ROOT inside strings, where a backslash is an escape.
+          cmake -G Ninja -S shell -B build -DCEF_ROOT="$(cygpath -m "$PWD")/cef/$CEFW" -DCMAKE_BUILD_TYPE=Release
+          ninja -C build
 
       - name: Checks
         shell: bash
