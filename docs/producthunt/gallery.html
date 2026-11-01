@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Tobari gallery</title>
+<!-- Product Hunt gallery, 1270x760 per slide. Render: bash docs/producthunt/render.sh (slide picked by #n). -->
+<style>
+@font-face { font-family: Inter; font-weight: 100 900; src: url(img/inter.woff2) format("woff2"); }
+:root { --bg: #0b0d10; --surface: #181b20; --ink: #ecebe7; --ink-2: #b4b3ae; --ink-3: #868991; --ai: #9db8e6;
+  --ember: #e8936f; --line: rgba(236,235,231,.10); }
+* { box-sizing: border-box; }
+html, body { margin: 0; width: 1270px; height: 760px; overflow: hidden; background: var(--bg); color: var(--ink);
+  font-family: Inter, "Noto Sans", "Noto Sans Thai", sans-serif; font-feature-settings: "cv11", "ss01", "ss03";
+  -webkit-font-smoothing: antialiased; }
+.slide { display: none; position: relative; width: 1270px; height: 760px; padding: 64px 0 0 72px; overflow: hidden; }
+.slide.on { display: block; }
+.slide::before { content: ""; position: absolute; inset: -40% -10% auto auto; width: 900px; height: 900px; border-radius: 50%;
+  background: radial-gradient(closest-side, rgba(157,184,230,.16), transparent); pointer-events: none; }
+.eyebrow { display: inline-flex; gap: 8px; align-items: center; font-size: 15px; font-weight: 600; color: var(--ink-2);
+  padding: 6px 14px 6px 12px; border-radius: 999px; background: var(--surface); border: 1px solid var(--line); }
+.eyebrow i { width: 8px; height: 8px; border-radius: 50%; background: var(--ai); }
+h1 { margin: 22px 0 14px; font-size: 52px; line-height: 1.04; letter-spacing: -.035em; font-weight: 700; max-width: 540px; }
+h1 em { font-style: normal; color: var(--ai); }
+p { margin: 0; font-size: 20px; line-height: 1.5; color: var(--ink-2); max-width: 500px; }
+/* A window crop at readable size: --w is the screenshot's drawn width, --x/--y move it inside the frame. */
+.frame { position: absolute; right: 0; bottom: 0; width: 640px; height: 640px; overflow: hidden; border-radius: 16px 0 0 0;
+  border: 1px solid var(--line); border-width: 1px 0 0 1px; box-shadow: 0 40px 120px rgba(0,0,0,.6); background: #0e1014; }
+.frame img { position: absolute; width: var(--w, 1100px); left: var(--x, 0); top: var(--y, 0); }
+.narrow h1, .narrow p { max-width: 520px; }
+.wide h1 { max-width: 1000px; }
+.wide .shot { position: absolute; left: 72px; right: auto; top: 300px; width: 1126px; }
+.code { position: absolute; right: 56px; top: 150px; width: 580px; padding: 24px 26px; border-radius: 14px; background: #111419;
+  border: 1px solid var(--line); font: 15px/1.7 "Noto Sans Mono", monospace; color: var(--ink-2); white-space: pre;
+  box-shadow: 0 30px 80px rgba(0,0,0,.5); }
+.code b { color: var(--ink); font-weight: 600; } .code s { text-decoration: none; color: var(--ai); } .code u { text-decoration: none; color: var(--ember); }
+.code .dim { color: var(--ink-3); }
+.tools { position: absolute; left: 72px; bottom: 64px; display: flex; flex-wrap: wrap; gap: 10px; max-width: 520px; }
+.tools span { font: 500 15px/1 "Noto Sans Mono", monospace; padding: 10px 12px; border-radius: 10px; background: var(--surface);
+  border: 1px solid var(--line); color: var(--ink); }
+.list { margin: 26px 0 0; padding: 0; list-style: none; display: grid; gap: 12px; font-size: 19px; color: var(--ink-2); }
+.list li::before { content: "→ "; color: var(--ai); }
+.mark { position: absolute; left: 72px; bottom: 56px; display: flex; gap: 10px; align-items: center; font-size: 18px; font-weight: 650; }
+.mark img { width: 28px; height: 28px; border-radius: 7px; }
+</style>
+</head>
+<body>
+
+<section class="slide" id="s1">
+  <span class="eyebrow"><i></i>Free · open source · Linux &amp; Windows</span>
+  <h1>The private browser your <em>AI agents</em> can drive.</h1>
+  <p>Vertical tabs, a command bar that answers, an assistant on your own model, and an MCP server built in.</p>
+  <div class="frame" style="--w:1000px;--x:0;--y:0"><img src="img/browse-dark.png" alt=""></div>
+</section>
+
+<section class="slide narrow" id="s2">
+  <span class="eyebrow"><i></i>Built-in MCP server</span>
+  <h1>Let Claude, Cursor or any agent <em>use real tabs.</em></h1>
+  <p>One line to connect. Agents list, open, read, click, fill and screenshot pages while you watch.</p>
+  <div class="code"><span class="dim">$</span> <b>claude mcp add tobari -- tobari mcp</b>
+
+<span class="dim">› agent</span>  open the PR, read the failing check
+<s>tobari_open</s>   github.com/…/pull/42   <span class="dim">→ tab 7</span>
+<s>tobari_read</s>   tab 7                  <span class="dim">→ 4.1k chars</span>
+<s>tobari_click</s>  "button.show-logs"     <span class="dim">→ ok</span>
+<s>tobari_screenshot</s> tab 7              <span class="dim">→ png</span>
+
+<u>Agent: clicked button.show-logs</u>  <span class="dim">← toast in Tobari</span></div>
+  <div class="tools"><span>tobari_tabs</span><span>tobari_open</span><span>tobari_read</span><span>tobari_click</span><span>tobari_fill</span><span>tobari_screenshot</span><span>tobari_close</span></div>
+</section>
+
+<section class="slide" id="s3">
+  <span class="eyebrow"><i></i>Alt K</span>
+  <h1>A command bar that <em>answers.</em></h1>
+  <p>Math, units and temperatures offline. Tabs, history, bangs, workspaces and every command in one box.</p>
+  <ul class="list"><li>(1200 * 0.15) + 45 = 225</li><li>72 f to c → 22.2 °C</li><li>!w kiwi → Wikipedia</li></ul>
+  <div class="frame" style="--w:1180px;--x:-300px;--y:-10px"><img src="img/calc.png" alt=""></div>
+</section>
+
+<section class="slide" id="s4">
+  <span class="eyebrow"><i></i>Your model, local or BYOK</span>
+  <h1>Ask this page. Or <em>every open tab.</em></h1>
+  <p>Summaries, comparisons, answers across tabs. Runs on Ollama, LM Studio or any OpenAI-compatible key.</p>
+  <div class="frame" style="--w:1180px;--x:-540px;--y:0"><img src="img/assistant-chat-dark.png" alt=""></div>
+</section>
+
+<section class="slide" id="s5">
+  <span class="eyebrow"><i></i>Screenshot + annotate</span>
+  <h1>Capture, mark up, <em>hide what's private.</em></h1>
+  <p>Pen, box, arrow and pixelate. Copy or save a PNG without leaving the browser.</p>
+  <div class="frame" style="--w:1100px;--x:-170px;--y:0"><img src="img/annotate-dark.png" alt=""></div>
+</section>
+
+<section class="slide" id="s6">
+  <span class="eyebrow"><i></i>Private by default</span>
+  <h1>Quiet when idle. <em>Burn</em> when you're done.</h1>
+  <p>Ads and trackers blocked, HTTPS-only, no telemetry. Hold to wipe cookies, cache and history, and start fresh.</p>
+  <div class="frame" style="--w:1200px;--x:-260px;--y:-40px"><img src="img/burn.png" alt=""></div>
+</section>
+
+<script>
+const n = Number(location.hash.slice(1)) || 1;
+document.getElementById('s' + n).classList.add('on');
+</script>
+</body>
+</html>
