@@ -8,6 +8,8 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 PAGE = "<!doctype html><meta charset=utf-8><title>Kiwi notes</title><p>Kiwi birds cannot fly. Marker ZEBRA-42.</p>"
 
+PAGE2 = "<!doctype html><meta charset=utf-8><title>Moa notes</title><p>Moa birds are extinct. Marker MOA-7.</p>"
+
 class H(BaseHTTPRequestHandler):
     def log_message(self, *a): pass
 
@@ -21,6 +23,8 @@ class H(BaseHTTPRequestHandler):
     def do_GET(self):
         if self.path == "/page.html":
             self.send(200, "text/html; charset=utf-8", PAGE.encode())
+        elif self.path == "/page2.html":
+            self.send(200, "text/html; charset=utf-8", PAGE2.encode())
         elif self.path == "/v1/models":
             self.send(200, "application/json", b'{"data":[{"id":"fake-1"}]}')
         else:

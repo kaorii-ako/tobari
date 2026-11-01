@@ -82,13 +82,13 @@
   async function send(text) {
     if (busy || !text.trim()) return;
     if (!cfg?.model) { openSetup(); return; }
-    const page = $('#ai-page').checked && pageOk();
-    add('user', text).dataset.page = page ? activeTab().title || activeTab().url : '';
+    const all = $('#ai-all').checked, page = !all && $('#ai-page').checked && pageOk();
+    add('user', text).dataset.page = all ? 'all tabs' : page ? activeTab().title || activeTab().url : '';
     chat.push({ role: 'user', content: text });
     reply = add('assistant', '');
     reply.classList.add('pending');
     setBusy(true);
-    T.api('ai.send', { messages: chat, page });
+    T.api('ai.send', { messages: chat, page, all });
   }
   T.aiText = (t) => {
     if (!reply) return;
@@ -164,7 +164,7 @@
 
   // Called by render() on every state push: the page switch only applies to web pages.
   T.aiRender = () => {
-    $('#ai-page').disabled = !pageOk();
+    $('#ai-page').disabled = !pageOk() || $('#ai-all').checked;
     $('.ai-page').title = pageOk() ? activeTab().title || '' : 'Built-in pages are never sent';
   };
   T.aiSend = send;
