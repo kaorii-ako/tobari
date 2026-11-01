@@ -6,6 +6,8 @@
 #include <fstream>
 
 #include <sys/stat.h>
+#include <sys/wait.h>
+#include <unistd.h>
 #include <algorithm>
 #include <filesystem>
 
@@ -215,6 +217,27 @@ std::string DownloadDir() {
     if (!v.empty() && v[0] == '/') return v;
   }
   return Home() + "/Downloads";
+}
+
+void Spawn(const std::vector<std::string>& args) {
+  const char* appimage = getenv("APPIMAGE");
+  char self[4096];
+  ssize_t n = readlink("/proc/self/exe", self, sizeof self - 1);
+  if (!appimage && n <= 0) return;
+  if (n > 0) self[n] = 0;
+  std::vector<std::string> a = {appimage ? appimage : self};
+  a.insert(a.end(), args.begin(), args.end());
+  std::vector<char*> argv;
+  for (auto& s : a) argv.push_back(s.data());
+  argv.push_back(nullptr);
+  // Double fork so the new process isn't our child: it outlives us and leaves no zombie.
+  pid_t pid = fork();
+  if (pid == 0) {
+    setsid();
+    if (fork() == 0) execv(argv[0], argv.data());
+    _exit(0);
+  }
+  if (pid > 0) waitpid(pid, nullptr, 0);
 }
 
 void WriteFile(const std::string& path, const std::string& data) {

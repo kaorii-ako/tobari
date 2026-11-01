@@ -1,7 +1,6 @@
 #include "shell.h"
 
 #include <sys/stat.h>
-#include <sys/wait.h>
 #include <unistd.h>
 
 #include <algorithm>
@@ -142,25 +141,10 @@ namespace {
 // Opens a profile in its own process and window, the way Chrome opens a profile in a new window. Runs the AppImage
 // again when inside one, since this binary's mount goes away when the first window's AppImage exits.
 void OpenProfile(const std::string& name) {
-  const char* appimage = getenv("APPIMAGE");
-  char self[4096];
-  ssize_t n = readlink("/proc/self/exe", self, sizeof self - 1);
-  if (!appimage && n <= 0) return;
-  if (n > 0) self[n] = 0;
-  std::string exe = appimage ? appimage : self, arg = "--profile=" + name;
   auto cl = CefCommandLine::GetGlobalCommandLine();
-  std::string ozone = cl->HasSwitch("ozone-platform") ? "--ozone-platform=" + cl->GetSwitchValue("ozone-platform").ToString() : "";
-  std::vector<char*> argv = {exe.data(), arg.data()};
-  if (!ozone.empty()) argv.push_back(ozone.data());
-  argv.push_back(nullptr);
-  // Double fork so the new browser isn't our child: it outlives this window and leaves no zombie.
-  pid_t pid = fork();
-  if (pid == 0) {
-    setsid();
-    if (fork() == 0) execv(argv[0], argv.data());
-    _exit(0);
-  }
-  if (pid > 0) waitpid(pid, nullptr, 0);
+  std::vector<std::string> args = {"--profile=" + name};
+  if (cl->HasSwitch("ozone-platform")) args.push_back("--ozone-platform=" + cl->GetSwitchValue("ozone-platform").ToString());
+  Spawn(args);
 }
 
 // Hue for a profile's avatar, the same in every window.

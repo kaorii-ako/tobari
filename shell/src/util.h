@@ -42,6 +42,9 @@ std::string Home();
 // The XDG download directory from ~/.config/user-dirs.dirs, or ~/Downloads.
 std::string DownloadDir();
 
+// Starts this program again with these arguments ($APPIMAGE when packaged), detached so it outlives the caller.
+void Spawn(const std::vector<std::string>& args);
+
 // Writes through a temporary file (mode 0600) so a crash mid-write can't leave a truncated file.
 void WriteFile(const std::string& path, const std::string& data);
 
