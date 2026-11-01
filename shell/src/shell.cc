@@ -1,4 +1,5 @@
 #include "shell.h"
+#include "mcp.h"
 
 #include <sys/stat.h>
 #include <unistd.h>
@@ -191,6 +192,7 @@ void Shell::OnWindowCreated(CefRefPtr<CefWindow> window) {
 }
 
 void Shell::Ctl(const std::string& cmd, const std::string& arg, std::function<void(bool, const std::string&)> done) {
+  if (cmd == "mcp") return Mcp(arg, done);
   if (cmd == "profile") {
     if (arg != "Default" && !ValidProfile(arg)) return done(false, "That isn't a usable profile name.");
     if (arg != (CurrentProfile().empty() ? "Default" : CurrentProfile())) OpenProfile(arg);
@@ -228,6 +230,13 @@ void Shell::Ctl(const std::string& cmd, const std::string& arg, std::function<vo
     return;
   }
   done(false, "Unknown command.");
+}
+CefRefPtr<CefBrowser> Shell::AgentTab(int id, const std::string& what) {
+  Tab* t = id ? ById(id) : Current();
+  // Built-in pages hold settings and import; outside agents only get web pages.
+  if (!t || !t->view || !t->view->GetBrowser() || IsInternal(t->url)) return nullptr;
+  Toast("Agent: " + what);
+  return t->view->GetBrowser();
 }
 void Shell::Relaunch(CefRefPtr<CefCommandLine> cl) {
   if (!window_) return;

@@ -9,11 +9,13 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <iostream>
 #include <string>
 #include <thread>
 
 #include "include/base/cef_callback.h"
 #include "include/wrapper/cef_closure_task.h"
+#include "mcp.h"
 #include "shell.h"
 #include "util.h"
 
@@ -86,33 +88,54 @@ void CtlServe() {
   }).detach();
 }
 
-int CtlClient(int argc, char* argv[]) {
-  // `tobari --profile=NAME tabs` talks to that profile; main has already applied the switch.
-  if (argc > 1 && !strncmp(argv[1], "--profile=", 10)) ++argv, --argc;
-  if (argc < 2) return -1;
-  std::string cmd = argv[1];
-  if (cmd != "tabs" && cmd != "open" && cmd != "text" && cmd != "close" && cmd != "profile") return -1;
-  std::string arg = argc > 2 ? argv[2] : "";
-  if ((cmd == "open" || cmd == "close" || cmd == "profile") && arg.empty()) {
-    fprintf(stderr, "usage: tobari [--profile=NAME] tabs | open URL | text [ID] | close ID | profile NAME\n");
-    return 2;
-  }
+// One request to the running browser. Returns 1 ok, 0 error reply, -1 not running; body gets the reply text.
+int Ask(std::string cmd, std::string arg, std::string& body) {
   for (char& ch : arg)
     if (ch == '\n' || ch == '\t') ch = ' ';
   sockaddr_un a;
   int s = socket(AF_UNIX, SOCK_STREAM | SOCK_CLOEXEC, 0);
-  if (s < 0 || !Address(a) || connect(s, reinterpret_cast<sockaddr*>(&a), sizeof a) != 0) {
-    fprintf(stderr, "tobari: the browser isn't running.\n");
-    return 1;
-  }
+  if (s < 0 || !Address(a) || connect(s, reinterpret_cast<sockaddr*>(&a), sizeof a) != 0) return -1;
   SendAll(s, cmd + "\t" + arg + "\n");
   std::string out;
   char buf[65536];
   for (ssize_t n; (n = read(s, buf, sizeof buf)) > 0;) out.append(buf, n);
   close(s);
   size_t nl = out.find('\n');
-  bool ok = out.rfind("ok\n", 0) == 0;
-  std::string body = nl == std::string::npos ? out : out.substr(nl + 1);
+  body = nl == std::string::npos ? out : out.substr(nl + 1);
+  return out.rfind("ok\n", 0) == 0;
+}
+
+int McpClient() {
+  std::string line, body;
+  while (std::getline(std::cin, line)) {
+    if (line.empty()) continue;
+    if (Ask("mcp", line, body) < 0) {
+      fprintf(stderr, "tobari: the browser isn't running.\n");
+      return 1;
+    }
+    if (!body.empty()) printf("%s\n", body.c_str()), fflush(stdout);
+  }
+  return 0;
+}
+
+int CtlClient(int argc, char* argv[]) {
+  // `tobari --profile=NAME tabs` talks to that profile; main has already applied the switch.
+  if (argc > 1 && !strncmp(argv[1], "--profile=", 10)) ++argv, --argc;
+  if (argc < 2) return -1;
+  std::string cmd = argv[1];
+  if (cmd == "mcp") return McpClient();
+  if (cmd != "tabs" && cmd != "open" && cmd != "text" && cmd != "close" && cmd != "profile") return -1;
+  std::string arg = argc > 2 ? argv[2] : "";
+  if ((cmd == "open" || cmd == "close" || cmd == "profile") && arg.empty()) {
+    fprintf(stderr, "usage: tobari [--profile=NAME] tabs | open URL | text [ID] | close ID | profile NAME | mcp\n");
+    return 2;
+  }
+  std::string body;
+  int ok = Ask(cmd, arg, body);
+  if (ok < 0) {
+    fprintf(stderr, "tobari: the browser isn't running.\n");
+    return 1;
+  }
   fprintf(ok ? stdout : stderr, "%s%s", body.c_str(), body.empty() || body.back() == '\n' ? "" : "\n");
   return ok ? 0 : 1;
 }

@@ -54,6 +54,8 @@ class Shell : public CefClient,
   void Relaunch(CefRefPtr<CefCommandLine> cl);
   // One CLI request (ctl.h). done(ok, body) runs on the UI thread, maybe later.
   void Ctl(const std::string& cmd, const std::string& arg, std::function<void(bool, const std::string&)> done);
+  // The web page an agent wants to drive (id 0 = the current tab), or null. Shows `what` as a toast so the user sees every action.
+  CefRefPtr<CefBrowser> AgentTab(int id, const std::string& what);
   // The privacy handler blocked a request for this browser.
   void Blocked(int browser_id);
 
