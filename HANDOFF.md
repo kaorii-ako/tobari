@@ -46,6 +46,12 @@ Updated 2026-10-31. Current step: **All steps (0–6) are done. 0.5.0 is release
 - **Step 6:** v* tags build the release AppImage in CI; `packaging/release.sh VERSION NOTES.md` downloads that build, signs `SHA256SUMS` locally with `~/.minisign/tobari.key`, checks it against `tobari.pub` and publishes it with `install.sh`.
 
 - **After 0.5.0:** first-run welcome page (`tobari://welcome/`: theme, search engine, import, assistant setup, keys) and profiles. Each profile is its own browser process with its own folder under `~/.local/share/tobari/profiles/NAME` (the default stays at the root), so Google and other logins stay separate. Switch or add one from the avatar in the sidebar, the command bar (`profile NAME`), or `tobari profile NAME`; `tobari --profile=NAME ...` runs or talks to it. Chrome-style Google account sync isn't possible: Google closed its sync API to other browsers in 2021. `bench/profile_test.sh` 7/7.
+- **Product Hunt push (unreleased, after 0.5.1):**
+  - `tobari mcp` (`shell/src/mcp.cc`): MCP server over stdio for agents; tools tabs/open/close/read/click/fill/screenshot; see `docs/agents.md`. Test `bench/mcp_test.sh`.
+  - Command bar calculator + unit/temperature conversion (`ui/calc.js`, `bench/calc_test.js`). Offline; currency conversion not built (needs a network fetch).
+  - Assistant "All tabs" switch (`ai.send` with `all`): up to 8 awake web tabs of the workspace; `bench/ai_test.sh` covers it.
+  - Screenshot and annotate (`ui/shot.*`, api `shot`, `shot.get`, `shot.save`): pen, box, arrow, pixelate-hide; Save goes to Downloads. `bench/shot_test.sh` only checks the tab opens; drawing is checked by eye.
+  - Not done: Windows/macOS builds (the shell uses Unix sockets, fork, /proc and Ozone; needs a real port), landing page, gallery images, GIF. Draft listing text in `docs/producthunt.md`.
 
 ## Step 5 results (2026-10-31, Kao's desktop: Ryzen 5 9600X, Bazzite 44)
 | Browser | RAM, 1 blank tab | RAM, 10 real pages | Start to first rendered page |
@@ -92,6 +98,8 @@ After 0.5.0 (cut from its scope): sync, site MCP, cookie import, Flatpak, tab gr
 - The privacy, HTTPS and idle checks in CI hit real sites (example.org, badssl, neverssl, googlesyndication and the list hosts), so a network hiccup can fail a run.
 - The idle capture only covers what Chromium's net log sees. It doesn't watch the network from outside. Spellcheck is off until dictionaries are bundled or fetched on request.
 - Resizing a frameless window on GNOME Wayland is untested. The headless cage can't test it. Kao should try dragging the window edges.
+- MCP has no per-session opt-in: any process of the same user can use `ctl.sock` (0600) and drive web tabs; each action shows a toast and built-in pages are refused. Clicks and typing are synthetic DOM events, not trusted input.
+- "All tabs" waits on every tab's text; a tab that dies mid-request leaves the chat busy until Stop.
 - Manual tab groups, agent mode, memory and user skill folders aren't built (cut from 0.5.0).
 - The API key in `ai.json` is plain text, readable only by this user.
 - Sleeping tabs ignore audio: a tab playing media sleeps after 30 minutes in the background.
