@@ -69,6 +69,7 @@ function kindOf(name) {
   if (/\.flatpak$/.test(name)) return { k: "Flatpak", os: "Linux", rank: 1 };
   if (/\.AppImage$/.test(name)) return { k: "AppImage", os: "Linux", rank: 2 };
   if (/linux.*\.tar\.(gz|xz|zst)$/.test(name)) return { k: "Tarball", os: "Linux", rank: 3 };
+  if (/windows.*\.zip$/.test(name)) return { k: "Portable zip", os: "Windows", rank: 3.5 };
   if (/\.dmg$/.test(name)) return { k: "Disk image", os: "macOS", rank: 4 };
   if (/extension.*\.zip$/.test(name)) return { k: "Extension", os: "Chromium", rank: 5 };
   if (/^install\.sh$/.test(name)) return { k: "Installer", os: "Script", rank: 6 };
