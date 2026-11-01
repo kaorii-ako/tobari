@@ -40,7 +40,7 @@ jobs:
       - name: Build
         run: |
           CC=gcc-12 CXX=g++-12 cmake -G Ninja -S shell -B build -DCEF_ROOT="$PWD/cef/$CEF" -DCMAKE_BUILD_TYPE=Release
-          ninja -C build
+          ninja -k 0 -C build
 
       - name: Checks
         run: |
@@ -112,7 +112,7 @@ jobs:
         run: |
           # Forward slashes: CEF's cmake macros put CEF_ROOT inside strings, where a backslash is an escape.
           cmake -G Ninja -S shell -B build -DCEF_ROOT="$(cygpath -m "$PWD")/cef/$CEFW" -DCMAKE_BUILD_TYPE=Release
-          ninja -C build
+          ninja -k 0 -C build
 
       - name: Checks
         shell: bash

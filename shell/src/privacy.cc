@@ -56,7 +56,10 @@ int64_t Mtime(const std::string& path) {
   std::error_code ec;
   auto t = std::filesystem::last_write_time(path, ec);
   if (ec) return 0;
-  return std::chrono::duration_cast<std::chrono::seconds>(std::chrono::file_clock::to_sys(t).time_since_epoch()).count();
+  // file_clock -> system_clock via "now" on both (to_sys is missing on MSVC, clock_cast on gcc 12); seconds suffice.
+  using namespace std::chrono;
+  auto sys = system_clock::now() + duration_cast<system_clock::duration>(t - file_clock::now());
+  return duration_cast<seconds>(sys.time_since_epoch()).count();
 }
 
 std::string ReadAll(const std::string& path) {

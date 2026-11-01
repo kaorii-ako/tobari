@@ -51,7 +51,12 @@ Updated 2026-10-31. Current step: **All steps (0–6) are done. 0.5.0 is release
   - Command bar calculator + unit/temperature conversion (`ui/calc.js`, `bench/calc_test.js`). Offline; currency conversion not built (needs a network fetch).
   - Assistant "All tabs" switch (`ai.send` with `all`): up to 8 awake web tabs of the workspace; `bench/ai_test.sh` covers it.
   - Screenshot and annotate (`ui/shot.*`, api `shot`, `shot.get`, `shot.save`): pen, box, arrow, pixelate-hide; Save goes to Downloads. `bench/shot_test.sh` only checks the tab opens; drawing is checked by eye.
-  - Not done: Windows/macOS builds (the shell uses Unix sockets, fork, /proc and Ozone; needs a real port), landing page, gallery images, GIF. Draft listing text in `docs/producthunt.md`.
+  - Reopen closed tab (Ctrl Shift T, "Undo" toast that drains over 5 s); `bench/cli_test.sh` covers `reopen`.
+  - Burn (`tobari://burn/`, hold 1.6 s): writes `burn-pending`, restarts; the next start wipes `profile/` (50 tries, 200 ms apart, for Windows file locks) and shows `tobari://burn/#failed` if it can't. History keeps bookmarks only. `bench/burn_test.sh` 8/8.
+  - Copy clean link (`ui/clean.js`, `bench/clean_test.js`).
+  - Windows port: every OS difference is in `shell/src/platform.{h,cc}`. With the sandbox on, CEF's `bootstrap.exe` is copied to `tobari.exe` and loads `tobari.dll` (`RunWinMain` in `shell/src/main.cc`); a UTF-8 code-page manifest is merged in so narrow paths work for non-ASCII user names. `tobari-cli.exe` (console, `shell/cli_main.cc` + `ctl_client.cc`) is the CLI and the MCP command on Windows, since `tobari.exe` is a GUI program. Data in `%LOCALAPPDATA%\tobari`. CI job `windows` (continue-on-error) builds, runs unit tests and a smoke test in a Thai-named folder, uploads a portable unsigned zip. Not checked on a real Windows desktop yet.
+  - macOS: deferred (needs an NSApplication shell, helper bundles, signing; no notarization without a paid account).
+  - Launch kit: listing `docs/producthunt.md`; gallery `docs/producthunt/gallery.html` → `render.sh` → `out/gallery-1..6.png`; GIF `bench/demo_gif.sh` → `docs/producthunt/out/demo.gif`. Landing page on `main` (`site/src/pages/home.html`).
 
 ## Step 5 results (2026-10-31, Kao's desktop: Ryzen 5 9600X, Bazzite 44)
 | Browser | RAM, 1 blank tab | RAM, 10 real pages | Start to first rendered page |
