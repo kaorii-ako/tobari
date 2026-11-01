@@ -158,6 +158,7 @@ class Shell : public CefClient,
   CefRefPtr<CefBrowserView> frame_, cmd_;
   CefRefPtr<CefOverlayController> cmd_ov_;
   std::vector<Tab> tabs_;
+  std::vector<std::pair<std::string, std::string>> closed_;  // url, workspace
   std::vector<Visit> history_;
   std::map<std::string, size_t> visit_index_;
   std::string ui_blob_ = "{}", shot_, demo_, ws_ = "main";

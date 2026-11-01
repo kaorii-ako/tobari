@@ -198,6 +198,16 @@ button.model { text-align: left; border-radius: var(--r1); padding: 2px var(--s1
 .toast progress { display: block; width: 100%; height: 3px; margin-top: var(--s1); appearance: none; border: 0; background: rgb(127 127 127 / 0.3); border-radius: 2px; }
 .toast progress::-webkit-progress-bar { background: transparent; }
 .toast progress::-webkit-progress-value { background: var(--accent-soft); border-radius: 2px; }
+/* Undo toast: two stacked labels; the top one is clipped away linearly as the time runs out. */
+.toast.undo { display: flex; align-items: center; gap: var(--s2); padding-right: var(--s1); }
+.toast.undo > span { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.undo-btn { position: relative; overflow: hidden; flex: none; padding: 4px 10px; border-radius: var(--r1); font-weight: 500; font-size: var(--t-sm);
+  color: var(--surface); background: rgb(127 127 127 / 0.25); cursor: pointer; transition: transform var(--d1) var(--ease-out); }
+.undo-btn:active { transform: scale(0.96); }
+.undo-btn .drain { position: absolute; inset: 0; display: grid; place-items: center; background: var(--surface); color: var(--text);
+  clip-path: inset(0 0 0 0); transition-property: clip-path; transition-timing-function: linear; }
+.undo-btn.go .drain { clip-path: inset(0 0 0 100%); }
 @media (prefers-reduced-motion: reduce) {
+  .undo-btn .drain { transition-duration: 0ms !important; }
   .tab.enter, .toast.enter, .toast.leave { transform: none; }
 }

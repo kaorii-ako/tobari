@@ -9,6 +9,7 @@ let mode = 'cmd', items = [], sel = 0, seq = 0, shown = false;
 const COMMANDS = [
   ['New tab', 'Ctrl T', () => C.open('newtab')],
   ['Close tab', 'Ctrl W', () => T.run('close')],
+  ['Reopen closed tab', 'Ctrl Shift T', () => T.run('reopen')],
   ['Toggle assistant', 'Alt J', () => T.run('ai')],
   ['Compact mode', 'Alt S', () => T.run('compact')],
   ['Split view', 'Alt \\', () => T.run('split')],

@@ -124,10 +124,10 @@ int CtlClient(int argc, char* argv[]) {
   if (argc < 2) return -1;
   std::string cmd = argv[1];
   if (cmd == "mcp") return McpClient();
-  if (cmd != "tabs" && cmd != "open" && cmd != "text" && cmd != "close" && cmd != "profile") return -1;
+  if (cmd != "tabs" && cmd != "open" && cmd != "text" && cmd != "close" && cmd != "profile" && cmd != "reopen") return -1;
   std::string arg = argc > 2 ? argv[2] : "";
   if ((cmd == "open" || cmd == "close" || cmd == "profile") && arg.empty()) {
-    fprintf(stderr, "usage: tobari [--profile=NAME] tabs | open URL | text [ID] | close ID | profile NAME | mcp\n");
+    fprintf(stderr, "usage: tobari [--profile=NAME] tabs | open URL | text [ID] | close ID | reopen | profile NAME | mcp\n");
     return 2;
   }
   std::string body;

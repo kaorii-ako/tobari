@@ -18,6 +18,8 @@ id=$("$bin" open "http://127.0.0.1:$port/index.html?two")
 check open_id '[[ $id =~ ^[0-9]+$ ]] && [ "$("$bin" tabs | python3 -c "import json,sys; print(len(json.load(sys.stdin)))")" = 2 ]'
 check no_internal '! "$bin" open tobari://import/ 2>/dev/null'
 check close '"$bin" close "$id" && [ "$("$bin" tabs | python3 -c "import json,sys; print(len(json.load(sys.stdin)))")" = 1 ]'
+check reopen 'r=$("$bin" reopen) && "$bin" tabs | grep -q "?two" && "$bin" close "$r"'
+check reopen_empty '"$bin" reopen >/dev/null 2>&1; ! "$bin" reopen 2>/dev/null'
 check bad_id '! "$bin" text 99999 2>/dev/null'
 check socket_private '[ "$(stat -c %a "$XDG_DATA_HOME/tobari/ctl.sock")" = 600 ]'
 kill -INT $app 2>/dev/null; wait $app 2>/dev/null; kill $srv 2>/dev/null

@@ -57,6 +57,19 @@ const T = (window.T = {
   },
 
   toast: (msg) => toast(msg, 4000),
+  // "Closed X  [Undo]": the Undo button's dark layer drains left to right over 5 s, then the toast goes.
+  closed(title) {
+    const ms = 5000, el = toast('', ms);
+    el.classList.add('undo');
+    el.firstChild.textContent = 'Closed ' + title;
+    const b = document.createElement('button');
+    b.className = 'undo-btn';
+    b.innerHTML = '<span>Undo</span><span class="drain" aria-hidden="true">Undo</span>';
+    b.onclick = () => { T.api('tab.reopen'); dismiss(el); };
+    el.append(b);
+    b.querySelector('.drain').style.transitionDuration = ms + 'ms';
+    requestAnimationFrame(() => requestAnimationFrame(() => b.classList.add('go')));
+  },
   run: (name, arg) => run(name, arg),
   saveUi,
 });
@@ -235,6 +248,7 @@ function run(name, arg) {
   switch (name) {
     case 'cmd': case 'newtab': case 'address': return openCmd(name);
     case 'close': return t && T.api('tab.close', { id: t.id });
+    case 'reopen': return T.api('tab.reopen');
     case 'shield': return t && T.api('shield', { on: !t.shield });
     case 'ai':
       T.ui.ai = !T.ui.ai;
@@ -421,6 +435,7 @@ function applyDemo() {
     if (demo.includes('toast')) toast('Saved report.pdf to Downloads', 0); // stays up for the screenshot
     if (demo.includes('cmd')) openCmd('cmd');
     if (demo.includes('peek')) app.classList.add('peek');
+    if (p.get('closed')) T.closed('Kiwi notes');
     if (p.get('shot')) setTimeout(() => T.api('shot'), 3000);
     if (p.get('all')) document.getElementById('ai-all').checked = true;
     if (p.get('ask')) setTimeout(() => T.aiSend(p.get('ask')), p.get('all') ? 5000 : 500);

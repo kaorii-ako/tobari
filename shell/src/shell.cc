@@ -111,7 +111,7 @@ const Key kKeys[] = {
     {0x7B, 0, 0, 0, "devtools"}, {'1', 0, 1, 0, "tab1"},      {'2', 0, 1, 0, "tab2"},
     {'3', 0, 1, 0, "tab3"},      {'4', 0, 1, 0, "tab4"},      {'5', 0, 1, 0, "tab5"},
     {'6', 0, 1, 0, "tab6"},      {'7', 0, 1, 0, "tab7"},      {'8', 0, 1, 0, "tab8"},
-    {'9', 0, 1, 0, "tab9"},
+    {'9', 0, 1, 0, "tab9"},      {'T', 1, 1, 0, "reopen"},
 };
 
 class WindowDelegate : public CefWindowDelegate {
@@ -218,6 +218,12 @@ void Shell::Ctl(const std::string& cmd, const std::string& arg, std::function<vo
     // Built-in pages hold settings and import; outside agents only get web pages.
     if (u.rfind("http://", 0) && u.rfind("https://", 0)) return done(false, "Only http and https pages can be opened.");
     return done(true, std::to_string(NewTab(u, ws_, true)));
+  }
+  if (cmd == "reopen") {
+    if (closed_.empty()) return done(false, "No closed tab to reopen.");
+    auto [url, ws] = closed_.back();
+    closed_.pop_back();
+    return done(true, std::to_string(NewTab(url, ws, true)));
   }
   Tab* t = arg.empty() ? Current() : ById(atoi(arg.c_str()));
   if (!t) return done(false, "No such tab.");
@@ -337,6 +343,12 @@ void Shell::Forget(int id) {
 void Shell::Close(int id) {
   Tab* t = ById(id);
   if (!t) return;
+  // Kept for Reopen (Ctrl+Shift+T), newest last; internal pages are skipped so a reopen never surprises.
+  if (t->url.rfind("tobari://", 0) != 0) {
+    closed_.push_back({t->url, t->ws});
+    if (closed_.size() > 20) closed_.erase(closed_.begin());
+    Js("T.closed(" + JsonStr(t->title.empty() ? t->url : t->title) + ")");
+  }
   Sleep(*t);
   Forget(id);
 }
@@ -493,6 +505,8 @@ std::string Shell::Api(CefRefPtr<CefBrowser> caller, const std::string& cmd, Cef
     Layout();
   } else if (cmd == "tab.new") {
     return "{\"id\":" + std::to_string(NewTab(FixupInput(S("url")), ws_, !a->GetBool("background"))) + "}";
+  } else if (cmd == "tab.reopen") {
+    Ctl("reopen", "", [](bool, const std::string&) {});
   } else if (cmd == "tab.close" && cur) {
     Close(cur->id);
   } else if (cmd == "tab.select" && cur) {
@@ -1060,7 +1074,8 @@ bool Shell::OnShowPermissionPrompt(CefRefPtr<CefBrowser>, uint64_t, const CefStr
                                    CefRefPtr<CefPermissionPromptCallback> cb) {
   // Device APIs stay blocked: every request is refused and the user is told. A per-site prompt can come later.
   cb->Continue(CEF_PERMISSION_RESULT_DENY);
-  Toast("Blocked a permission request from " + origin.ToString());
+  // Our own UI trips loopback-network checks when it shows a localhost favicon; that's noise, not a site asking.
+  if (origin.ToString().rfind("tobari://", 0) != 0) Toast("Blocked a permission request from " + origin.ToString());
   return true;
 }
 
