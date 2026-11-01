@@ -28,6 +28,7 @@ const COMMANDS = [
   ['Theme: follow system', '', () => T.run('theme', 'system')],
   ['Blocking and privacy', '', () => T.api('tab.new', { url: 'tobari://blocking/' })],
   ['Bangs', '', () => T.api('tab.new', { url: 'tobari://bangs/' })],
+  ['Burn: forget this session…', '', () => T.api('tab.new', { url: 'tobari://burn/' })],
   ['Import bookmarks and history', '', () => T.api('tab.new', { url: 'tobari://import/' })],
   ['Welcome and setup', '', () => T.api('tab.new', { url: 'tobari://welcome/' })],
   ['About Tobari', '', () => T.api('tab.new', { url: 'tobari://about/' })],

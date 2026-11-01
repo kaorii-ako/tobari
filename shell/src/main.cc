@@ -42,6 +42,16 @@ class App : public CefApp, public CefBrowserProcessHandler {
 
 }  // namespace
 
+// Chromium prefs a fresh profile starts with, because profile setup downloads spellcheck dictionaries and
+// host-installed external extensions before PrivacyStart can set them (bench/idle_net.sh first start).
+static void BasePrefs(const std::string& data) {
+  std::filesystem::create_directories(std::filesystem::path(data).parent_path());  // XDG_DATA_HOME or profiles/ may not exist yet
+  for (auto d : {data, data + "/profile", data + "/profile/Default"}) mkdir(d.c_str(), 0700);
+  WriteFile(data + "/profile/Default/Preferences",
+            R"({"browser":{"enable_spellchecking":false},"extensions":{"block_external_extensions":true},)"
+            R"("default_search_provider":{"enabled":false},"safebrowsing":{"enabled":false}})");
+}
+
 // Zygote children get a fresh stack canary after fork and then return through main, so main must not
 // check one (Chromium marks its own main the same way).
 __attribute__((no_stack_protector)) int main(int argc, char* argv[]) {
@@ -52,6 +62,10 @@ __attribute__((no_stack_protector)) int main(int argc, char* argv[]) {
       return 2;
     }
   if (int code = CtlClient(argc, argv); code >= 0) return code;
+  // Copied now: Chromium later rewrites argv in place for the process title. Used to relaunch after a burn.
+  std::vector<std::string> again;
+  for (int i = 1; i < argc; ++i)
+    if (!strncmp(argv[i], "--profile=", 10) || !strncmp(argv[i], "--ozone-platform=", 17)) again.push_back(argv[i]);
   CefMainArgs args(argc, argv);
   CefRefPtr<App> app = new App;
   int code = CefExecuteProcess(args, app, nullptr);
@@ -64,18 +78,19 @@ __attribute__((no_stack_protector)) int main(int argc, char* argv[]) {
   s.log_severity = LOGSEVERITY_WARNING;
   s.persist_session_cookies = true;
   s.background_color = 0xFFE8E7EE;
-  // A new profile starts with these, because profile setup downloads spellcheck dictionaries and host-installed
-  // external extensions before PrivacyStart can set them (bench/idle_net.sh first start).
-  std::string prefs = data + "/profile/Default/Preferences";
-  if (access(prefs.c_str(), F_OK) != 0) {
+  if (access((data + "/profile/Default/Preferences").c_str(), F_OK) != 0) {
     Shell::first_run = true;
-    std::filesystem::create_directories(std::filesystem::path(data).parent_path());  // XDG_DATA_HOME or profiles/ may not exist yet
-    for (auto d : {data, data + "/profile", data + "/profile/Default"}) mkdir(d.c_str(), 0700);
-    WriteFile(prefs, R"({"browser":{"enable_spellchecking":false},"extensions":{"block_external_extensions":true},)"
-                     R"("default_search_provider":{"enabled":false},"safebrowsing":{"enabled":false}})");
+    BasePrefs(data);
   }
   if (!CefInitialize(args, s, app, nullptr)) return CefGetExitCode();
   CefRunMessageLoop();
   CefShutdown();
+  if (Shell::burn) {
+    // Burn: every Chromium store (cookies, cache, site storage, permissions) lives under profile/, so it all goes.
+    std::error_code ec;
+    std::filesystem::remove_all(data + "/profile", ec);
+    BasePrefs(data);
+    Spawn(again);
+  }
   return 0;
 }

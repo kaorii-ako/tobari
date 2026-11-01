@@ -137,6 +137,7 @@ class WindowDelegate : public CefWindowDelegate {
 
 }  // namespace
 
+bool Shell::burn = false;
 bool Shell::first_run = false;
 
 namespace {
@@ -218,6 +219,26 @@ void Shell::Ctl(const std::string& cmd, const std::string& arg, std::function<vo
     // Built-in pages hold settings and import; outside agents only get web pages.
     if (u.rfind("http://", 0) && u.rfind("https://", 0)) return done(false, "Only http and https pages can be opened.");
     return done(true, std::to_string(NewTab(u, ws_, true)));
+  }
+  if (cmd == "burn") {
+    // tobari://burn/: keep bookmarks (as zero-visit entries), drop every other visit and all open tabs, then
+    // close; main() wipes the Chromium profile folder after CefShutdown and starts Tobari again.
+    std::string keep;
+    for (auto& h : history_)
+      if (h.bookmark) {
+        auto d = CefDictionaryValue::Create();
+        d->SetString("u", h.url);
+        d->SetString("t", h.title);
+        d->SetDouble("s", 0);
+        d->SetInt("n", 0);
+        d->SetBool("b", true);
+        keep += Json(d) + "\n";
+      }
+    WriteFile(DataDir() + "/history.jsonl", keep);
+    burn = true;
+    done(true, "");
+    window_->Close();
+    return;
   }
   if (cmd == "reopen") {
     if (closed_.empty()) return done(false, "No closed tab to reopen.");
@@ -746,6 +767,8 @@ std::string Shell::Api(CefRefPtr<CefBrowser> caller, const std::string& cmd, Cef
       l->SetDictionary(l->GetSize(), d);
     }
     return Json(l);
+  } else if (cmd == "burn") {
+    Ctl("burn", "", [](bool, const std::string&) {});
   } else if (cmd == "https.allow") {
     // From tobari://https/ after an upgraded navigation failed: the user chose plain http for this host.
     std::string url = S("url");
@@ -763,7 +786,7 @@ void Shell::SaveSession() {
   auto list = CefListValue::Create();
   int active = -1;
   for (auto& t : tabs_) {
-    if (t.url.empty()) continue;
+    if (t.url.empty() || burn) continue;
     auto d = CefDictionaryValue::Create();
     d->SetString("url", t.url);
     d->SetString("title", t.title);
