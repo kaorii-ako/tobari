@@ -127,7 +127,8 @@ jobs:
         run: |
           $env:LOCALAPPDATA = Join-Path $env:RUNNER_TEMP "ทดสอบ"
           New-Item -ItemType Directory -Force $env:LOCALAPPDATA | Out-Null
-          $srv = Start-Process python -ArgumentList "bench/script_server.py","38181","script-test" -PassThru
+          # Plain server: bench/script_server.py exits after the page posts its result.
+          $srv = Start-Process python -ArgumentList "-m","http.server","38181","--bind","127.0.0.1","--directory","bench/script-test" -PassThru
           $app = Start-Process build/out/tobari.exe -ArgumentList "http://127.0.0.1:38181/index.html" -PassThru
           $cli = "build/out/tobari-cli.exe"
           $up = $false
