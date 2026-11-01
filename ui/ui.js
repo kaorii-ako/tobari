@@ -433,7 +433,7 @@ function applyDemo() {
     if (demo.includes('find')) { openFind(); $('#find-q').value = 'browser'; $('#find-q').dispatchEvent(new Event('input')); }
     if (demo.includes('split')) run('split');
     if (demo.includes('toast')) toast('Saved report.pdf to Downloads', 0); // stays up for the screenshot
-    if (demo.includes('cmd')) openCmd('cmd');
+    if (demo.includes('cmd')) openCmd('cmd', p.get('q') || '');
     if (demo.includes('peek')) app.classList.add('peek');
     if (p.get('closed')) T.closed('Kiwi notes');
     if (p.get('shot')) setTimeout(() => T.api('shot'), 3000);

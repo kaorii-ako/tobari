@@ -85,7 +85,7 @@ async function update() {
     group: 'Profiles', label: p.current ? `${p.name} (this window)` : `Open profile “${p.name}”`, hint: '', ic: p.name[0].toUpperCase(),
     run: () => !p.current && T.api('profile.open', { name: p.name }),
   }));
-  if (pname && !profiles.some((p) => p.name.toLowerCase() === pname))
+  if (profiles.length && pname && !profiles.some((p) => p.name.toLowerCase() === pname))
     pcmds.push({ group: 'Profiles', label: `New profile “${text.split(/\s+/).slice(1).join(' ')}”`, hint: 'Opens a new window', ic: '+',
       run: () => T.api('profile.open', { name: text.split(/\s+/).slice(1).join(' ') }).then((r) => r && r.error && T.toast && T.toast(r.error)) });
   out.push(...pcmds);
