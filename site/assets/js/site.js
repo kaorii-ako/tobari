@@ -14,6 +14,13 @@
   const gsap = window.gsap;
 
   if (window.ScrollTrigger) gsap.registerPlugin(window.ScrollTrigger);
+  // Smooth scrolling (Lenis), driven by GSAP's ticker so ScrollTrigger stays in step.
+  if (window.Lenis) {
+    const lenis = new window.Lenis({ lerp: 0.1 });
+    if (window.ScrollTrigger) lenis.on("scroll", window.ScrollTrigger.update);
+    gsap.ticker.add((t) => lenis.raf(t * 1000));
+    gsap.ticker.lagSmoothing(0);
+  }
   const heroItems = reveals.filter((el) => el.closest(".hero, .page-head"));
   setTimeout(() => show(heroItems.filter((el) => el.classList.contains("reveal"))), 1600);
   gsap.to(heroItems, { opacity: 1, y: 0, duration: 0.7, stagger: 0.07, ease: "power3.out", onComplete: () => show(heroItems) });

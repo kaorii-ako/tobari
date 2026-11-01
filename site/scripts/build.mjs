@@ -122,6 +122,7 @@ function layout({ title, description, url, body, page = "doc" }) {
 <link rel="icon" href="/assets/icon-32.png" type="image/png">
 <link rel="preload" href="/assets/fonts/inter-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="/assets/site.css">
+<script src="/assets/vendor/lenis.min.js" defer></script>
 <script src="/assets/vendor/gsap.min.js" defer></script>
 <script src="/assets/vendor/ScrollTrigger.min.js" defer></script>
 <script src="/assets/js/site.js" defer></script>
@@ -247,6 +248,7 @@ async function copyAssets() {
   await mkdir(path.join(DIST, "assets/fonts"), { recursive: true });
   await cp(path.join(SITE, "node_modules/gsap/dist/gsap.min.js"), path.join(DIST, "assets/vendor/gsap.min.js"));
   await cp(path.join(SITE, "node_modules/gsap/dist/ScrollTrigger.min.js"), path.join(DIST, "assets/vendor/ScrollTrigger.min.js"));
+  await cp(path.join(SITE, "node_modules/lenis/dist/lenis.min.js"), path.join(DIST, "assets/vendor/lenis.min.js"));
   for (const f of ["inter-latin-wght-normal.woff2", "inter-latin-ext-wght-normal.woff2"]) {
     await cp(path.join(SITE, "node_modules/@fontsource-variable/inter/files", f), path.join(DIST, "assets/fonts", f));
   }
