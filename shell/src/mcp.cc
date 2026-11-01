@@ -127,6 +127,12 @@ void Tool(CefRefPtr<CefValue> id, const std::string& name, Dict a, Done done) {
 
 }  // namespace
 
+void Screenshot(CefRefPtr<CefBrowser> b, std::function<void(bool, const std::string&)> done) {
+  auto p = CefDictionaryValue::Create();
+  p->SetString("format", "png");
+  DevTools(b, "Page.captureScreenshot", p, [done](bool ok, Dict r) { done(ok, ok ? r->GetString("data").ToString() : ""); });
+}
+
 void Mcp(const std::string& line, Done done) {
   auto v = CefParseJSON(line, JSON_PARSER_RFC);
   if (!v || v->GetType() != VTYPE_DICTIONARY) return done(true, "");

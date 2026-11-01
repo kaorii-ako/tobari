@@ -160,7 +160,7 @@ class Shell : public CefClient,
   std::vector<Tab> tabs_;
   std::vector<Visit> history_;
   std::map<std::string, size_t> visit_index_;
-  std::string ui_blob_ = "{}", demo_, ws_ = "main";
+  std::string ui_blob_ = "{}", shot_, demo_, ws_ = "main";
   std::vector<std::string> start_urls_;
   int active_ = 0, split_ = 0, focus_ = 0, next_id_ = 1, open_ = 0;
   int popup_disposition_ = 0;

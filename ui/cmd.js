@@ -16,6 +16,7 @@ const COMMANDS = [
   ['Reload', 'Ctrl R', () => T.run('reload')],
   ['Back', 'Alt ←', () => T.run('back')],
   ['Forward', 'Alt →', () => T.run('forward')],
+  ['Screenshot and annotate', '', () => T.api('shot')],
   ['Developer tools', 'F12', () => T.run('devtools')],
   ['Theme: light', '', () => T.run('theme', 'light')],
   ['Theme: dark', '', () => T.run('theme', 'dark')],

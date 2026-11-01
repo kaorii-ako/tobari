@@ -421,6 +421,7 @@ function applyDemo() {
     if (demo.includes('toast')) toast('Saved report.pdf to Downloads', 0); // stays up for the screenshot
     if (demo.includes('cmd')) openCmd('cmd');
     if (demo.includes('peek')) app.classList.add('peek');
+    if (p.get('shot')) setTimeout(() => T.api('shot'), 3000);
     if (p.get('all')) document.getElementById('ai-all').checked = true;
     if (p.get('ask')) setTimeout(() => T.aiSend(p.get('ask')), p.get('all') ? 5000 : 500);
   }, 1500);

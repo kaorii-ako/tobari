@@ -1,0 +1,7 @@
+body { margin: 0; background: var(--surface-2); }
+header { position: sticky; top: 0; display: flex; gap: var(--s2); align-items: center; padding: var(--s2) var(--s4); background: var(--surface); border-bottom: 1px solid var(--surface-3); z-index: 1; }
+.tools { display: flex; gap: var(--s1); }
+.grow { flex: 1; }
+#msg { color: var(--text-2); font-size: var(--t-sm); }
+button[aria-pressed="true"] { background: var(--accent); color: var(--on-accent); }
+canvas { display: block; max-width: 100%; margin: var(--s4) auto; box-shadow: 0 2px 16px rgb(0 0 0 / 0.25); cursor: crosshair; touch-action: none; }

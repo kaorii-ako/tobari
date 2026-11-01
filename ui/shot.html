@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Screenshot</title>
+<link rel="stylesheet" href="tokens.css">
+<link rel="stylesheet" href="page.css">
+<link rel="stylesheet" href="shot.css">
+</head>
+<body>
+<header>
+  <div class="tools" role="radiogroup" aria-label="Tool">
+    <button data-tool="pen" aria-pressed="true">Pen</button>
+    <button data-tool="box" aria-pressed="false">Box</button>
+    <button data-tool="arrow" aria-pressed="false">Arrow</button>
+    <button data-tool="blur" aria-pressed="false">Hide</button>
+  </div>
+  <button id="undo">Undo</button>
+  <span class="grow"></span>
+  <span id="msg" role="status"></span>
+  <button id="copy">Copy</button>
+  <button id="save" class="primary">Save PNG</button>
+</header>
+<canvas id="c" aria-label="Screenshot to annotate"></canvas>
+<script src="shot.js"></script>
+</body>
+</html>

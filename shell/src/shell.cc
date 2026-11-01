@@ -475,7 +475,7 @@ void Shell::OnAccelerator(int id) { Js(std::string("T.key('") + kKeys[id].name +
 std::string Shell::Api(CefRefPtr<CefBrowser> caller, const std::string& cmd, CefRefPtr<CefDictionaryValue> a) {
   // scheme.cc lets built-in pages call only their own "<host>." commands.
   if (!IsUi(caller) && cmd.rfind("blocking.", 0) && cmd.rfind("bangs.", 0) && cmd.rfind("https.", 0) && cmd.rfind("import.", 0) &&
-      cmd.rfind("welcome.", 0))
+      cmd.rfind("welcome.", 0) && cmd.rfind("shot.", 0))
     return "";
   // The welcome page reuses the import page's commands.
   if (cmd == "welcome.import.list" || cmd == "welcome.import.run") return Api(caller, cmd.substr(8), a);
@@ -702,6 +702,26 @@ std::string Shell::Api(CefRefPtr<CefBrowser> caller, const std::string& cmd, Cef
     r->SetInt("bookmarks", static_cast<int>(marks.size()));
     r->SetInt("history", static_cast<int>(visits.size()));
     return Json(r);
+  } else if (cmd == "shot") {
+    // From the command bar: grab the current page, then open the annotator on it.
+    if (!cur || !cur->view || cur->url.rfind("http", 0) != 0) return Toast("Open a web page to take a screenshot."), "";
+    Screenshot(cur->view->GetBrowser(), [this](bool ok, const std::string& png) {
+      if (!ok) return Toast("Screenshot failed.");
+      shot_ = png;
+      NewTab("tobari://shot/", ws_, true);
+    });
+  } else if (cmd == "shot.get") {
+    return "{\"data\":\"" + shot_ + "\"}";  // base64 has nothing to escape
+  } else if (cmd == "shot.save") {
+    // The annotated PNG, as base64 from the page's canvas. Goes to Downloads like any download.
+    CefRefPtr<CefBinaryValue> bin = CefBase64Decode(S("data"));
+    if (!bin || !bin->GetSize()) return "{\"error\":\"Nothing to save.\"}";
+    std::string bytes(bin->GetSize(), 0);
+    bin->GetData(bytes.data(), bytes.size(), 0);
+    std::string path = DownloadDir() + "/Tobari-screenshot-" + std::to_string(time(nullptr)) + ".png";
+    WriteFile(path, bytes);
+    Toast("Saved " + path);
+    return "{\"path\":" + JsonStr(path) + "}";
   } else if (cmd == "bangs.list") {
     auto l = CefListValue::Create();
     for (const Bang& b : Bangs()) {
