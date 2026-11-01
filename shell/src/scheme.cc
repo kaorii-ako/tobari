@@ -1,6 +1,5 @@
 #include "scheme.h"
 
-#include <unistd.h>
 
 #include <cstring>
 #include <fstream>
@@ -12,6 +11,7 @@
 #include "include/cef_parser.h"
 #include "include/wrapper/cef_closure_task.h"
 #include "shell.h"
+#include "platform.h"
 #include "util.h"
 
 namespace {
@@ -22,9 +22,7 @@ std::mutex g_mu;
 std::set<int> g_internal;
 
 std::string ExeDir() {
-  char buf[4096];
-  ssize_t n = readlink("/proc/self/exe", buf, sizeof(buf) - 1);
-  std::string p(buf, n > 0 ? n : 0);
+  std::string p = ExePath();
   return p.substr(0, p.find_last_of('/'));
 }
 

@@ -1,12 +1,11 @@
 #include "import.h"
 
-#include <dlfcn.h>
-
 #include <filesystem>
 #include <fstream>
 #include <sstream>
 
 #include "include/cef_parser.h"
+#include "platform.h"
 
 namespace fs = std::filesystem;
 
@@ -14,7 +13,8 @@ namespace {
 
 bool Web(const std::string& u) { return u.rfind("http://", 0) == 0 || u.rfind("https://", 0) == 0; }
 
-// SQLite comes from the system (every desktop has it) through dlopen, so Tobari doesn't ship or link it.
+// SQLite comes from the system (every Linux desktop has it; Windows 10+ ships winsqlite3.dll) and is loaded at
+// run time, so Tobari doesn't ship or link it.
 struct Sqlite {
   int (*open)(const char*, void**, int, const char*);
   int (*prepare)(void*, const char*, int, void**, const char**);
@@ -26,9 +26,9 @@ struct Sqlite {
   const char* (*errmsg)(void*);
   bool ok = false;
   Sqlite() {
-    void* h = dlopen("libsqlite3.so.0", RTLD_NOW | RTLD_LOCAL);
+    void* h = LoadLib(SqliteLibName());
     if (!h) return;
-    auto f = [&](auto& p, const char* n) { p = reinterpret_cast<std::remove_reference_t<decltype(p)>>(dlsym(h, n)); return p != nullptr; };
+    auto f = [&](auto& p, const char* n) { p = reinterpret_cast<std::remove_reference_t<decltype(p)>>(LibSym(h, n)); return p != nullptr; };
     ok = f(open, "sqlite3_open_v2") && f(prepare, "sqlite3_prepare_v2") && f(step, "sqlite3_step") &&
          f(text, "sqlite3_column_text") && f(int64, "sqlite3_column_int64") && f(finalize, "sqlite3_finalize") &&
          f(close, "sqlite3_close") && f(errmsg, "sqlite3_errmsg");
@@ -41,10 +41,11 @@ constexpr int kReadOnly = 0x1, kUri = 0x40, kRow = 100;
 // lock) is never disturbed. Each row's columns are url, title, time, count.
 std::string Query(const std::string& db, const char* sql, std::vector<ImportEntry>& out, int64_t (*to_unix)(int64_t)) {
   static Sqlite s;
-  if (!s.ok) return "SQLite (libsqlite3.so.0) isn't installed, so history can't be read.";
+  if (!s.ok) return std::string("SQLite (") + SqliteLibName() + ") isn't installed, so history can't be read.";
   if (!fs::exists(db)) return "";
   void* c = nullptr;
-  std::string uri = "file:" + db + "?immutable=1";
+  // A Windows path (C:/...) needs the file:/// form; a Linux one is already absolute.
+  std::string uri = (db[0] == '/' ? "file:" : "file:///") + fs::path(db).generic_string() + "?immutable=1";
   if (s.open(uri.c_str(), &c, kReadOnly | kUri, nullptr) != 0) {
     std::string e = c ? s.errmsg(c) : "can't open";
     if (c) s.close(c);
@@ -89,6 +90,10 @@ std::vector<Profile> FindProfiles(const std::string& home) {
       {"Brave (Flatpak)", ".var/app/com.brave.Browser/config/BraveSoftware/Brave-Browser"},
       {"Edge (Flatpak)", ".var/app/com.microsoft.Edge/config/microsoft-edge"},
       {"Vivaldi (Flatpak)", ".var/app/com.vivaldi.Vivaldi/config/vivaldi"},
+      // Windows. Every list is searched on every OS; folders that don't exist are just skipped.
+      {"Chrome", "AppData/Local/Google/Chrome/User Data"},    {"Chromium", "AppData/Local/Chromium/User Data"},
+      {"Brave", "AppData/Local/BraveSoftware/Brave-Browser/User Data"},
+      {"Edge", "AppData/Local/Microsoft/Edge/User Data"},      {"Vivaldi", "AppData/Local/Vivaldi/User Data"},
   };
   std::error_code ec;
   for (auto [name, rel] : chromes) {
@@ -101,7 +106,8 @@ std::vector<Profile> FindProfiles(const std::string& home) {
     }
   }
   const std::pair<const char*, const char*> foxes[] = {
-      {"Firefox", ".mozilla/firefox"}, {"Firefox (Flatpak)", ".var/app/org.mozilla.firefox/.mozilla/firefox"}};
+      {"Firefox", ".mozilla/firefox"}, {"Firefox (Flatpak)", ".var/app/org.mozilla.firefox/.mozilla/firefox"},
+      {"Firefox", "AppData/Roaming/Mozilla/Firefox/Profiles"}};
   for (auto [name, rel] : foxes) {
     for (auto& d : fs::directory_iterator(fs::path(home) / rel, ec)) {
       if (!fs::exists(d.path() / "places.sqlite")) continue;

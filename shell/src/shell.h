@@ -46,7 +46,8 @@ class Shell : public CefClient,
   static void Start(CefRefPtr<CefCommandLine> cl);
   // Set by main when this profile has never run; the first window opens tobari://welcome/.
   static bool first_run;
-  static bool burn;  // set by tobari://burn/; main() wipes the profile and relaunches after shutdown
+  static bool burn;
+  static bool burn_failed;  // a pending burn couldn't remove the profile folder (main.cc FinishBurn)  // set by tobari://burn/; main() wipes the profile and relaunches after shutdown
   static Shell* Get();
 
   // Called from the tobari:// scheme handler on the UI thread. Returns the JSON reply.

@@ -1,12 +1,14 @@
-#include <sys/stat.h>
-#include <unistd.h>
-
 #include <cstdio>
 #include <cstring>
 #include <filesystem>
 
 #include "include/cef_app.h"
+#ifdef _WIN32
+#include <windows.h>
+#include "include/cef_sandbox_win.h"
+#endif
 #include "ctl.h"
+#include "platform.h"
 #include "shell.h"
 #include "util.h"
 
@@ -45,30 +47,47 @@ class App : public CefApp, public CefBrowserProcessHandler {
 // Chromium prefs a fresh profile starts with, because profile setup downloads spellcheck dictionaries and
 // host-installed external extensions before PrivacyStart can set them (bench/idle_net.sh first start).
 static void BasePrefs(const std::string& data) {
-  std::filesystem::create_directories(std::filesystem::path(data).parent_path());  // XDG_DATA_HOME or profiles/ may not exist yet
-  for (auto d : {data, data + "/profile", data + "/profile/Default"}) mkdir(d.c_str(), 0700);
+  std::error_code ec;
+  std::filesystem::create_directories(std::filesystem::path(data).parent_path(), ec);  // the data root may not exist yet
+  for (auto d : {data, data + "/profile", data + "/profile/Default"}) MakeDir(d);
   WriteFile(data + "/profile/Default/Preferences",
             R"({"browser":{"enable_spellchecking":false},"extensions":{"block_external_extensions":true},)"
             R"("default_search_provider":{"enabled":false},"safebrowsing":{"enabled":false}})");
 }
 
-// Zygote children get a fresh stack canary after fork and then return through main, so main must not
-// check one (Chromium marks its own main the same way).
-__attribute__((no_stack_protector)) int main(int argc, char* argv[]) {
+// Burn wipes the Chromium profile at the next start, before CEF opens it: by then the old browser's helper
+// processes are gone (Windows keeps files locked while they live), and a retry covers the stragglers.
+static void FinishBurn(const std::string& data) {
+  std::string mark = data + "/burn-pending";
+  if (!std::filesystem::exists(mark)) return;
+  std::error_code ec;
+  for (int i = 0; i < 50; ++i) {
+    std::filesystem::remove_all(data + "/profile", ec);
+    if (!std::filesystem::exists(data + "/profile")) break;
+    SleepMs(200);
+  }
+  if (std::filesystem::exists(data + "/profile")) {
+    Shell::burn_failed = true;  // the marker stays, so the next start tries again
+    return;
+  }
+  std::filesystem::remove(mark, ec);
+  BasePrefs(data);  // a burned profile isn't a first run: no welcome page
+}
+
+// Browser and helper processes both come through here. args are UTF-8, without argv[0].
+static int Run(const std::vector<std::string>& args, const CefMainArgs& main_args, void* sandbox_info) {
   // --profile=NAME runs that profile: its own data folder, process and window (Shell::OpenProfile).
-  for (int i = 1; i < argc; ++i)
-    if (!strncmp(argv[i], "--profile=", 10) && !SetProfile(argv[i] + 10)) {
-      fprintf(stderr, "tobari: \"%s\" isn't a usable profile name.\n", argv[i] + 10);
+  for (auto& a : args)
+    if (a.rfind("--profile=", 0) == 0 && !SetProfile(a.substr(10))) {
+      fprintf(stderr, "tobari: \"%s\" isn't a usable profile name.\n", a.c_str() + 10);
       return 2;
     }
-  if (int code = CtlClient(argc, argv); code >= 0) return code;
-  // Copied now: Chromium later rewrites argv in place for the process title. Used to relaunch after a burn.
+  // To relaunch after a burn.
   std::vector<std::string> again;
-  for (int i = 1; i < argc; ++i)
-    if (!strncmp(argv[i], "--profile=", 10) || !strncmp(argv[i], "--ozone-platform=", 17)) again.push_back(argv[i]);
-  CefMainArgs args(argc, argv);
+  for (auto& a : args)
+    if (a.rfind("--profile=", 0) == 0 || a.rfind("--ozone-platform=", 0) == 0) again.push_back(a);
   CefRefPtr<App> app = new App;
-  int code = CefExecuteProcess(args, app, nullptr);
+  int code = CefExecuteProcess(main_args, app, sandbox_info);
   if (code >= 0) return code;
   CefSettings s;
   std::string data = DataDir();
@@ -78,19 +97,38 @@ __attribute__((no_stack_protector)) int main(int argc, char* argv[]) {
   s.log_severity = LOGSEVERITY_WARNING;
   s.persist_session_cookies = true;
   s.background_color = 0xFFE8E7EE;
-  if (access((data + "/profile/Default/Preferences").c_str(), F_OK) != 0) {
+  FinishBurn(data);
+  if (!std::filesystem::exists(data + "/profile/Default/Preferences")) {
     Shell::first_run = true;
     BasePrefs(data);
   }
-  if (!CefInitialize(args, s, app, nullptr)) return CefGetExitCode();
+  if (!CefInitialize(main_args, s, app, sandbox_info)) return CefGetExitCode();
   CefRunMessageLoop();
   CefShutdown();
-  if (Shell::burn) {
-    // Burn: every Chromium store (cookies, cache, site storage, permissions) lives under profile/, so it all goes.
-    std::error_code ec;
-    std::filesystem::remove_all(data + "/profile", ec);
-    BasePrefs(data);
-    Spawn(again);
-  }
+  if (Shell::burn) Spawn(again);
   return 0;
 }
+
+#ifdef _WIN32
+// tobari.exe is CEF's bootstrap.exe renamed; it checks the signature policy, sets up the sandbox and calls
+// this in tobari.dll. The CLI is the separate console program tobari-cli.exe (cli_main.cc).
+extern "C" CEF_BOOTSTRAP_EXPORT int RunWinMain(HINSTANCE instance, LPWSTR, int, void* sandbox_info,
+                                               cef_version_info_t*) {
+  auto args = Utf8Args(0, nullptr);
+  if (!args.empty()) args.erase(args.begin());
+  return Run(args, CefMainArgs(instance), sandbox_info);
+}
+#else
+// Zygote children get a fresh stack canary after fork and then return through main, so main must not
+// check one (Chromium marks its own main the same way).
+__attribute__((no_stack_protector)) int main(int argc, char* argv[]) {
+  std::vector<std::string> args(argv + 1, argv + argc);  // copied: Chromium later rewrites argv for the title
+  for (auto& a : args)
+    if (a.rfind("--profile=", 0) == 0 && !SetProfile(a.substr(10))) {
+      fprintf(stderr, "tobari: \"%s\" isn't a usable profile name.\n", a.c_str() + 10);
+      return 2;
+    }
+  if (int code = CtlClient(args); code >= 0) return code;
+  return Run(args, CefMainArgs(argc, argv), nullptr);
+}
+#endif

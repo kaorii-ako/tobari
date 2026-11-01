@@ -1,11 +1,12 @@
 #include "privacy.h"
 
-#include <sys/stat.h>
 
 #include <atomic>
 #include <climits>
 #include <cstdio>
 #include <ctime>
+#include <chrono>
+#include <filesystem>
 #include <fstream>
 #include <map>
 #include <memory>
@@ -21,6 +22,7 @@
 #include "include/wrapper/cef_closure_task.h"
 #include "block.h"
 #include "shell.h"
+#include "platform.h"
 #include "util.h"
 
 namespace {
@@ -51,8 +53,10 @@ std::vector<CefRefPtr<CefURLRequest>> g_pending;
 std::string ListPath(const List& l) { return DataDir() + "/lists/" + l.file; }
 
 int64_t Mtime(const std::string& path) {
-  struct stat st;
-  return stat(path.c_str(), &st) == 0 ? st.st_mtime : 0;
+  std::error_code ec;
+  auto t = std::filesystem::last_write_time(path, ec);
+  if (ec) return 0;
+  return std::chrono::duration_cast<std::chrono::seconds>(std::chrono::file_clock::to_sys(t).time_since_epoch()).count();
 }
 
 std::string ReadAll(const std::string& path) {
@@ -101,7 +105,7 @@ class Fetch : public CefURLRequestClient {
     // Only a complete 200 that parses into rules replaces the list on disk.
     if (r->GetRequestStatus() == UR_SUCCESS && res && res->GetStatus() == 200 && data_.size() <= kMaxList &&
         Filter().Add(data_) > 0) {
-      mkdir((DataDir() + "/lists").c_str(), 0700);
+      MakeDir(DataDir() + "/lists");
       WriteFile(ListPath(list_), data_);
       CefPostTask(TID_FILE_USER_VISIBLE, base::BindOnce(&LoadLists));
     } else {

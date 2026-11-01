@@ -24,6 +24,9 @@ function done() {
 }
 
 btn.style.setProperty('--hold', HOLD + 'ms');
+// Back here after a restart whose wipe couldn't finish (files still locked): say so, and let the user hold again.
+if (location.hash === '#failed')
+  document.getElementById('note').textContent = "The last burn couldn't remove everything; some files were still in use. Hold again, or restart Tobari and it retries.";
 btn.addEventListener('pointerdown', (e) => {
   if (!e.isPrimary || e.button !== 0) return;
   pointer = e.pointerId;

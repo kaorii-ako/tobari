@@ -3,23 +3,20 @@
 #include <cctype>
 #include <cstdio>
 #include <cstdlib>
+#include <cstring>
 #include <fstream>
 
-#include <sys/stat.h>
-#include <sys/wait.h>
-#include <unistd.h>
 #include <algorithm>
 #include <filesystem>
+
+#include "platform.h"
 
 namespace {
 std::string g_profile;  // "" is the default profile, which lives at the data root as before profiles existed
 std::string g_search = "https://duckduckgo.com/?q=%s";
 }  // namespace
 
-std::string Home() {
-  const char* h = getenv("HOME");
-  return h ? h : "";
-}
+std::string Home() { return HomeDir(); }
 
 namespace {
 
@@ -173,8 +170,7 @@ std::string FreeName(const std::string& dir, std::string name,
 }
 
 std::string DataRoot() {
-  const char* x = getenv("XDG_DATA_HOME");
-  return (x && *x ? std::string(x) : Home() + "/.local/share") + "/tobari";
+  return AppDataBase() + "/tobari";
 }
 
 std::string DataDir() { return g_profile.empty() ? DataRoot() : DataRoot() + "/profiles/" + g_profile; }
@@ -183,9 +179,10 @@ const std::string& CurrentProfile() { return g_profile; }
 
 bool ValidProfile(const std::string& name) {
   if (name.empty() || name.size() > 64 || name[0] == '.' || name[0] == ' ' || name.back() == ' ') return false;
-  // Bytes >= 0x80 are UTF-8, so Thai and Japanese names work; '/' and control characters would escape the folder.
+  // Bytes >= 0x80 are UTF-8, so Thai and Japanese names work. Slashes and control characters would escape the
+  // folder; the rest are refused by Windows, and kept out everywhere so a profile name works on both.
   for (unsigned char c : name)
-    if (c < 0x20 || c == '/' || c == 0x7f) return false;
+    if (c < 0x20 || c == 0x7f || strchr("/\\:*?\"<>|", c)) return false;
   return true;
 }
 
@@ -207,8 +204,9 @@ std::vector<std::string> Profiles() {
 }
 
 std::string DownloadDir() {
-  const char* x = getenv("XDG_CONFIG_HOME");
-  std::ifstream f((x && *x ? std::string(x) : Home() + "/.config") + "/user-dirs.dirs");
+  if (std::string k = KnownDownloads(); !k.empty()) return k;
+  std::string x = Env("XDG_CONFIG_HOME");
+  std::ifstream f((x.empty() ? Home() + "/.config" : x) + "/user-dirs.dirs");
   std::string line;
   while (std::getline(f, line)) {
     if (!StartsWith(line, "XDG_DOWNLOAD_DIR=\"")) continue;
@@ -220,24 +218,12 @@ std::string DownloadDir() {
 }
 
 void Spawn(const std::vector<std::string>& args) {
-  const char* appimage = getenv("APPIMAGE");
-  char self[4096];
-  ssize_t n = readlink("/proc/self/exe", self, sizeof self - 1);
-  if (!appimage && n <= 0) return;
-  if (n > 0) self[n] = 0;
-  std::vector<std::string> a = {appimage ? appimage : self};
+  std::string self = Env("APPIMAGE");
+  if (self.empty()) self = ExePath();
+  if (self.empty()) return;
+  std::vector<std::string> a = {self};
   a.insert(a.end(), args.begin(), args.end());
-  std::vector<char*> argv;
-  for (auto& s : a) argv.push_back(s.data());
-  argv.push_back(nullptr);
-  // Double fork so the new process isn't our child: it outlives us and leaves no zombie.
-  pid_t pid = fork();
-  if (pid == 0) {
-    setsid();
-    if (fork() == 0) execv(argv[0], argv.data());
-    _exit(0);
-  }
-  if (pid > 0) waitpid(pid, nullptr, 0);
+  Launch(a);
 }
 
 void WriteFile(const std::string& path, const std::string& data) {
@@ -247,8 +233,9 @@ void WriteFile(const std::string& path, const std::string& data) {
     f << data;
     if (!f.flush()) return;
   }
-  chmod(tmp.c_str(), 0600);
-  rename(tmp.c_str(), path.c_str());
+  MakePrivate(tmp);
+  std::error_code ec;
+  std::filesystem::rename(tmp, path, ec);  // replaces path, also on Windows
 }
 
 namespace {

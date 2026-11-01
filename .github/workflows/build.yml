@@ -88,3 +88,69 @@ jobs:
 
       - uses: actions/upload-artifact@v4
         with: { name: tobari-appimage, path: dist/ }
+
+  windows:
+    # Portable zip, unsigned (SmartScreen warns on first run). Separate job that can't fail the Linux release.
+    runs-on: windows-2022
+    timeout-minutes: 45
+    continue-on-error: true
+    env:
+      CEFW: cef_binary_156.0.14+g4fa4ab5+chromium-156.0.8078.48_windows64_minimal
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ilammy/msvc-dev-cmd@v1
+      - uses: actions/cache@v4
+        with: { path: cef, key: "${{ env.CEFW }}" }
+
+      - name: CEF
+        shell: bash
+        run: |
+          [ -d cef ] || { mkdir cef; curl -sSfL "https://cef-builds.spotifycdn.com/${CEFW//+/%2B}.tar.bz2" | tar xj -C cef; }
+
+      - name: Build
+        shell: cmd
+        run: |
+          cmake -G Ninja -S shell -B build -DCEF_ROOT="%CD%/cef/%CEFW%" -DCMAKE_BUILD_TYPE=Release || exit /b 1
+          ninja -C build || exit /b 1
+
+      - name: Checks
+        shell: bash
+        run: |
+          build/util_test.exe
+          build/block_test.exe
+          node bench/calc_test.js
+          node bench/clean_test.js
+
+      - name: Smoke (Thai user folder, CLI over the socket)
+        shell: pwsh
+        run: |
+          $env:LOCALAPPDATA = Join-Path $env:RUNNER_TEMP "ทดสอบ"
+          New-Item -ItemType Directory -Force $env:LOCALAPPDATA | Out-Null
+          $srv = Start-Process python -ArgumentList "bench/script_server.py","38181","script-test" -PassThru
+          $app = Start-Process build/out/tobari.exe -ArgumentList "http://127.0.0.1:38181/index.html" -PassThru
+          $cli = "build/out/tobari-cli.exe"
+          $up = $false
+          foreach ($i in 1..60) { & $cli tabs *> $null; if ($LASTEXITCODE -eq 0) { $up = $true; break }; Start-Sleep 1 }
+          if (-not $up) { Get-Content "$env:LOCALAPPDATA/tobari/cef.log" -ErrorAction SilentlyContinue | Select-Object -Last 30; throw "browser never answered" }
+          Start-Sleep 4
+          $tabs = & $cli tabs; $tabs
+          $id = & $cli open "http://127.0.0.1:38181/index.html?two"
+          Start-Sleep 3
+          $text = & $cli text $id
+          if (-not ($text -match "ภาษาไทย")) { throw "page text missing Thai: $text" }
+          $mcp = '{"jsonrpc":"2.0","id":1,"method":"tools/list"}' | & $cli mcp | Out-String
+          if ($mcp -notmatch "tobari_click") { throw "mcp tools/list failed: $mcp" }
+          Stop-Process -Id $app.Id; Stop-Process -Id $srv.Id
+          "windows smoke: PASS" >> $env:GITHUB_STEP_SUMMARY
+
+      - name: Package
+        shell: pwsh
+        run: |
+          $v = (git describe --tags --always) -replace '^v',''
+          New-Item -ItemType Directory dist | Out-Null
+          Copy-Item -Recurse build/out "dist/Tobari"
+          Remove-Item dist/Tobari/*.lib, dist/Tobari/*.exp, dist/Tobari/*.pdb -ErrorAction SilentlyContinue
+          Compress-Archive dist/Tobari "dist/Tobari-$v-windows-x64.zip"
+
+      - uses: actions/upload-artifact@v4
+        with: { name: tobari-windows, path: "dist/*.zip" }

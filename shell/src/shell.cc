@@ -2,12 +2,11 @@
 #include "mcp.h"
 
 #include <memory>
-#include <sys/stat.h>
-#include <unistd.h>
 
 #include <algorithm>
 #include <cstdio>
 #include <ctime>
+#include <filesystem>
 #include <fstream>
 #include <functional>
 #include <sstream>
@@ -24,6 +23,7 @@
 #include "import.h"
 #include "privacy.h"
 #include "scheme.h"
+#include "platform.h"
 #include "util.h"
 
 namespace {
@@ -138,6 +138,7 @@ class WindowDelegate : public CefWindowDelegate {
 }  // namespace
 
 bool Shell::burn = false;
+bool Shell::burn_failed = false;
 bool Shell::first_run = false;
 
 namespace {
@@ -167,8 +168,9 @@ void Shell::Start(CefRefPtr<CefCommandLine> cl) {
   CefCommandLine::ArgumentList args;
   cl->GetArguments(args);
   for (auto& a : args) g_shell->start_urls_.push_back(FixupInput(a.ToString()));
+  if (burn_failed) g_shell->start_urls_.push_back("tobari://burn/#failed");
   if (first_run && g_shell->start_urls_.empty() && g_shell->demo_.empty()) g_shell->start_urls_.push_back("tobari://welcome/");
-  mkdir(DataDir().c_str(), 0700);
+  MakeDir(DataDir());
   CefWindow::CreateTopLevelWindow(new WindowDelegate);
   CtlServe();
 }
@@ -235,6 +237,7 @@ void Shell::Ctl(const std::string& cmd, const std::string& arg, std::function<vo
         keep += Json(d) + "\n";
       }
     WriteFile(DataDir() + "/history.jsonl", keep);
+    WriteFile(DataDir() + "/burn-pending", "");  // main.cc FinishBurn wipes the profile on the way back up
     burn = true;
     done(true, "");
     window_->Close();
@@ -855,7 +858,7 @@ void Shell::AppendHistory(const std::string& lines) {
   // Plain JSON lines, mode 0600, like Chrome's and Firefox's history. Disk encryption protects it at rest.
   std::string path = DataDir() + "/history.jsonl";
   std::ofstream(path, std::ios::app) << lines;
-  chmod(path.c_str(), 0600);
+  MakePrivate(path);
 }
 
 void Shell::Visited(const Tab& t) {
@@ -1045,8 +1048,8 @@ bool Shell::OnBeforeBrowse(CefRefPtr<CefBrowser> b, CefRefPtr<CefFrame> f, CefRe
 bool Shell::OnBeforeDownload(CefRefPtr<CefBrowser>, CefRefPtr<CefDownloadItem>, const CefString& name,
                              CefRefPtr<CefBeforeDownloadCallback> cb) {
   std::string dir = DownloadDir();
-  mkdir(dir.c_str(), 0755);
-  cb->Continue(FreeName(dir, name, [](const std::string& p) { return access(p.c_str(), F_OK) == 0; }), false);
+  MakeDir(dir);
+  cb->Continue(FreeName(dir, name, [](const std::string& p) { return std::filesystem::exists(p); }), false);
   return true;
 }
 
